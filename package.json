@@ -1,0 +1,10 @@
+{
+  "name": "remember-membership-management-system",
+  "version": "1.0.0",
+  "description": "Full-stack Membership Management System with React, Tailwind CSS, Node.js, MongoDB, JWT RBAC, and Google Wallet digital passes",
+  "scripts": {
+    "start:backend": "cd backend && npm start",
+    "start:frontend": "cd frontend && npm run dev",
+    "test": "cd backend && node test_suite.js"
+  }
+}
