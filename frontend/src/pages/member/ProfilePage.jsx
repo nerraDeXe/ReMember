@@ -3,6 +3,9 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import { useToast } from '../../context/ToastContext.jsx';
 import { User, Phone, MapPin, Mail, Save, RefreshCw, Bell, Shield, Upload, Trash2 } from 'lucide-react';
 import { api } from '../../api.js';
+import CountrySelect from '../../components/CountrySelect.jsx';
+import PhoneInput from '../../components/PhoneInput.jsx';
+import { normalisePhone, rebasePhone } from '../../phone.js';
 
 const MAX_AVATAR_SIZE = 2 * 1024 * 1024;
 const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -35,7 +38,7 @@ export default function ProfilePage() {
       setCity(user.address?.city || '');
       setState(user.address?.state || '');
       setPostalCode(user.address?.postalCode || '');
-      setCountry(user.address?.country || 'United States');
+      setCountry(user.country || user.address?.country || '');
       setNotifyEmail(user.notifications?.email ?? true);
       setNotifyEvents(user.notifications?.events ?? true);
     }
@@ -77,7 +80,7 @@ export default function ProfilePage() {
     try {
       const payload = {
         name,
-        phone,
+        phone: normalisePhone(phone, country),
         bio,
         avatarUrl,
         address: {
@@ -180,13 +183,8 @@ export default function ProfilePage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">Phone Number</label>
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
-              />
+              <label htmlFor="profile-phone" className="block text-xs font-semibold text-slate-700 mb-1.5">Phone Number (optional)</label>
+              <PhoneInput id="profile-phone" country={country} value={phone} onChange={setPhone} disabled={saving} />
             </div>
 
             <div>
@@ -262,13 +260,8 @@ export default function ProfilePage() {
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Country</label>
-              <input
-                type="text"
-                value={country}
-                onChange={(e) => setCountry(e.target.value)}
-                className="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
-              />
+              <label htmlFor="profile-country" className="block text-xs font-semibold text-slate-700 mb-1">Country</label>
+              <CountrySelect id="profile-country" value={country} onChange={value => { setPhone(previous => rebasePhone(previous, country, value)); setCountry(value); }} required disabled={saving} />
             </div>
           </div>
         </div>

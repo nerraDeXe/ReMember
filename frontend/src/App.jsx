@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext.jsx';
 import { ToastProvider, useToast } from './context/ToastContext.jsx';
 
@@ -8,14 +8,16 @@ import Sidebar from './components/Sidebar.jsx';
 // Pages
 import LandingPage from './pages/LandingPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
-import RegisterPage from './pages/RegisterPage.jsx';
+const RegisterPage = lazy(() => import('./pages/RegisterPage.jsx'));
 import VerifyEmailPage from './pages/VerifyEmailPage.jsx';
 import AccountOnboardingPage from './pages/AccountOnboardingPage.jsx';
 import OrganisationSetupPage from './pages/OrganisationSetupPage.jsx';
+import ForgotPasswordPage from './pages/ForgotPasswordPage.jsx';
+import ResetPasswordPage from './pages/ResetPasswordPage.jsx';
 
 // Member Pages
 import MemberDashboard from './pages/member/MemberDashboard.jsx';
-import ProfilePage from './pages/member/ProfilePage.jsx';
+const ProfilePage = lazy(() => import('./pages/member/ProfilePage.jsx'));
 import EventsCalendarPage from './pages/member/EventsCalendarPage.jsx';
 import InvoicesPage from './pages/member/InvoicesPage.jsx';
 import MemberOrganisationsPage from './pages/member/MemberOrganisationsPage.jsx';
@@ -35,9 +37,10 @@ import { api } from './api.js';
 import { getAccountHomePage, getPageAfterContextChange, isAccountPage } from './navigation.js';
 
 function MainApp() {
-  const { user, isAuthenticated, isAdmin, loading, refreshUser, getCurrentUser } = useAuth();
+  const { user, isAuthenticated, isAdmin, loading, refreshUser, getCurrentUser, sessionExpired } = useAuth();
   const { showToast } = useToast();
-  const [currentPage, setCurrentPage] = useState('landing');
+  const [currentPage, setCurrentPage] = useState(() => window.location.hash.startsWith('#reset-password') ? 'reset-password' : 'landing');
+  const [loginEmail, setLoginEmail] = useState('');
   const [isRenewModalOpen, setIsRenewModalOpen] = useState(false);
   const [tiers, setTiers] = useState([]);
   const [walletData, setWalletData] = useState(null);
@@ -50,7 +53,7 @@ function MainApp() {
       if (isAuthenticated) {
         setCurrentPage(page => ['landing', 'login', 'register'].includes(page) ? getAccountHomePage(user) : page);
       } else {
-        setCurrentPage(page => ['login', 'register'].includes(page) ? page : 'landing');
+        setCurrentPage(page => ['login', 'register', 'google-signup', 'forgot-password', 'reset-password'].includes(page) ? page : 'landing');
       }
     }
   }, [isAuthenticated, isAdmin, loading, user?.activeOrganisationId]);
@@ -62,6 +65,16 @@ function MainApp() {
     setIsRenewModalOpen(false);
     setWalletData(null);
   }, [user?.activeOrganisationId, user?.emailVerified, user?.onboardingCompleted, isAdmin]);
+
+  useEffect(() => {
+    if (sessionExpired) { setCurrentPage(page => ['forgot-password', 'reset-password'].includes(page) ? page : 'login'); showToast('Your session has ended. Please sign in again.', 'info'); }
+  }, [sessionExpired]);
+
+  useEffect(() => {
+    const handleResetLink = () => { if (window.location.hash.startsWith('#reset-password')) setCurrentPage('reset-password'); };
+    window.addEventListener('hashchange', handleResetLink);
+    return () => window.removeEventListener('hashchange', handleResetLink);
+  }, []);
 
   // Load tiers for modal renewal usage
   useEffect(() => {
@@ -98,7 +111,14 @@ function MainApp() {
     if (response.requiresPayment) setCheckoutOrganisationId(String(response.organisation._id));
   };
 
-  const handleNavigate = (page) => {
+  const handleNavigate = (page, options = {}) => {
+    if (page === 'login' && getCurrentUser()) page = 'account-home';
+    if (page === 'login') setLoginEmail(options.email || '');
+    if (['forgot-password', 'reset-password', 'login'].includes(page)) {
+      if (page !== 'reset-password') window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      setCurrentPage(page);
+      return;
+    }
     const account = getCurrentUser();
     if (account && !account.emailVerified) {
       setCurrentPage('verify-email');
@@ -143,9 +163,12 @@ function MainApp() {
   }
 
   // Public unauthenticated pages
+  if (currentPage === 'forgot-password') return <ForgotPasswordPage onNavigate={handleNavigate} />;
+  if (currentPage === 'reset-password') return <ResetPasswordPage onNavigate={handleNavigate} />;
   if (!isAuthenticated) {
-    if (currentPage === 'login') return <LoginPage onNavigate={handleNavigate} />;
-    if (currentPage === 'register') return <RegisterPage onNavigate={handleNavigate} />;
+    if (currentPage === 'login') return <LoginPage key={loginEmail} initialEmail={loginEmail} onNavigate={handleNavigate} />;
+    if (currentPage === 'register') return <RegisterPage key="email-register" onNavigate={handleNavigate} />;
+    if (currentPage === 'google-signup') return <RegisterPage key="google-register" googleSignup onNavigate={handleNavigate} />;
     return <LandingPage onNavigate={handleNavigate} />;
   }
 
@@ -227,7 +250,7 @@ export default function App() {
   return (
     <AuthProvider>
       <ToastProvider>
-        <MainApp />
+        <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center text-sm text-slate-600">Loading…</div>}><MainApp /></Suspense>
       </ToastProvider>
     </AuthProvider>
   );

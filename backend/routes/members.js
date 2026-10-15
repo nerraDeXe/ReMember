@@ -1,4 +1,5 @@
 import express from 'express';
+import { countryChoice, normaliseAccountPhone } from '../services/accountValidation.js';
 import { User, Tier, Invoice, Event, ActivityLog } from '../models/index.js';
 import { authenticateToken, requireVerifiedEmail } from '../middleware/auth.js';
 import { withSelectedMembership, requireActiveMembership } from '../services/membershipContext.js';
@@ -88,7 +89,13 @@ router.put('/profile', async (req, res) => {
 
     const updateFields = {};
     if (name) updateFields.name = name.trim();
-    if (phone !== undefined) updateFields.phone = phone;
+    const selectedCountry = countryChoice(address?.country || req.user.country || req.user.address?.country);
+    if (address?.country !== undefined && !selectedCountry) return res.status(400).json({ success: false, message: 'Choose a country from the country list.' });
+    if (phone !== undefined) {
+      try { updateFields.phone = normaliseAccountPhone(phone, selectedCountry?.name); }
+      catch (error) { return res.status(400).json({ success: false, message: error.message }); }
+    }
+    if (address?.country !== undefined) updateFields.country = selectedCountry.name;
     if (bio !== undefined) updateFields.bio = bio;
     const updateOperation = { $set: updateFields };
     if (avatarUrl !== undefined && avatarUrl !== req.user.avatarUrl) {

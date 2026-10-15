@@ -1,7 +1,6 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import crypto from 'node:crypto';
-import jwt from 'jsonwebtoken';
 import { User, ActivityLog } from '../models/index.js';
 import { config } from '../config/config.js';
 import { emailService } from '../services/emailService.js';
@@ -9,18 +8,17 @@ import { mailDelivery } from '../services/mailDelivery.js';
 import { getAccountContext } from '../services/organisationAccess.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { COUNTRIES } from '../../shared/countries.js';
+import { passwordError } from '../../shared/accountRules.js';
+import { normaliseAccountPhone } from '../services/accountValidation.js';
+import { issueSession } from '../services/sessions.js';
+import recoveryRoutes from './accountRecovery.js';
+import { createGoogleAuthRouter } from './googleAuth.js';
 
 const router = express.Router();
 const CODE_LIFETIME_MS = 30 * 60 * 1000;
 const RESEND_COOLDOWN_MS = 60 * 1000;
 const MAX_CODE_ATTEMPTS = 5;
 const VERIFICATION_FIELDS = '+emailVerificationHash +emailVerificationExpiresAt +emailVerificationSentAt +emailVerificationAttempts';
-
-const signToken = user => jwt.sign(
-  { id: user._id, email: user.email, role: user.role, name: user.name },
-  config.JWT_SECRET,
-  { expiresIn: config.JWT_EXPIRES_IN }
-);
 
 const hashCode = (userId, code) => crypto.createHmac('sha256', config.JWT_SECRET)
   .update(`${userId}:${code}`).digest('hex');
@@ -102,9 +100,8 @@ router.post('/register', async (req, res) => {
     if (normalizedEmail.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
       return res.status(400).json({ success: false, message: 'Enter a valid email address.' });
     }
-    if (password.length < 8 || Buffer.byteLength(password, 'utf8') > 72) {
-      return res.status(400).json({ success: false, message: 'Password must be at least 8 characters and no more than 72 UTF-8 bytes.' });
-    }
+    const invalidPassword = passwordError(password);
+    if (invalidPassword) return res.status(400).json({ success: false, message: invalidPassword });
     const selectedCountry = COUNTRIES.find(item => item.name === country.trim() || item.code === country.trim().toUpperCase());
     if (!selectedCountry) {
       return res.status(400).json({ success: false, message: 'Choose a country from the country list.' });
@@ -112,11 +109,11 @@ router.post('/register', async (req, res) => {
     if (typeof bio !== 'string' || bio.length > 500) {
       return res.status(400).json({ success: false, message: 'Member bio must be 500 characters or fewer.' });
     }
-    if (typeof phone !== 'string' || phone.length > 50) {
-      return res.status(400).json({ success: false, message: 'Phone number must be 50 characters or fewer.' });
-    }
+    let normalizedPhone;
+    try { normalizedPhone = normaliseAccountPhone(phone, selectedCountry.name); }
+    catch (error) { return res.status(400).json({ success: false, message: error.message }); }
     if (await User.findOne({ email: normalizedEmail })) {
-      return res.status(409).json({ success: false, message: 'An account with this email address already exists.' });
+      return res.status(409).json({ success: false, code: 'ACCOUNT_EXISTS', message: 'An account with this email address already exists. Sign in instead.' });
     }
 
     const now = new Date();
@@ -125,7 +122,7 @@ router.post('/register', async (req, res) => {
       name: `${firstName.trim()} ${lastName.trim()}`,
       email: normalizedEmail, password: await bcrypt.hash(password, 10),
       country: selectedCountry.name, address: { country: selectedCountry.name },
-      phone: phone.trim(), bio: bio.trim(), role: 'member', status: 'active',
+      phone: normalizedPhone, bio: bio.trim(), role: 'member', status: 'active',
       membershipNumber: `MEM-${crypto.randomBytes(12).toString('hex').toUpperCase()}`,
       joinedDate: now.toISOString(), emailVerified: false, onboardingCompleted: false
     });
@@ -138,7 +135,7 @@ router.post('/register', async (req, res) => {
 
     return res.status(201).json({
       success: true, message: 'Your ReMember account is created. Confirm your email address to continue.',
-      token: signToken(user), user: await getAccountContext(user), verification
+      ...issueSession(user), user: await getAccountContext(user), verification
     });
   } catch (err) {
     if (err.code === 11000) return res.status(409).json({ success: false, message: 'An account with this email address already exists.' });
@@ -149,12 +146,13 @@ router.post('/register', async (req, res) => {
 
 router.post('/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, rememberMe = false } = req.body;
+    if (typeof rememberMe !== 'boolean') return res.status(400).json({ success: false, message: 'Remember Me must be true or false.' });
     if (typeof email !== 'string' || !email.trim() || typeof password !== 'string' || !password) {
       return res.status(400).json({ success: false, message: 'Email and password are required.' });
     }
     const user = await User.findOne({ email: email.toLowerCase().trim() }).select(`+password ${VERIFICATION_FIELDS}`);
-    if (!user || !await bcrypt.compare(password, user.password)) {
+    if (!user || !user.password || !await bcrypt.compare(password, user.password)) {
       return res.status(401).json({ success: false, message: 'Invalid email or password.' });
     }
     if (user.status === 'revoked' || user.status === 'suspended') {
@@ -164,7 +162,7 @@ router.post('/login', async (req, res) => {
     if (!user.emailVerified && (!user.emailVerificationHash || new Date(user.emailVerificationExpiresAt).getTime() <= Date.now())) {
       verification = await sendVerification(user);
     }
-    return res.json({ success: true, message: `Welcome back, ${user.name}!`, token: signToken(user), user: await getAccountContext(user), verification });
+    return res.json({ success: true, message: `Welcome back, ${user.name}!`, ...issueSession(user, rememberMe), user: await getAccountContext(user), verification });
   } catch {
     console.error('Account login failed.');
     return res.status(500).json({ success: false, message: 'Authentication failed.' });
@@ -200,7 +198,7 @@ router.post('/verify-email', authenticateToken, async (req, res) => {
     const code = typeof req.body.code === 'string' ? req.body.code.trim() : '';
     if (!/^\d{6}$/.test(code)) return res.status(400).json({ success: false, message: 'Enter the six-digit code from your verification email.' });
     const user = await User.findById(req.user._id).select(VERIFICATION_FIELDS);
-    if (user.emailVerified) return res.json({ success: true, message: 'Your email address is already verified.', token: signToken(user), user: await getAccountContext(user) });
+    if (user.emailVerified) return res.json({ success: true, message: 'Your email address is already verified.', ...issueSession(user, req.auth.rememberMe, req.auth.exp), user: await getAccountContext(user) });
     if (!user.emailVerificationHash || new Date(user.emailVerificationExpiresAt).getTime() <= Date.now()) {
       return res.status(400).json({ success: false, message: 'Your verification code has expired or was not sent. Request a new code.' });
     }
@@ -221,10 +219,12 @@ router.post('/verify-email', authenticateToken, async (req, res) => {
       $unset: { emailVerificationHash: '', emailVerificationExpiresAt: '', emailVerificationSentAt: '', emailVerificationAttempts: '' }
     }, { new: true });
     if (!verifiedUser) return res.status(400).json({ success: false, message: 'This code is no longer valid. Request a new verification code.' });
-    return res.json({ success: true, message: 'Your email address is confirmed.', token: signToken(verifiedUser), user: await getAccountContext(verifiedUser) });
+    return res.json({ success: true, message: 'Your email address is confirmed.', ...issueSession(verifiedUser, req.auth.rememberMe, req.auth.exp), user: await getAccountContext(verifiedUser) });
   } catch {
     return res.status(500).json({ success: false, message: 'Could not confirm your email address. Please try again.' });
   }
 });
 
+router.use(recoveryRoutes);
+router.use(createGoogleAuthRouter(sendVerification));
 export default router;

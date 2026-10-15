@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { api } from '../api.js';
+import { sessionExpiry } from '../session.js';
 
 const AuthContext = createContext(null);
 
@@ -8,13 +9,18 @@ export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => localStorage.getItem('remember_token'));
   const [loading, setLoading] = useState(true);
   const [verification, setVerification] = useState(null);
+  const [pendingGoogleSignup, setPendingGoogleSignup] = useState(null);
+  const [sessionExpired, setSessionExpired] = useState(false);
+  const currentTokenRef = useRef(token);
   const sessionUserRef = useRef(null);
   const sessionRevision = useRef(0);
 
   const applySession = (data) => {
     if (data.token) {
+      currentTokenRef.current = data.token;
       localStorage.setItem('remember_token', data.token);
       setToken(data.token);
+      setSessionExpired(false);
     }
     if (data.user) {
       sessionRevision.current += 1;
@@ -56,8 +62,8 @@ export function AuthProvider({ children }) {
     return () => { cancelled = true; };
   }, [token]);
 
-  const login = async (email, password) => {
-    const data = await api.login({ email, password });
+  const login = async (email, password, rememberMe = false) => {
+    const data = await api.login({ email, password, rememberMe });
     if (data.success && data.token) {
       return applySession(data);
     }
@@ -77,27 +83,90 @@ export function AuthProvider({ children }) {
     setToken(null);
     setUser(null);
     sessionUserRef.current = null;
+    currentTokenRef.current = null;
     sessionRevision.current += 1;
     setVerification(null);
+    setPendingGoogleSignup(null);
+    window.google?.accounts?.id?.disableAutoSelect();
   };
 
+  useEffect(() => {
+    if (!token) return;
+    let timeout;
+    const expire = () => {
+      if (currentTokenRef.current !== token) return;
+      logout();
+      setSessionExpired(true);
+    };
+    const check = () => {
+      clearTimeout(timeout);
+      const remaining = sessionExpiry(token) - Date.now();
+      if (remaining <= 0) expire();
+      else timeout = setTimeout(check, Math.min(remaining + 20, 2_147_000_000));
+    };
+    const invalidSession = event => { if (event.detail?.token === token) expire(); };
+    check();
+    window.addEventListener('focus', check);
+    document.addEventListener('visibilitychange', check);
+    window.addEventListener('remember:session-expired', invalidSession);
+    return () => { clearTimeout(timeout); window.removeEventListener('focus', check); document.removeEventListener('visibilitychange', check); window.removeEventListener('remember:session-expired', invalidSession); };
+  }, [token]);
+
+  useEffect(() => {
+    const sync = event => {
+      if (event.key !== 'remember_token') return;
+      currentTokenRef.current = event.newValue;
+      if (!event.newValue) logout();
+      else { setLoading(true); setToken(event.newValue); }
+    };
+    window.addEventListener('storage', sync);
+    return () => window.removeEventListener('storage', sync);
+  }, []);
+
   const refreshUser = async () => {
+    const expectedToken = currentTokenRef.current;
     const data = await api.getMe();
+    if (!expectedToken || expectedToken !== currentTokenRef.current) throw new Error('Your session has ended. Sign in again.');
     if (!data.success || !data.user) throw new Error('Could not refresh your account.');
     applySession(data);
     return data.user;
   };
-  const verifyEmail = async (code) => applySession(await api.verifyEmail(code));
-  const resendVerification = async () => applySession(await api.resendVerification());
-  const completeOnboarding = async () => applySession(await api.completeOnboarding());
+  const applyAuthenticatedRequest = async (request) => {
+    const expectedToken = currentTokenRef.current;
+    const data = await request();
+    if (!expectedToken || expectedToken !== currentTokenRef.current) throw new Error('Your session has ended. Sign in again.');
+    return applySession(data);
+  };
+  const verifyEmail = async (code) => applyAuthenticatedRequest(() => api.verifyEmail(code));
+  const resendVerification = async () => applyAuthenticatedRequest(() => api.resendVerification());
+  const completeOnboarding = async () => applyAuthenticatedRequest(() => api.completeOnboarding());
   const selectOrganisation = async (organisationId) => {
-    const data = applySession(await api.selectOrganisation(organisationId));
+    const expectedToken = currentTokenRef.current;
+    const response = await api.selectOrganisation(organisationId);
+    if (!expectedToken || expectedToken !== currentTokenRef.current) throw new Error('Your session has ended. Sign in again.');
+    const data = applySession(response);
     return data.user;
+  };
+  const googleSignIn = async (details) => {
+    const data = await api.googleSignIn(details);
+    if (data.signupRequired) setPendingGoogleSignup(data);
+    else applySession(data);
+    return data;
+  };
+  const completeGoogleSignup = async (details) => {
+    if (!pendingGoogleSignup) throw new Error('Choose Google sign-up again to continue.');
+    const data = await api.googleRegister({ ...details, signupToken: pendingGoogleSignup.signupToken });
+    setPendingGoogleSignup(null);
+    return applySession(data);
   };
   const value = {
     user,
     token,
     loading,
+    sessionExpired,
+    pendingGoogleSignup,
+    googleSignIn,
+    completeGoogleSignup,
     isAuthenticated: !!user,
     isAdmin: user?.emailVerified === true && user?.organisationRole === 'owner',
     verificationDeliveryError: verification && verification.delivery !== 'sent' ? verification.message : '',

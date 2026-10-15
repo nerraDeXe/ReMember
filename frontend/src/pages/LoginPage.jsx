@@ -1,21 +1,24 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
-import { Sparkles, Lock, Mail, ArrowRight, RefreshCw } from 'lucide-react';
+import { Lock, Mail, ArrowRight, RefreshCw } from 'lucide-react';
+import GoogleSignIn from '../components/GoogleSignIn.jsx';
 
-export default function LoginPage({ onNavigate }) {
+export default function LoginPage({ onNavigate, initialEmail = '' }) {
   const { login } = useAuth();
   const { showToast } = useToast();
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+  const [googleBusy, setGoogleBusy] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const data = await login(email, password);
+      const data = await login(email, password, rememberMe);
       showToast(`Welcome back, ${data.user.name}!`, 'success');
       onNavigate('account-home');
     } catch (err) {
@@ -48,6 +51,7 @@ export default function LoginPage({ onNavigate }) {
 
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <fieldset disabled={loading || googleBusy} className="space-y-4 min-w-0">
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1.5">Email Address</label>
             <div className="relative">
@@ -78,6 +82,11 @@ export default function LoginPage({ onNavigate }) {
             </div>
           </div>
 
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+            <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={rememberMe} onChange={event => setRememberMe(event.target.checked)} className="accent-brand-primary" />Remember Me (30 days)</label>
+            <button type="button" onClick={() => onNavigate('forgot-password')} className="font-semibold hover:underline">Forgot password?</button>
+          </div>
+          <p className="text-xs text-slate-500">{rememberMe ? 'Stay signed in for 30 days.' : 'Your session lasts 24 hours.'} Applies to email and Google sign-in.</p>
           <button
             type="submit"
             disabled={loading}
@@ -95,7 +104,10 @@ export default function LoginPage({ onNavigate }) {
               </>
             )}
           </button>
+          </fieldset>
         </form>
+
+        <div className="mt-6 space-y-4"><p className="text-center text-xs text-slate-500">Or continue with Google</p><GoogleSignIn intent="login" rememberMe={rememberMe} disabled={loading} onBusyChange={setGoogleBusy} onNavigate={onNavigate} /></div>
 
         <div className="mt-6 text-center text-xs text-slate-500">
           Don't have a membership account yet?{' '}

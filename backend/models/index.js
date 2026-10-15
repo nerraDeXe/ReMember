@@ -8,7 +8,12 @@ const userSchema = new mongoose.Schema({
   lastName: { type: String },
   country: { type: String },
   email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
+  password: { type: String, required() { return !this.googleId; }, select: false },
+  googleId: { type: String, select: false },
+  sessionVersion: { type: Number, default: 0 },
+  passwordResetHash: { type: String, select: false, index: true },
+  passwordResetExpiresAt: { type: Date, select: false },
+  passwordResetSentAt: { type: Date, select: false },
   role: { type: String, enum: ['admin', 'member'], default: 'member' },
   status: { type: String, enum: ['active', 'pending', 'suspended', 'revoked', 'expired'], default: 'active' },
   emailVerified: { type: Boolean, default: false },
@@ -45,6 +50,16 @@ const userSchema = new mongoose.Schema({
     marketing: { type: Boolean, default: false }
   }
 }, { timestamps: true });
+
+userSchema.index({ googleId: 1 }, { unique: true, sparse: true });
+
+const authChallengeSchema = new mongoose.Schema({
+  _id: { type: String, required: true },
+  purpose: { type: String, required: true },
+  expiresAt: { type: Date, required: true, expires: 0 },
+  consumed: { type: Boolean, default: false }
+});
+export const AuthChallenge = mongoose.models.AuthChallenge || mongoose.model('AuthChallenge', authChallengeSchema);
 
 const tierSchema = new mongoose.Schema({
   _id: { type: String, default: () => new mongoose.Types.ObjectId().toString() },

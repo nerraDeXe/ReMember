@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken';
 import { config } from '../config/config.js';
 import { User, ActivityLog } from '../models/index.js';
 import { getAccountContext } from '../services/organisationAccess.js';
+import { SESSION_SECONDS, REMEMBER_SESSION_SECONDS } from '../services/sessions.js';
 
 /**
  * JWT Authentication Middleware
@@ -20,6 +21,10 @@ export const authenticateToken = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, config.JWT_SECRET);
+    if (decoded.purpose && decoded.purpose !== 'session') throw new Error('Not a session token.');
+    const sessionLimit = (decoded.iat || 0) + (decoded.rememberMe === true ? REMEMBER_SESSION_SECONDS : SESSION_SECONDS);
+    if (sessionLimit <= Math.floor(Date.now() / 1000)) throw new Error('Your session has expired.');
+    decoded.exp = Math.min(decoded.exp || sessionLimit, sessionLimit);
     const user = await User.findById(decoded.id).select('-password');
 
     if (!user) {
@@ -28,6 +33,8 @@ export const authenticateToken = async (req, res, next) => {
         message: 'Invalid session: User account no longer exists.'
       });
     }
+
+    if ((decoded.ver || 0) !== (user.sessionVersion || 0)) throw new Error('This session has ended.');
 
     if (user.status === 'revoked' || user.status === 'suspended') {
       return res.status(403).json({
@@ -38,10 +45,12 @@ export const authenticateToken = async (req, res, next) => {
 
     // Attach user object to request
     req.user = user;
+    req.auth = decoded;
     next();
   } catch (error) {
-    return res.status(403).json({
+    return res.status(401).json({
       success: false,
+      code: 'SESSION_EXPIRED',
       message: 'Invalid or expired session token.',
       error: error.message
     });

@@ -1,6 +1,6 @@
 import nodemailer from 'nodemailer';
 
-// Verification messages are delivered by SMTP. They are never written to the
+// Verification and recovery messages are delivered by SMTP. They are never written to the
 // member notification inbox, database, or development logs.
 export const mailDelivery = {
   isConfigured() {

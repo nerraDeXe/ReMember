@@ -13,7 +13,7 @@ export function isOrganisationOwner(organisation, user) {
 export function sanitiseUser(user) {
   const result = user?.toObject ? user.toObject() : { ...user };
   for (const key of Object.keys(result)) {
-    if (key === 'password' || key.startsWith('emailVerification')) delete result[key];
+    if (['password', 'googleId', 'sessionVersion'].includes(key) || key.startsWith('emailVerification') || key.startsWith('passwordReset')) delete result[key];
   }
   return result;
 }

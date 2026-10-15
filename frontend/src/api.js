@@ -26,6 +26,7 @@ export async function apiRequest(endpoint, options = {}) {
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
+    if (token && data.code === 'SESSION_EXPIRED') window.dispatchEvent(new CustomEvent('remember:session-expired', { detail: { token } }));
     const error = new Error(data.message || `Request failed with status ${response.status}`);
     error.status = response.status;
     error.data = data;
@@ -42,6 +43,11 @@ export const api = {
   getMe: () => apiRequest('/auth/me'),
   verifyEmail: (code) => apiRequest('/auth/verify-email', { method: 'POST', body: JSON.stringify({ code }) }),
   resendVerification: () => apiRequest('/auth/resend-verification', { method: 'POST', body: '{}' }),
+  forgotPassword: (email) => apiRequest('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) }),
+  resetPassword: (token, password) => apiRequest('/auth/reset-password', { method: 'POST', body: JSON.stringify({ token, password }) }),
+  getGoogleConfig: () => apiRequest('/auth/google/config'),
+  googleSignIn: (data) => apiRequest('/auth/google', { method: 'POST', body: JSON.stringify(data) }),
+  googleRegister: (data) => apiRequest('/auth/google/register', { method: 'POST', body: JSON.stringify(data) }),
 
   // Members
   getMemberDashboard: () => apiRequest('/members/dashboard'),

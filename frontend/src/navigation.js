@@ -10,9 +10,10 @@ export function getAccountHomePage(account) {
 }
 
 export function getPageAfterContextChange(page, account) {
+  if (['forgot-password', 'reset-password'].includes(page)) return page;
   // Account pages must stay open when a portal is selected, renamed or deleted.
   if (isAccountPage(page)) return page;
-  if (['landing', 'login', 'register', 'verify-email', 'account-onboarding'].includes(page)) return getAccountHomePage(account);
+  if (['landing', 'login', 'register', 'google-signup', 'verify-email', 'account-onboarding'].includes(page)) return getAccountHomePage(account);
   if (account?.organisationRole === 'owner') return 'admin-dashboard';
   return account?.activeOrganisationId ? 'member-dashboard' : getAccountHomePage(account);
 }
