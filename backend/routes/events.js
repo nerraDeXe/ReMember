@@ -85,9 +85,10 @@ router.post('/:id/rsvp', requireActiveMembership, async (req, res) => {
     );
 
     // Trigger automated email confirmation
-    emailService.sendEventRsvpConfirmation(req.user, event).catch(err => {
-      console.error('RSVP email error:', err);
+    const confirmation = await emailService.sendEventRsvpConfirmation(req.user, event).catch(() => {
+      console.error('Could not send or record RSVP confirmation.');
     });
+    const emailDelivery = confirmation?.status || 'failed';
 
     // Log member activity
     await ActivityLog.create({
@@ -108,7 +109,8 @@ router.post('/:id/rsvp', requireActiveMembership, async (req, res) => {
 
     res.json({
       success: true,
-      message: `RSVP confirmed for "${event.title}"! A confirmation email has been dispatched.`,
+      message: `RSVP confirmed for "${event.title}"! ${emailDelivery === 'sent' ? 'A confirmation email has been sent to your email provider.' : 'Your reservation is saved, but the confirmation email could not be sent.'}`,
+      emailDelivery,
       event: eventView(updatedEvent, req.user._id, req.membershipRole === 'owner')
     });
   } catch (err) {
@@ -116,10 +118,6 @@ router.post('/:id/rsvp', requireActiveMembership, async (req, res) => {
     res.status(500).json({ success: false, message: 'Failed to complete RSVP.', error: err.message });
   }
 });
-
-function updatedEventRsvps(list) {
-  return list;
-}
 
 /**
  * POST /api/events/:id/cancel-rsvp

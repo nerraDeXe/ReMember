@@ -7,6 +7,7 @@ import {
   Calendar,
   BarChart3,
   ScrollText,
+  Mail,
   CreditCard,
   User,
   Wallet,
@@ -22,6 +23,7 @@ export default function Sidebar({ currentPage, onNavigate, isAdmin }) {
     { id: 'admin-members', label: 'Member Directory', icon: Users },
     { id: 'admin-tiers', label: 'Custom Tiers & Pricing', icon: Layers },
     { id: 'admin-events', label: 'Community Events', icon: Calendar },
+    { id: 'admin-email-settings', label: 'Email Settings', icon: Mail },
     { id: 'admin-finances', label: 'Financial Analytics', icon: BarChart3 },
     { id: 'admin-logs', label: 'Audit Activity Log', icon: ScrollText },
   ];

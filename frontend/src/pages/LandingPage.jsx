@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-  Sparkles,
   Search,
   Building2,
   Globe,
@@ -16,6 +15,7 @@ import {
 } from 'lucide-react';
 import { api } from '../api.js';
 import OrganisationImage from '../components/OrganisationImage.jsx';
+import { filterOrganisations } from '../organisationDirectory.js';
 
 export default function LandingPage({ onNavigate }) {
   const [organisations, setOrganisations] = useState([]);
@@ -47,30 +47,9 @@ export default function LandingPage({ onNavigate }) {
     return ['All', ...list];
   }, [organisations]);
 
-  const filteredOrganisations = useMemo(() => {
-    return organisations.filter((org) => {
-      // Must be public
-      if (!org.isPublic && org.visibility !== 'public') return false;
-
-      // Category filter
-      if (selectedCategory !== 'All' && org.category !== selectedCategory) {
-        return false;
-      }
-
-      // Search query filter
-      if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase().trim();
-        const nameMatch = org.name?.toLowerCase().includes(query);
-        const descMatch = org.description?.toLowerCase().includes(query);
-        const locMatch = org.location?.toLowerCase().includes(query);
-        const catMatch = org.category?.toLowerCase().includes(query);
-        const tagMatch = org.tags?.some((t) => t.toLowerCase().includes(query));
-        return nameMatch || descMatch || locMatch || catMatch || tagMatch;
-      }
-
-      return true;
-    });
-  }, [organisations, selectedCategory, searchQuery]);
+  const filteredOrganisations = useMemo(() => filterOrganisations(organisations, {
+    search: searchQuery, category: selectedCategory, visibility: 'public'
+  }), [organisations, selectedCategory, searchQuery]);
 
 
   return (

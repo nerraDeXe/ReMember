@@ -6,21 +6,21 @@ const router = express.Router();
 
 /**
  * GET /api/emails
- * Retrieve sent automated email confirmations
+ * Retrieve automated confirmation records and their delivery status
  */
 router.get('/', authenticateToken, async (req, res) => {
   try {
-    const user = req.user;
-    let emails = [];
+    const emails = await EmailNotification.find({ recipientEmail: req.user.email });
 
-    emails = await EmailNotification.find({ recipientEmail: user.email });
-
-    // Sort descending by sentAt
-    emails.sort((a, b) => new Date(b.sentAt) - new Date(a.sentAt));
+    emails.sort((a, b) => new Date(b.sentAt || b.createdAt) - new Date(a.sentAt || a.createdAt));
 
     res.json({
       success: true,
-      emails
+      emails: emails.map(email => {
+        const record = email.toObject();
+        // Old records said "sent" even though the app never contacted SMTP.
+        return { ...record, status: record.deliveryMethod === 'smtp' ? record.status : 'recorded' };
+      })
     });
   } catch (err) {
     console.error('Fetch emails error:', err);

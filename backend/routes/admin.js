@@ -5,6 +5,7 @@ import { requireOrganisationOwner } from '../middleware/organisationAccess.js';
 import { updateOrgMemberCount } from '../services/organisationAccess.js';
 import { membershipView } from '../services/membershipContext.js';
 import { walletService } from '../services/walletService.js';
+import { buildDashboardAnalytics, dashboardPeriod } from '../services/dashboardAnalytics.js';
 
 const router = express.Router();
 router.use(authenticateToken, requireVerifiedEmail, requireOrganisationOwner);
@@ -15,6 +16,25 @@ async function membersFor(organisationId) {
   const byId = new Map(accounts.map(account => [String(account._id), account]));
   return associations.filter(item => byId.has(String(item.userId))).map(item => membershipView(byId.get(String(item.userId)), item));
 }
+
+router.get('/dashboard-analytics', async (req, res, next) => {
+  try {
+    const { months, startMonth, endMonth } = req.query;
+    const now = new Date();
+    try {
+      dashboardPeriod({ months, startMonth, endMonth }, now);
+    } catch (error) {
+      if (error instanceof RangeError) return res.status(400).json({ success: false, message: error.message });
+      throw error;
+    }
+    const [memberships, invoices] = await Promise.all([
+      OrganisationMembership.find({ organisationId: req.organisationId, role: 'member' }).select('userId role status tierName joinedDate createdAt').lean(),
+      Invoice.find({ organisationId: req.organisationId }).select('amount currency paymentStatus paidAt createdAt').lean()
+    ]);
+    const users = memberships.length ? await User.find({ _id: { $in: memberships.map(member => member.userId) } }).select('country address.country').lean() : [];
+    res.json(buildDashboardAnalytics({ memberships, users, invoices, months, startMonth, endMonth, now }));
+  } catch (err) { next(err); }
+});
 
 router.get('/members', async (req, res, next) => {
   try {

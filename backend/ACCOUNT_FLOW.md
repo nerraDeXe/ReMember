@@ -29,7 +29,19 @@ EMAIL_FROM="ReMember <verified-sender@your-domain.com>"
 
 For port 465, set `SMTP_SECURE=true`. Use the SMTP credentials and sender address supplied by your email provider, then restart the backend. TLS is required by default; `SMTP_REQUIRE_TLS=false` is only for a local test mail server that does not support TLS.
 
-Until SMTP is configured, signup saves an unverified account and reports that the verification email could not be sent. Codes are never returned in API responses or exposed in the in-app email inbox.
+Until SMTP is configured, signup saves an unverified account and reports that the verification email could not be sent. Codes are never returned in API responses or saved with email delivery records.
+
+## Automated confirmation emails
+
+Event RSVPs and successful test payments use the same SMTP settings to send confirmations to the account email address. Email delivery records track whether the SMTP provider accepted the email, rejected it, or was unavailable. Provider acceptance does not confirm inbox placement. Check spam or the provider's delivery logs if an accepted message is missing.
+
+A mail failure does not undo an RSVP or payment. Their API responses include `emailDelivery` and report mail failures separately. Historical records created before SMTP dispatch was connected were never emailed and are not automatically resent. Account verification and password reset messages are not saved with these delivery records.
+
+## Organisation email settings
+
+Organisation owners can open Email Settings from their admin portal or profile menu to customise the subject and message for welcome emails and renewal reminders. These settings belong only to the selected organisation. Templates support `{memberName}`, `{organisationName}`, `{tierName}`, `{expiryDate}` and `{renewalDays}`. Messages use the existing SMTP settings and respect the member's email notification preference.
+
+Welcome emails are enabled by default and attempted once when a new member's membership becomes active: immediately for a free tier, or after the first successful payment for a paid tier. Failed or unavailable welcome emails are recorded and are not automatically retried. Renewal reminders are initially disabled. Owners can enable them and choose 1–365 days before membership expiry (30 days by default). The running backend checks for due reminders every minute, records successful reminders for each membership expiry, and retries failed reminders after an hour while the membership is still valid. Suspended, expired or revoked memberships and organisation owners do not receive reminders.
 
 ## Password reset emails
 
@@ -39,7 +51,7 @@ The login page has a Forgot password link. Configure `APP_WEB_URL` to the fronte
 APP_WEB_URL=http://localhost:5173
 ```
 
-Use your actual HTTPS frontend URL in production. This setting is separate from `APP_ORIGIN` used by Google Wallet. The existing SMTP settings deliver password reset emails. Each reset link expires after 30 minutes, can be used once, and lives in the URL fragment so the reset token is not sent in ordinary HTTP access logs. Only a hash is saved in MongoDB; the token is not returned through the API or saved in the notification inbox. Requests have a one-minute cooldown and the same response for unknown emails. A completed reset invalidates all earlier account sessions and requires a fresh login. Google-only accounts should use Google sign-in; this form does not silently add a password to them.
+Use your actual HTTPS frontend URL in production. This setting is separate from `APP_ORIGIN` used by Google Wallet. The existing SMTP settings deliver password reset emails. Each reset link expires after 30 minutes, can be used once, and lives in the URL fragment so the reset token is not sent in ordinary HTTP access logs. Only a hash is saved in MongoDB; the token is not returned through the API or saved with email delivery records. Requests have a one-minute cooldown and the same response for unknown emails. A completed reset invalidates all earlier account sessions and requires a fresh login. Google-only accounts should use Google sign-in; this form does not silently add a password to them.
 
 ## Google sign-in setup
 

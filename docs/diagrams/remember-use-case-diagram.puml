@@ -1,0 +1,91 @@
+@startuml
+title ReMember - Use Case Diagram
+left to right direction
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam usecaseBackgroundColor White
+skinparam usecaseBorderColor #344352
+actor "Member" as Member
+actor "Admin" as Admin
+rectangle "ReMember Membership Management System" {
+  package "Shared account and organisation functions" {
+    usecase "Register an account\n(email or Google)" as S1
+    usecase "Sign in / sign out\n(email or Google sign-in)" as S2
+    usecase "Verify email / resend code" as S3
+    usecase "Reset forgotten password" as S4
+    usecase "Edit personal profile\nand notification preferences" as S5
+    usecase "Discover organisations\nand view membership tiers" as S6
+    usecase "Create an organisation\nwith initial membership tiers" as S7
+    usecase "Select / switch\norganisation portal" as S8
+  }
+  package "Member functions" {
+    usecase "View membership dashboard\n(status, tier and expiry)" as M1
+    usecase "Join an organisation\nand select a tier" as M2
+    usecase "Activate / renew membership\nthrough test checkout" as M3
+    usecase "Browse events, RSVP\nand cancel RSVP" as M4
+    usecase "View, save and sync\nGoogle Wallet membership pass" as M5
+    usecase "View, download and\nprint invoices" as M6
+    usecase "Receive welcome, renewal,\npayment and RSVP emails" as M7
+  }
+  package "Admin functions" {
+    usecase "View organisation dashboard\nand member analytics" as A1
+    usecase "Edit / delete organisation\nand set public / private visibility" as A2
+    usecase "Search and filter\nmember directory" as A3
+    usecase "Activate, suspend or\nrevoke memberships" as A4
+    usecase "Assign / change\nmember tiers" as A5
+    usecase "Manage membership tiers,\nprices, benefits and capacity" as A6
+    usecase "Manage events\nand inspect attendees" as A7
+    usecase "View financial metrics\nand payment transactions" as A8
+    usecase "Export filtered\nmember data as CSV" as A9
+    usecase "Customise / preview welcome emails\nand configure renewal reminders" as A10
+    usecase "View and filter\naudit activity logs" as A11
+  }
+}
+Member -- S1
+Admin -- S1
+Member -- S2
+Admin -- S2
+Member -- S3
+Admin -- S3
+Member -- S4
+Admin -- S4
+Member -- S5
+Admin -- S5
+Member -- S6
+Admin -- S6
+Member -- S7
+Admin -- S7
+Member -- S8
+Admin -- S8
+Member -- M1
+Member -- M2
+Member -- M3
+Member -- M4
+Member -- M5
+Member -- M6
+Member -- M7
+Admin -- A1
+Admin -- A2
+Admin -- A3
+Admin -- A4
+Admin -- A5
+Admin -- A6
+Admin -- A7
+Admin -- A8
+Admin -- A9
+Admin -- A10
+Admin -- A11
+note bottom of Admin
+  Admin means owner of the selected organisation.
+  The same account can be a Member in another organisation.
+end note
+note bottom of M3
+  Checkout currently simulates payment.
+end note
+note bottom of A10
+  Welcome: first membership activation.
+  Renewal: X days before membership expiry.
+  Subject, message, preview and enable/disable settings
+  belong to the individual organisation.
+end note
+@enduml

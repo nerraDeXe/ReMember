@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useToast } from '../../context/ToastContext.jsx';
-import { User, Phone, MapPin, Mail, Save, RefreshCw, Bell, Shield, Upload, Trash2 } from 'lucide-react';
+import { User, MapPin, Save, RefreshCw, Bell, Upload, Trash2 } from 'lucide-react';
 import { api } from '../../api.js';
 import CountrySelect from '../../components/CountrySelect.jsx';
 import PhoneInput from '../../components/PhoneInput.jsx';
@@ -282,7 +282,7 @@ export default function ProfilePage() {
                 className="w-4 h-4 rounded text-brand-ink accent-brand-primary bg-white border-slate-300 cursor-pointer"
               />
               <span className="text-xs text-slate-700">
-                Receive automated email receipts upon renewal payments and registration
+                Receive welcome emails, renewal reminders and payment receipts
               </span>
             </label>
 

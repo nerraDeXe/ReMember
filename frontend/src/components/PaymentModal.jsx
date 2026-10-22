@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, CreditCard, Shield, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
+import { X, CreditCard, Shield, CheckCircle, RefreshCw } from 'lucide-react';
 import { api } from '../api.js';
 import { useToast } from '../context/ToastContext.jsx';
 
@@ -39,7 +39,7 @@ export default function PaymentModal({ isOpen, onClose, user, tiers = [], onSucc
 
       if (response.success) {
         setCompletedInvoice(response.invoice);
-        showToast(response.message, 'success');
+        showToast(response.message, response.emailDelivery && response.emailDelivery !== 'sent' ? 'info' : 'success');
         if (onSuccess) onSuccess(response);
       }
     } catch (err) {

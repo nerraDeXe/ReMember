@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Plus, Users, Trash2, MapPin, Clock, RefreshCw, Eye, X } from 'lucide-react';
+import { Calendar, Plus, Trash2, RefreshCw, Eye, X } from 'lucide-react';
 import { api } from '../../api.js';
 import { useToast } from '../../context/ToastContext.jsx';
 import EventModal from '../../components/EventModal.jsx';

@@ -1,10 +1,39 @@
 import { EmailNotification, ActivityLog } from '../models/index.js';
-import { config } from '../config/config.js';
 import { mailDelivery } from './mailDelivery.js';
+import { getOrganisationEmailSettings, interpolateOrganisationEmail } from '../../shared/organisationEmails.js';
 
 const escapeHtml = value => String(value).replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]));
 
 export const emailService = {
+  async sendOrganisationWelcome(user, membership, organisation) {
+    return this._sendOrganisationTemplate('welcome', user, membership, organisation);
+  },
+
+  async sendOrganisationRenewal(user, membership, organisation) {
+    return this._sendOrganisationTemplate('renewal', user, membership, organisation);
+  },
+
+  async _sendOrganisationTemplate(type, user, membership, organisation) {
+    const settings = getOrganisationEmailSettings(organisation.emailSettings);
+    if (!settings[type].enabled || user.notifications?.email === false || membership.role === 'owner') return { status: 'skipped' };
+    const context = {
+      memberName: user.name || user.firstName || 'Member',
+      organisationName: organisation.name,
+      tierName: membership.tierName || 'Community',
+      expiryDate: membership.expirationDate && Number.isFinite(Date.parse(membership.expirationDate)) ? new Date(membership.expirationDate).toISOString().slice(0, 10) : 'No expiry date',
+      renewalDays: settings.renewal.daysBefore
+    };
+    const subject = interpolateOrganisationEmail(settings[type].subject, context).replace(/[\r\n]+/g, ' ');
+    const textContent = interpolateOrganisationEmail(settings[type].body, context);
+    const htmlContent = `<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 32px; border: 1px solid #BEBEBE; border-top: 4px solid #FFD700;"><h1>${escapeHtml(organisation.name)}</h1><p style="white-space: pre-wrap; line-height: 1.6;">${escapeHtml(textContent)}</p></div>`;
+    return this._dispatchAndRecord({
+      recipientEmail: user.email, recipientName: user.name || user.firstName || 'Member',
+      type: type === 'welcome' ? 'REGISTRATION_WELCOME' : 'MEMBERSHIP_RENEWAL',
+      subject, htmlContent, textContent, userId: user._id,
+      organisationId: String(organisation._id)
+    });
+  },
+
   async sendEmailVerification(user, code) {
     return mailDelivery.send({
       to: user.email,
@@ -17,38 +46,8 @@ export const emailService = {
   /**
    * Send automated email upon registration
    */
-  async sendRegistrationConfirmation(user) {
-    const subject = `Welcome to ReMember Club, ${user.name}! 🌟`;
-    const htmlContent = `
-      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; background: #FFFFFF; color: #333333; padding: 32px; border-radius: 12px; border: 1px solid #BEBEBE; border-top: 4px solid #FFD700;">
-        <div style="text-align: center; margin-bottom: 24px;">
-          <h1 style="color: #333333; margin: 0; font-size: 28px; letter-spacing: -0.5px;">ReMember Club</h1>
-          <p style="color: #555555; font-size: 14px; margin-top: 4px;">Exclusive Community & Membership Portal</p>
-        </div>
-        <div style="background: #FFFBE6; padding: 24px; border-radius: 8px; margin-bottom: 24px; border-left: 4px solid #FFD700;">
-          <h2 style="margin-top: 0; color: #333333; font-size: 20px;">Welcome aboard, ${user.name}!</h2>
-          <p style="color: #555555; line-height: 1.6;">Your membership registration has been completed successfully. We are thrilled to welcome you to our growing community.</p>
-          <div style="margin-top: 16px; padding: 12px; background: #FFFFFF; border-radius: 6px;">
-            <p style="margin: 4px 0; font-size: 14px;"><strong>Membership Number:</strong> <span style="color: #333333;">${user.membershipNumber}</span></p>
-            <p style="margin: 4px 0; font-size: 14px;"><strong>Membership Tier:</strong> <span style="color: #333333;">${user.tierName}</span></p>
-            <p style="margin: 4px 0; font-size: 14px;"><strong>Status:</strong> <span style="color: #333333;">${user.status.toUpperCase()}</span></p>
-          </div>
-        </div>
-        <p style="color: #555555; font-size: 13px; line-height: 1.5;">You can now log in to access upcoming community events, view your digital membership pass, and explore your perks.</p>
-        <div style="text-align: center; margin-top: 32px; border-top: 1px solid #BEBEBE; padding-top: 20px;">
-          <p style="color: #555555; font-size: 12px; margin: 0;">Sent by ${config.EMAIL_SENDER.NAME} &bull; ${config.EMAIL_SENDER.ADDRESS}</p>
-        </div>
-      </div>
-    `;
-
-    return this._dispatchAndRecord({
-      recipientEmail: user.email,
-      recipientName: user.name,
-      type: 'REGISTRATION_WELCOME',
-      subject,
-      htmlContent,
-      userId: user._id
-    });
+  async sendRegistrationConfirmation(user, organisation = { _id: user.organisationId, name: 'ReMember' }) {
+    return this.sendOrganisationWelcome(user, user, organisation);
   },
 
   /**
@@ -96,7 +95,8 @@ export const emailService = {
       type: 'PAYMENT_CONFIRMATION',
       subject,
       htmlContent,
-      userId: user._id
+      userId: user._id,
+      organisationId: invoice.organisationId
     });
   },
 
@@ -129,29 +129,44 @@ export const emailService = {
       type: 'EVENT_RSVP',
       subject,
       htmlContent,
-      userId: user._id
+      userId: user._id,
+      organisationId: event.organisationId
     });
   },
 
   /**
-   * Internal helper to record email and print confirmation log
+   * Keep an in-app copy and record the outcome of real SMTP delivery.
    */
-  async _dispatchAndRecord({ recipientEmail, recipientName, type, subject, htmlContent, userId }) {
-    console.log(`✉️ [Automated Email Dispatch] Sending [${type}] to ${recipientEmail} (${subject})`);
-
+  async _dispatchAndRecord({ recipientEmail, recipientName, type, subject, htmlContent, textContent, userId, organisationId }) {
     const emailRecord = await EmailNotification.create({
+      organisationId,
       recipientEmail,
       recipientName,
       type,
       subject,
       htmlContent,
-      status: 'sent',
-      sentAt: new Date().toISOString()
+      status: 'pending',
+      deliveryMethod: 'smtp'
     });
 
-    // Record in activity log
+    if (!mailDelivery.isConfigured()) {
+      emailRecord.status = 'unavailable';
+    } else {
+      try {
+        await mailDelivery.send({ to: recipientEmail, subject, text: textContent, html: htmlContent });
+        emailRecord.status = 'sent';
+        emailRecord.sentAt = new Date().toISOString();
+      } catch {
+        emailRecord.status = 'failed';
+        console.error('Confirmation email delivery failed. Check SMTP configuration and provider availability.');
+      }
+    }
+    await emailRecord.save();
+
+    // Only SMTP acceptance counts as sent; it does not confirm inbox placement.
     await ActivityLog.create({
-      action: 'EMAIL_SENT',
+      action: emailRecord.status === 'sent' ? 'EMAIL_SENT' : 'EMAIL_DELIVERY_FAILED',
+      organisationId,
       userId: userId || null,
       userName: recipientName,
       userEmail: recipientEmail,
@@ -159,7 +174,8 @@ export const emailService = {
       details: {
         type,
         subject,
-        emailId: emailRecord._id
+        emailId: emailRecord._id,
+        status: emailRecord.status
       },
       timestamp: new Date().toISOString()
     }).catch(console.error);

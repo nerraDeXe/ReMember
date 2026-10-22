@@ -5,6 +5,8 @@ import { Organisation, OrganisationMembership, User, Tier, ActivityLog } from '.
 import { authenticateToken, requireVerifiedEmail } from '../middleware/auth.js';
 import { optionalAuth } from '../middleware/organisationAccess.js';
 import { normaliseOrganisationImage } from '../services/organisationImages.js';
+import { getOrganisationEmailSettings, normaliseOrganisationEmailSettings } from '../../shared/organisationEmails.js';
+import { sendWelcomeForMembership } from '../services/organisationEmailSettings.js';
 import {
   accessibleMembershipStatuses,
   canReadOrganisation,
@@ -18,6 +20,12 @@ import {
 
 const router = express.Router();
 const organisationFields = ['name', 'description', 'category', 'location', 'website', 'contactEmail', 'logoUrl', 'bannerUrl', 'joinRequirements', 'tags', 'featured'];
+
+function organisationForViewer(organisation, user) {
+  const result = organisation.toObject ? organisation.toObject() : { ...organisation };
+  if (!isOrganisationOwner(organisation, user)) delete result.emailSettings;
+  return result;
+}
 
 function normaliseOrganisationInput(body, creating = false) {
   const result = {};
@@ -88,7 +96,7 @@ router.get('/', optionalAuth, async (req, res) => {
     if (category && !['all', 'All Categories'].includes(category)) organisations = organisations.filter(org => org.category?.toLowerCase() === category.toLowerCase());
     if (search) organisations = organisations.filter(org => [org.name, org.description, org.category, org.location, ...(org.tags || [])].some(value => value?.toLowerCase().includes(search)));
     organisations.sort((a, b) => Number(Boolean(b.featured)) - Number(Boolean(a.featured)) || a.name.localeCompare(b.name));
-    organisations = organisations.map(org => ({ ...org, organisationRole: isOrganisationOwner(org, req.user) ? 'owner' : (membershipsByOrganisation.has(String(org._id)) ? 'member' : null), membership: membershipsByOrganisation.get(String(org._id)) || null }));
+    organisations = organisations.map(org => ({ ...organisationForViewer(org, req.user), organisationRole: isOrganisationOwner(org, req.user) ? 'owner' : (membershipsByOrganisation.has(String(org._id)) ? 'member' : null), membership: membershipsByOrganisation.get(String(org._id)) || null }));
     res.json({ success: true, count: organisations.length, organisations });
   } catch (error) {
     console.error('Organisation search error:', error.message);
@@ -179,7 +187,7 @@ router.get('/:id', optionalAuth, async (req, res) => {
       Tier.find({ organisationId: String(organisation._id), ...(isOrganisationOwner(organisation, req.user) ? {} : { isActive: true }) }),
       req.user ? OrganisationMembership.findOne({ organisationId: String(organisation._id), userId: String(req.user._id) }) : Promise.resolve(null)
     ]);
-    res.json({ success: true, organisation, tiers, membership, organisationRole: isOrganisationOwner(organisation, req.user) ? 'owner' : (membership ? 'member' : null) });
+    res.json({ success: true, organisation: organisationForViewer(organisation, req.user), tiers, membership, organisationRole: isOrganisationOwner(organisation, req.user) ? 'owner' : (membership ? 'member' : null) });
   } catch {
     res.status(500).json({ success: false, message: 'Failed to load organisation.' });
   }
@@ -206,7 +214,7 @@ router.post('/:id/join', authenticateToken, requireVerifiedEmail, async (req, re
         if (!membership) membership = await OrganisationMembership.findOne({ organisationId: String(organisation._id), userId: String(req.user._id) });
       } else {
         try {
-          membership = await OrganisationMembership.findOneAndUpdate({ organisationId: String(organisation._id), userId: String(req.user._id) }, { $setOnInsert: { ...updates, organisationId: String(organisation._id), userId: String(req.user._id) } }, { upsert: true, new: true, runValidators: true });
+          membership = await OrganisationMembership.findOneAndUpdate({ organisationId: String(organisation._id), userId: String(req.user._id) }, { $setOnInsert: { ...updates, welcomeEmailEligible: !owner, organisationId: String(organisation._id), userId: String(req.user._id) } }, { upsert: true, new: true, runValidators: true });
         } catch (error) {
           if (error.code !== 11000) throw error;
           membership = await OrganisationMembership.findOne({ organisationId: String(organisation._id), userId: String(req.user._id) });
@@ -218,10 +226,28 @@ router.post('/:id/join', authenticateToken, requireVerifiedEmail, async (req, re
     const updatedOrganisation = await updateOrgMemberCount(organisation._id);
     const requiresPayment = membership.status === 'pending';
     if (!requiresPayment) await logActivity(req, organisation._id, 'ORGANISATION_JOINED', { organisationId: organisation._id, tierId: membership.tierId });
-    res.json({ success: true, message: requiresPayment ? 'Complete payment to activate your membership.' : 'You are a member of this organisation.', membership, organisation: updatedOrganisation || organisation, requiresPayment, user: await getAccountContext(user) });
+    if (!requiresPayment) await sendWelcomeForMembership(req.user, membership, organisation).catch(() => console.error('Could not send or record organisation welcome email.'));
+    res.json({ success: true, message: requiresPayment ? 'Complete payment to activate your membership.' : 'You are a member of this organisation.', membership, organisation: organisationForViewer(updatedOrganisation || organisation, req.user), requiresPayment, user: await getAccountContext(user) });
   } catch (error) {
     console.error('Join organisation error:', error.message);
     res.status(500).json({ success: false, message: 'Failed to join organisation.' });
+  }
+});
+
+router.get('/:id/email-settings', authenticateToken, requireVerifiedEmail, requireTargetOwner, (req, res) => {
+  res.json({ success: true, emailSettings: getOrganisationEmailSettings(req.organisation.emailSettings) });
+});
+
+router.put('/:id/email-settings', authenticateToken, requireVerifiedEmail, requireTargetOwner, async (req, res) => {
+  let emailSettings;
+  try { emailSettings = normaliseOrganisationEmailSettings(req.body); }
+  catch (error) { return res.status(400).json({ success: false, message: error.message }); }
+  try {
+    const organisation = await Organisation.findByIdAndUpdate(req.params.id, { $set: { emailSettings } }, { new: true, runValidators: true });
+    await logActivity(req, organisation._id, 'ORGANISATION_EMAIL_SETTINGS_UPDATED', { welcomeEnabled: emailSettings.welcome.enabled, renewalEnabled: emailSettings.renewal.enabled, daysBefore: emailSettings.renewal.daysBefore });
+    res.json({ success: true, message: 'Organisation email settings saved.', emailSettings: getOrganisationEmailSettings(organisation.emailSettings) });
+  } catch {
+    res.status(500).json({ success: false, message: 'Failed to save organisation email settings.' });
   }
 });
 

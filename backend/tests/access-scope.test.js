@@ -3,22 +3,27 @@ import { after, before, beforeEach, test } from 'node:test';
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import { config } from '../config/config.js';
-import { User, Organisation, OrganisationMembership, Tier, Invoice, Event, ActivityLog } from '../models/index.js';
+import { User, Organisation, OrganisationMembership, Tier, Invoice, Event, ActivityLog, EmailNotification } from '../models/index.js';
 import adminRouter from '../routes/admin.js';
 import memberRouter from '../routes/members.js';
 import eventRouter from '../routes/events.js';
 import paymentRouter from '../routes/payments.js';
 import walletRouter from '../routes/wallet.js';
+import emailRouter from '../routes/emails.js';
 import { walletService } from '../services/walletService.js';
 import { emailService } from '../services/emailService.js';
 
-const models = { User, Organisation, OrganisationMembership, Tier, Invoice, Event, ActivityLog };
+const models = { User, Organisation, OrganisationMembership, Tier, Invoice, Event, ActivityLog, EmailNotification };
 const originals = [];
-let records, serial, walletCalls, mailCalls;
+let records, serial, walletCalls, mailCalls, findCalls;
 const clone = value => structuredClone(value);
 function matches(record, filter = {}) {
   return Object.entries(filter).every(([key, expected]) => {
     if (key === '$or') return expected.some(branch => matches(record, branch));
+    if (key.includes('.')) {
+      const values = key.split('.').reduce((items, part) => items.flatMap(item => item?.[part] ?? []), [record]);
+      return values.includes(expected);
+    }
     if (expected && typeof expected === 'object') {
       if ('$in' in expected) return expected.$in.includes(record[key]);
       if ('$ne' in expected) return record[key] !== expected.$ne;
@@ -44,7 +49,7 @@ function document(value, modelName) {
   } });
   return result;
 }
-function query(value, modelName) {
+function query(value, modelName, recordedQuery) {
   let projected = value;
   const result = {
     select(fields) {
@@ -56,10 +61,20 @@ function query(value, modelName) {
       return this;
     },
     sort(criteria) {
+      if (recordedQuery) recordedQuery.sort = clone(criteria);
       if (Array.isArray(projected)) projected = [...projected].sort((a, b) => {
-        for (const [key, direction] of Object.entries(criteria)) if (a[key] !== b[key]) return a[key] > b[key] ? direction : -direction;
+        for (const [key, direction] of Object.entries(criteria)) if (a[key] !== b[key]) {
+          if (a[key] == null) return -direction;
+          if (b[key] == null) return direction;
+          return a[key] > b[key] ? direction : -direction;
+        }
         return 0;
       });
+      return this;
+    },
+    limit(amount) {
+      if (recordedQuery) recordedQuery.limit = amount;
+      projected = projected.slice(0, amount);
       return this;
     },
     async lean() { return clone(projected); },
@@ -77,7 +92,11 @@ function patch(target, method, replacement) {
 before(() => {
   for (const [name, model] of Object.entries(models)) {
     const collection = () => records[name];
-    patch(model, 'find', filter => query(collection().filter(record => matches(record, filter)), name));
+    patch(model, 'find', filter => {
+      const recordedQuery = { model: name, filter: clone(filter) };
+      findCalls.push(recordedQuery);
+      return query(collection().filter(record => matches(record, filter)), name, recordedQuery);
+    });
     patch(model, 'findOne', filter => query(collection().find(record => matches(record, filter)) || null, name));
     patch(model, 'findById', id => query(collection().find(record => record._id === id) || null, name));
     patch(model, 'countDocuments', filter => query(collection().filter(record => matches(record, filter)).length, name));
@@ -113,8 +132,9 @@ before(() => {
     walletCalls.push(clone(user));
     return { success: true, objectId: `${user._id}_${user.organisationId}` };
   });
-  patch(emailService, 'sendPaymentConfirmation', async (...args) => { mailCalls.push(['payment', ...args.map(value => clone(Object.fromEntries(Object.entries(value))))]); });
-  patch(emailService, 'sendEventRsvpConfirmation', async (...args) => { mailCalls.push(['rsvp', ...args.map(value => clone(Object.fromEntries(Object.entries(value))))]); });
+  patch(emailService, 'sendPaymentConfirmation', async (...args) => { mailCalls.push(['payment', ...args.map(value => clone(Object.fromEntries(Object.entries(value))))]); return { status: 'sent' }; });
+  patch(emailService, 'sendEventRsvpConfirmation', async (...args) => { mailCalls.push(['rsvp', ...args.map(value => clone(Object.fromEntries(Object.entries(value))))]); return { status: 'sent' }; });
+  patch(emailService, 'sendOrganisationWelcome', async (...args) => { mailCalls.push(['welcome', ...args.map(value => clone(Object.fromEntries(Object.entries(value))))]); return { status: 'sent', sentAt: new Date().toISOString() }; });
 });
 after(() => {
   for (const [target, method, original] of originals.reverse()) target[method] = original;
@@ -126,6 +146,7 @@ beforeEach(() => {
   serial = 0;
   walletCalls = [];
   mailCalls = [];
+  findCalls = [];
   records = Object.fromEntries(Object.keys(models).map(name => [name, []]));
   records.User.push(account('ownerA', 'A', 'admin'), account('ownerB', 'B', 'admin'), account('member', 'A'), account('foreign', 'B'), account('unassociated', ''));
   records.Organisation.push({ _id: 'A', name: 'Organisation A', adminId: 'ownerA', isPublic: true, visibility: 'public' }, { _id: 'B', name: 'Organisation B', adminId: 'ownerB', isPublic: true, visibility: 'public' });
@@ -278,6 +299,37 @@ test('Payments reject foreign tiers and activate only the selected organisation 
   assert.equal(mailCalls[0][0], 'payment');
 });
 
+test('A new paid membership gets one welcome after successful activation and none on failed payments or later renewals', async () => {
+  const selected = records.OrganisationMembership.find(item => item._id === 'member-A');
+  selected.status = 'pending';
+  selected.welcomeEmailEligible = true;
+  selected.expirationDate = undefined;
+  const other = records.OrganisationMembership.find(item => item._id === 'member-B');
+  other.welcomeEmailEligible = true;
+  const failed = await request(paymentRouter, 'POST', '/renew', { body: { tierId: 'A-paid', simulateFailure: true } });
+  assert.equal(failed.status, 402);
+  assert.equal(selected.status, 'pending');
+  assert.equal(selected.welcomeEmailEligible, true);
+  assert.equal(mailCalls.length, 0);
+
+  const paid = await request(paymentRouter, 'POST', '/renew', { body: { tierId: 'A-paid' } });
+  assert.equal(paid.status, 200);
+  assert.equal(selected.status, 'active');
+  assert.equal(selected.welcomeEmailEligible, false);
+  assert.ok(selected.welcomeEmailSentAt);
+  const welcomes = mailCalls.filter(call => call[0] === 'welcome');
+  assert.equal(welcomes.length, 1);
+  assert.equal(welcomes[0][1]._id, 'member');
+  assert.equal(welcomes[0][2].tierName, 'Supporter');
+  assert.equal(welcomes[0][3]._id, 'A');
+  assert.equal(other.welcomeEmailEligible, true);
+  assert.equal(other.welcomeEmailSentAt, undefined);
+
+  const renewal = await request(paymentRouter, 'POST', '/renew', { body: { tierId: 'A-paid' } });
+  assert.equal(renewal.status, 200);
+  assert.equal(mailCalls.filter(call => call[0] === 'welcome').length, 1);
+});
+
 test('Payment upgrades enforce tier capacity without counting the renewing member twice', async () => {
   records.Tier.find(tier => tier._id === 'A-paid').maxMembers = 1;
   records.OrganisationMembership.find(item => item._id === 'ownerB-A').tierId = 'A-paid';
@@ -326,6 +378,26 @@ test('Member dashboard hides other members’ RSVP details and other organisatio
   assert.ok(!JSON.stringify(dashboard.body.upcomingRsvps).includes('PRIVATE_OTHER_EMAIL'));
 });
 
+test('Member dashboard returns personal RSVPs and five latest invoices while invoice history keeps all personal invoices', async () => {
+  records.Event.push({ _id: 'unjoined-event-A', organisationId: 'A', rsvps: [{ userId: 'ownerB' }] });
+  for (const day of [3, 7, 1, 6, 2, 5, 4]) {
+    records.Invoice.push({ _id: `recent-${day}`, organisationId: 'A', userId: 'member', createdAt: `2026-10-0${day}T00:00:00Z` });
+  }
+  records.Invoice.find(invoice => invoice._id === 'ownerB-A-invoice').createdAt = '2099-01-01T00:00:00Z';
+  records.Invoice.find(invoice => invoice._id === 'member-B-invoice').createdAt = '2099-01-01T00:00:00Z';
+
+  const dashboard = await request(memberRouter, 'GET', '/dashboard');
+  assert.equal(dashboard.status, 200);
+  assert.deepEqual(dashboard.body.upcomingRsvps.map(event => event._id), ['event-A']);
+  assert.deepEqual(dashboard.body.recentInvoices.map(invoice => invoice._id), [7, 6, 5, 4, 3].map(day => `recent-${day}`));
+  assert.deepEqual(findCalls.find(call => call.model === 'Event'), { model: 'Event', filter: { organisationId: 'A', 'rsvps.userId': 'member' } });
+  assert.deepEqual(findCalls.find(call => call.model === 'Invoice'), { model: 'Invoice', filter: { userId: 'member', organisationId: 'A' }, sort: { createdAt: -1 }, limit: 5 });
+
+  const history = await request(memberRouter, 'GET', '/invoices');
+  assert.equal(history.status, 200);
+  assert.deepEqual(history.body.invoices.map(invoice => invoice._id), [...[7, 6, 5, 4, 3, 2, 1].map(day => `recent-${day}`), 'member-A-invoice']);
+});
+
 test('RSVP mutation responses hide other members’ names and email addresses', async () => {
   records.User.find(user => user._id === 'ownerB').activeOrganisationId = 'A';
   const rsvp = await request(eventRouter, 'POST', '/:id/rsvp', { userId: 'ownerB', params: { id: 'event-A' } });
@@ -346,4 +418,47 @@ test('Expired active member dashboard does not issue a usable wallet save URL', 
   const dashboard = await request(memberRouter, 'GET', '/dashboard');
   assert.equal(dashboard.status, 200);
   assert.equal(dashboard.body.membership.googleWallet, null);
+});
+
+test('RSVP reports SMTP acceptance and preserves the reservation on delivery failures', async t => {
+  t.mock.method(console, 'error', () => {});
+  for (const delivery of ['sent', 'failed', 'unavailable', 'record_failure']) {
+    const target = records.Event.find(event => event._id === 'event-A');
+    target.rsvps = [];
+    t.mock.method(emailService, 'sendEventRsvpConfirmation', async () => {
+      if (delivery === 'record_failure') throw new Error('Notification storage unavailable');
+      return { status: delivery };
+    });
+    const response = await request(eventRouter, 'POST', '/:id/rsvp', { params: { id: 'event-A' } });
+    assert.equal(response.status, 200);
+    assert.equal(response.body.success, true);
+    assert.equal(response.body.emailDelivery, delivery === 'record_failure' ? 'failed' : delivery);
+    assert.equal(target.rsvps.some(rsvp => rsvp.userId === 'member'), true);
+    if (delivery === 'sent') assert.match(response.body.message, /sent to your email provider/);
+    else assert.match(response.body.message, /reservation is saved.*could not be sent/);
+  }
+});
+
+test('SMTP failure does not undo a completed membership payment', async t => {
+  t.mock.method(emailService, 'sendPaymentConfirmation', async () => ({ status: 'failed' }));
+  const response = await request(paymentRouter, 'POST', '/renew', { body: { tierId: 'A-paid' } });
+  assert.equal(response.status, 200);
+  assert.equal(response.body.success, true);
+  assert.equal(response.body.emailDelivery, 'failed');
+  assert.match(response.body.message, /confirmation email could not be sent/);
+  assert.equal(records.OrganisationMembership.find(item => item._id === 'member-A').status, 'active');
+  assert.equal(response.body.invoice.paymentStatus, 'paid');
+});
+
+test('Email center reports historical records honestly and keeps unsent records in date order', async () => {
+  records.EmailNotification.push(
+    { _id: 'old', recipientEmail: 'member@example.test', status: 'sent', sentAt: '2026-10-01T00:00:00Z' },
+    { _id: 'new', recipientEmail: 'member@example.test', status: 'failed', deliveryMethod: 'smtp', createdAt: '2026-10-20T00:00:00Z' },
+    { _id: 'foreign', recipientEmail: 'foreign@example.test', status: 'sent', deliveryMethod: 'smtp', sentAt: '2026-10-21T00:00:00Z' }
+  );
+  const response = await request(emailRouter, 'GET', '/');
+  assert.equal(response.status, 200);
+  assert.deepEqual(response.body.emails.map(email => [email._id, email.status]), [['new', 'failed'], ['old', 'recorded']]);
+  assert.equal(records.EmailNotification[0].status, 'sent', 'Historical data is not overwritten');
+  assert.equal((await request(emailRouter, 'GET', '/', { userId: null })).status, 401);
 });

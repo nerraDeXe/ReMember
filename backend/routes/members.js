@@ -18,25 +18,15 @@ const AVATAR_DATA_URL = /^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+/]+={0,
 router.get('/dashboard', withSelectedMembership, async (req, res) => {
   try {
     const user = req.membershipUser;
-    const tier = user.tierId ? await Tier.findOne({ _id: user.tierId, organisationId: req.organisationId }) : null;
-
-    // Get user's RSVPs from events
-    const allEvents = await Event.find({ organisationId: req.organisationId });
-    const myEvents = allEvents.filter(event => 
-      event.rsvps && event.rsvps.some(r => String(r.userId) === String(user._id))
-    );
-
-    // Get user invoices
-    const allInvoices = await Invoice.find({ userId: String(user._id), organisationId: req.organisationId });
-    const invoices = (Array.isArray(allInvoices) ? allInvoices : allInvoices._data || [])
-      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
-      .slice(0, 5);
+    const [tier, myEvents, invoices] = await Promise.all([
+      user.tierId ? Tier.findOne({ _id: user.tierId, organisationId: req.organisationId }) : null,
+      Event.find({ organisationId: req.organisationId, 'rsvps.userId': String(user._id) }),
+      Invoice.find({ userId: String(user._id), organisationId: req.organisationId }).sort({ createdAt: -1 }).limit(5)
+    ]);
 
     // Ensure wallet pass is up-to-date
     const isExpired = Boolean(user.expirationDate && new Date(user.expirationDate) < new Date());
     const walletPass = user.status === 'active' && !isExpired ? walletService.generateSaveUrl(user) : null;
-
-    const { password: _, ...userSafe } = user;
 
     res.json({
       success: true,
@@ -53,7 +43,7 @@ router.get('/dashboard', withSelectedMembership, async (req, res) => {
         tier: tier || null,
         joinedDate: user.joinedDate,
         expirationDate: user.expirationDate,
-        isExpired: user.expirationDate ? new Date(user.expirationDate) < new Date() : false,
+        isExpired,
         avatarUrl: user.avatarUrl,
         phone: user.phone,
         bio: user.bio,
@@ -183,9 +173,7 @@ router.get('/wallet-pass', withSelectedMembership, requireActiveMembership, asyn
  */
 router.get('/invoices', withSelectedMembership, async (req, res) => {
   try {
-    const userInvoices = await Invoice.find({ userId: String(req.user._id), organisationId: req.organisationId });
-    const invoices = (Array.isArray(userInvoices) ? userInvoices : userInvoices._data || [])
-      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    const invoices = await Invoice.find({ userId: String(req.user._id), organisationId: req.organisationId }).sort({ createdAt: -1 });
 
     res.json({
       success: true,

@@ -7,6 +7,7 @@ import { withSelectedMembership, membershipView } from '../services/membershipCo
 import { getAccountContext, updateOrgMemberCount } from '../services/organisationAccess.js';
 import { emailService } from '../services/emailService.js';
 import { walletService } from '../services/walletService.js';
+import { sendWelcomeForMembership } from '../services/organisationEmailSettings.js';
 
 const router = express.Router();
 router.post('/renew', authenticateToken, requireVerifiedEmail, withSelectedMembership, async (req, res, next) => {
@@ -49,15 +50,20 @@ router.post('/renew', authenticateToken, requireVerifiedEmail, withSelectedMembe
         req.membership.tierId = tier._id;
         req.membership.tierName = tier.name;
         req.membership.expirationDate = expiry.toISOString();
+        req.membership.renewalEmailRetryAt = undefined;
+        req.membership.renewalEmailClaimedAt = undefined;
+        req.membership.renewalEmailClaimToken = undefined;
         await req.membership.save({ session });
       });
     } finally { await session.endSession(); }
     await updateOrgMemberCount(req.organisationId);
     const member = membershipView(req.user, req.membership);
     await walletService.updateWalletObject(member, 'MembershipPayment');
-    emailService.sendPaymentConfirmation(member, invoice).catch(() => console.error('Could not record payment confirmation.'));
+    const confirmation = await emailService.sendPaymentConfirmation(member, invoice).catch(() => console.error('Could not send or record payment confirmation.'));
+    await sendWelcomeForMembership(req.user, req.membership, req.organisation).catch(() => console.error('Could not send or record organisation welcome email.'));
+    const emailDelivery = confirmation?.status || 'failed';
     await ActivityLog.create({ organisationId: req.organisationId, action: 'PAYMENT_SUCCESS', userId: member._id, userName: member.name, userEmail: member.email, actorRole: 'member', details: { invoiceNumber: invoice.invoiceNumber, amount: tier.price, tierName: tier.name } });
-    res.json({ success: true, message: 'Test payment completed. Your organisation membership is active.', invoice, user: await getAccountContext(req.user) });
+    res.json({ success: true, message: `Test payment completed. Your organisation membership is active. ${emailDelivery === 'sent' ? 'A confirmation email has been sent to your email provider.' : 'The confirmation email could not be sent.'}`, emailDelivery, invoice, user: await getAccountContext(req.user) });
   } catch (err) { next(err); }
 });
 

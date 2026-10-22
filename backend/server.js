@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { config } from './config/config.js';
 import { dbManager } from './models/db.js';
+import { startRenewalScheduler } from './services/renewalScheduler.js';
 
 import authRoutes from './routes/auth.js';
 import memberRoutes from './routes/members.js';
@@ -83,7 +84,7 @@ async function startServer() {
   try {
     await dbManager.init(config.MONGODB_URI);
 
-    app.listen(config.PORT, () => {
+    const server = app.listen(config.PORT, () => {
       console.log(`\n======================================================`);
       console.log(`🚀 ReMember Backend Server running on port ${config.PORT}`);
       console.log(`📡 Base API URL: http://localhost:${config.PORT}/api`);
@@ -93,6 +94,8 @@ async function startServer() {
       console.log(`✉️  Automated Email Dispatcher: ENABLED`);
       console.log(`======================================================\n`);
     });
+    const stopRenewalScheduler = startRenewalScheduler();
+    server.on('close', stopRenewalScheduler);
   } catch (error) {
     console.error('Fatal initialization error:', error);
     process.exit(1);

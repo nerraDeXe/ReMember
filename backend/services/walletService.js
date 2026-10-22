@@ -128,7 +128,7 @@ export const walletService = {
    * Simulates calling the Google Wallet REST API to update the GenericObject
    */
   async updateWalletObject(user, changedByAdmin = 'System/Admin') {
-    const { genericObject, objectId } = this.createPassObject(user);
+    const { objectId } = this.createPassObject(user);
 
     const apiEndpoint = `https://walletobjects.googleapis.com/walletobjects/v1/genericObject/${objectId}`;
     const timestamp = new Date().toISOString();

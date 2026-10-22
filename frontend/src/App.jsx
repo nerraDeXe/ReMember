@@ -32,6 +32,7 @@ import EventManagementPage from './pages/admin/EventManagementPage.jsx';
 import FinancialAnalyticsPage from './pages/admin/FinancialAnalyticsPage.jsx';
 import ActivityLogPage from './pages/admin/ActivityLogPage.jsx';
 import OrganisationsManagementPage from './pages/OrganisationsManagementPage.jsx';
+const EmailSettingsPage = lazy(() => import('./pages/admin/EmailSettingsPage.jsx'));
 
 import { api } from './api.js';
 import { getAccountHomePage, getPageAfterContextChange, isAccountPage } from './navigation.js';
@@ -224,6 +225,7 @@ function MainApp() {
             {currentPage === 'admin-members' && <MembersListPage />}
             {currentPage === 'admin-tiers' && <TiersManagementPage />}
             {currentPage === 'admin-events' && <EventManagementPage />}
+            {currentPage === 'admin-email-settings' && <EmailSettingsPage />}
             {currentPage === 'admin-finances' && <FinancialAnalyticsPage />}
             {currentPage === 'admin-logs' && <ActivityLogPage />}
           </>}

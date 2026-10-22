@@ -131,13 +131,16 @@ const activityLogSchema = new mongoose.Schema({
 
 const emailNotificationSchema = new mongoose.Schema({
   _id: { type: String, default: () => new mongoose.Types.ObjectId().toString() },
+  organisationId: { type: String, index: true },
   recipientEmail: { type: String, required: true },
   recipientName: { type: String, required: true },
   type: { type: String, required: true },
   subject: { type: String, required: true },
   htmlContent: { type: String, required: true },
-  status: { type: String, default: 'sent' },
-  sentAt: { type: String, default: () => new Date().toISOString() }
+  status: { type: String, default: 'pending' },
+  // No default: historical records were saved without any SMTP delivery attempt.
+  deliveryMethod: { type: String, enum: ['smtp'] },
+  sentAt: { type: String }
 }, { timestamps: true });
 
 const organisationSchema = new mongoose.Schema({
@@ -158,7 +161,20 @@ const organisationSchema = new mongoose.Schema({
   adminName: { type: String },
   tags: [{ type: String }],
   joinRequirements: { type: String, default: 'Open enrollment for verified members' },
-  featured: { type: Boolean, default: false }
+  featured: { type: Boolean, default: false },
+  emailSettings: {
+    welcome: {
+      enabled: { type: Boolean, default: true },
+      subject: { type: String, maxlength: 160 },
+      body: { type: String, maxlength: 5000 }
+    },
+    renewal: {
+      enabled: { type: Boolean, default: false },
+      subject: { type: String, maxlength: 160 },
+      body: { type: String, maxlength: 5000 },
+      daysBefore: { type: Number, min: 1, max: 365, default: 30 }
+    }
+  }
 }, { timestamps: true });
 
 const organisationMembershipSchema = new mongoose.Schema({
@@ -171,6 +187,15 @@ const organisationMembershipSchema = new mongoose.Schema({
   tierName: { type: String },
   joinedDate: { type: String, default: () => new Date().toISOString() },
   expirationDate: { type: String },
+  welcomeEmailEligible: { type: Boolean, default: false },
+  welcomeEmailSentAt: { type: String },
+  welcomeEmailClaimedAt: { type: String },
+  welcomeEmailClaimToken: { type: String },
+  renewalEmailSentAt: { type: String },
+  renewalEmailCycleKey: { type: String },
+  renewalEmailClaimedAt: { type: String },
+  renewalEmailClaimToken: { type: String },
+  renewalEmailRetryAt: { type: String },
 }, { timestamps: true });
 organisationMembershipSchema.index({ organisationId: 1, userId: 1 }, { unique: true });
 

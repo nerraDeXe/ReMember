@@ -13,7 +13,6 @@ export const config = {
   NODE_ENV: process.env.NODE_ENV || 'development',
   MONGODB_URI: process.env.MONGODB_URI,
   JWT_SECRET: process.env.JWT_SECRET || 'remember_jwt_super_secret_key_2026_xyz987',
-  JWT_EXPIRES_IN: '24h',
   APP_WEB_URL: process.env.APP_WEB_URL || (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:5173'),
   GOOGLE_WALLET: {
     ISSUER_ID: process.env.GOOGLE_WALLET_ISSUER_ID || '3388000000022341234',

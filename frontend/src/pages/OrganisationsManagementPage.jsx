@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useToast } from '../context/ToastContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import {
@@ -19,6 +19,7 @@ import {
 import { api } from '../api.js';
 import OrganisationImage from '../components/OrganisationImage.jsx';
 import ImageUploadField from '../components/ImageUploadField.jsx';
+import { filterOrganisations } from '../organisationDirectory.js';
 
 export default function OrganisationsManagementPage({ onNavigate }) {
   const { user, refreshUser, selectOrganisation } = useAuth();
@@ -191,21 +192,9 @@ export default function OrganisationsManagementPage({ onNavigate }) {
   };
 
   // Filter organisations
-  const filtered = organisations.filter((org) => {
-    const isPub = org.isPublic === true || org.visibility === 'public';
-    if (visibilityFilter === 'public' && !isPub) return false;
-    if (visibilityFilter === 'private' && isPub) return false;
-
-    if (search.trim()) {
-      const q = search.toLowerCase().trim();
-      const nameMatch = org.name?.toLowerCase().includes(q);
-      const descMatch = org.description?.toLowerCase().includes(q);
-      const catMatch = org.category?.toLowerCase().includes(q);
-      const locMatch = org.location?.toLowerCase().includes(q);
-      return nameMatch || descMatch || catMatch || locMatch;
-    }
-    return true;
-  });
+  const filtered = useMemo(() => filterOrganisations(organisations, {
+    search, visibility: visibilityFilter, fields: ['name', 'description', 'category', 'location']
+  }), [organisations, search, visibilityFilter]);
 
   const publicCount = organisations.filter((o) => o.isPublic || o.visibility === 'public').length;
   const privateCount = organisations.filter((o) => !o.isPublic && o.visibility === 'private').length;

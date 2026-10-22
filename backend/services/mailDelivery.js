@@ -1,7 +1,7 @@
 import nodemailer from 'nodemailer';
 
-// Verification and recovery messages are delivered by SMTP. They are never written to the
-// member notification inbox, database, or development logs.
+// Shared SMTP transport. Callers keep verification and recovery secrets out of
+// the member notification inbox, database, and development logs.
 export const mailDelivery = {
   isConfigured() {
     return Boolean(process.env.SMTP_HOST && process.env.EMAIL_FROM)
@@ -24,7 +24,7 @@ export const mailDelivery = {
       debug: false
     });
     const result = await transport.sendMail({ from: process.env.EMAIL_FROM, to, subject, text, html });
-    if (!result.accepted?.length) throw new Error('The email provider did not accept the verification message.');
+    if (!result.accepted?.length) throw new Error('The email provider did not accept the message.');
     return { accepted: true };
   }
 };

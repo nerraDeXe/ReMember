@@ -3,7 +3,6 @@ import {
   BarChart3,
   DollarSign,
   TrendingUp,
-  CreditCard,
   Layers,
   Calendar,
   RefreshCw,

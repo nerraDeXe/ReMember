@@ -11,6 +11,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { api } from '../../api.js';
+import DashboardAnalytics from '../../components/DashboardAnalytics.jsx';
 
 export default function AdminDashboard({ onNavigate }) {
   const { user } = useAuth();
@@ -136,6 +137,8 @@ export default function AdminDashboard({ onNavigate }) {
           </div>
         </div>
       </div>
+
+      <DashboardAnalytics organisationId={user?.activeOrganisationId} onNavigate={onNavigate} />
 
       {/* Quick Navigation Panels */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

@@ -21,8 +21,6 @@ export default function ActivityLogPage() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionFilter, setActionFilter] = useState('all');
-  const [page, setPage] = useState(1);
-  const [pagination, setPagination] = useState({ page: 1, limit: 20, totalLogs: 0, totalPages: 1 });
 
   const loadLogs = async (currentPage = 1) => {
     setLoading(true);
@@ -35,7 +33,6 @@ export default function ActivityLogPage() {
 
       if (data.success) {
         setLogs(data.logs || []);
-        setPagination(data.pagination || { page: 1, limit: 20, totalLogs: 0, totalPages: 1 });
       }
     } catch (err) {
       console.error('Failed to load activity logs:', err);

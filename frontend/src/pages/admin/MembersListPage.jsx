@@ -2,16 +2,12 @@ import React, { useState, useEffect } from 'react';
 import {
   Users,
   Search,
-  Filter,
   Download,
   ChevronLeft,
   ChevronRight,
-  Shield,
   Layers,
   RefreshCw,
   CheckCircle2,
-  AlertTriangle,
-  Ban,
   Wallet,
   Sparkles,
   X
@@ -36,10 +32,6 @@ export default function MembersListPage() {
   const [tierChangeMember, setTierChangeMember] = useState(null);
   const [selectedNewTierId, setSelectedNewTierId] = useState('');
   const [updatingTier, setUpdatingTier] = useState(false);
-
-  // Status reason modal
-  const [statusChangeTarget, setStatusChangeTarget] = useState(null);
-  const [statusReason, setStatusReason] = useState('');
 
   const loadMembers = async (page = 1) => {
     setLoading(true);

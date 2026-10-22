@@ -2,20 +2,17 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { isAccountPage } from '../navigation.js';
 import {
-  Sparkles,
   User,
   LogOut,
   Mail,
   Building2,
   ChevronDown
 } from 'lucide-react';
-import EmailDrawer from './EmailDrawer.jsx';
 
 export default function Navbar({ onNavigate, currentPage }) {
   const { user, isAdmin, logout } = useAuth();
   const accountPage = isAccountPage(currentPage);
   const adminPortal = !accountPage && isAdmin;
-  const [isEmailDrawerOpen, setIsEmailDrawerOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   return (
@@ -53,18 +50,6 @@ export default function Navbar({ onNavigate, currentPage }) {
           <div className="flex items-center gap-3">
             <button onClick={() => onNavigate('account-organisations')} aria-label="My Organisations" className={`flex items-center gap-1.5 px-2 sm:px-3 py-2 rounded-lg text-xs font-semibold border ${currentPage === 'account-organisations' ? 'bg-brand-primary border-brand-primary text-brand-ink' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100'}`}>
               <Building2 className="w-4 h-4" /><span className="hidden sm:inline">My Organisations</span>
-            </button>
-
-            {/* Email Center Trigger Button */}
-            <button
-              onClick={() => setIsEmailDrawerOpen(true)}
-              className="relative p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 border border-slate-200 transition-colors"
-              title="Automated Email Notification Center"
-            >
-              <Mail className="w-4 h-4" />
-              <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-brand-primary"></span>
-              </span>
             </button>
 
             {/* User Profile Pill */}
@@ -118,17 +103,18 @@ export default function Navbar({ onNavigate, currentPage }) {
 
                     <button onClick={() => { onNavigate('member-organisations'); setUserMenuOpen(false); }} className="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2"><Building2 className="w-3.5 h-3.5" />Find Organisations</button>
                     <button onClick={() => { onNavigate('organisation-setup'); setUserMenuOpen(false); }} className="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2"><Building2 className="w-3.5 h-3.5" />Create Organisation</button>
-
-                    <button
-                      onClick={() => {
-                        setIsEmailDrawerOpen(true);
-                        setUserMenuOpen(false);
-                      }}
-                      className="w-full text-left px-4 py-2 text-xs text-slate-700 hover:text-slate-900 hover:bg-slate-50 flex items-center gap-2"
-                    >
-                      <Mail className="w-3.5 h-3.5 text-slate-400" />
-                      <span>Automated Emails Inbox</span>
-                    </button>
+                    {isAdmin && (
+                      <button
+                        onClick={() => {
+                          onNavigate('admin-email-settings');
+                          setUserMenuOpen(false);
+                        }}
+                        className="w-full text-left px-4 py-2 text-xs text-slate-700 hover:text-slate-900 hover:bg-slate-50 flex items-center gap-2"
+                      >
+                        <Mail className="w-3.5 h-3.5 text-slate-400" />
+                        <span>Email Settings</span>
+                      </button>
+                    )}
                   </div>
 
                   <div className="border-t border-slate-100 pt-1">
@@ -149,12 +135,6 @@ export default function Navbar({ onNavigate, currentPage }) {
           </div>
         </div>
       </header>
-
-      {/* Dispatched Emails Slide-over drawer */}
-      <EmailDrawer
-        isOpen={isEmailDrawerOpen}
-        onClose={() => setIsEmailDrawerOpen(false)}
-      />
     </>
   );
 }

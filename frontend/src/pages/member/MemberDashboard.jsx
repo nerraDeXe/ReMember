@@ -2,15 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useToast } from '../../context/ToastContext.jsx';
 import {
-  Sparkles,
   Calendar,
   CreditCard,
-  User,
   Clock,
   ArrowRight,
-  ShieldCheck,
   CheckCircle2,
-  AlertCircle,
   RefreshCw,
   Wallet
 } from 'lucide-react';
@@ -71,7 +67,6 @@ export default function MemberDashboard({ onNavigate }) {
   }
 
   const membership = dashboardData?.membership || user;
-  const isExpired = membership?.isExpired || false;
   const formattedExpiry = membership?.expirationDate
     ? new Date(membership.expirationDate).toLocaleDateString('en-US', {
         year: 'numeric',

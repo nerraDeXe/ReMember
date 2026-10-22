@@ -4,6 +4,7 @@ import { api } from '../../api.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useToast } from '../../context/ToastContext.jsx';
 import OrganisationImage from '../../components/OrganisationImage.jsx';
+import { filterOrganisations } from '../../organisationDirectory.js';
 
 export default function MemberOrganisationsPage({ onNavigate, onJoined }) {
   const { selectOrganisation } = useAuth();
@@ -20,7 +21,9 @@ export default function MemberOrganisationsPage({ onNavigate, onJoined }) {
     api.getOrganisations({ visibility: 'public' }).then(data => setOrganisations(data.organisations || [])).catch(err => setError(err.message)).finally(() => setLoading(false));
   }, []);
   const categories = useMemo(() => ['All', ...new Set(organisations.map(org => org.category).filter(Boolean))], [organisations]);
-  const filtered = organisations.filter(org => (category === 'All' || org.category === category) && [org.name, org.description, org.location, ...(org.tags || [])].some(value => String(value || '').toLowerCase().includes(search.trim().toLowerCase())));
+  const filtered = useMemo(() => filterOrganisations(organisations, {
+    search, category, fields: ['name', 'description', 'location', 'tags']
+  }), [organisations, search, category]);
   const openDetails = async (org) => {
     setBusy(true);
     setError('');

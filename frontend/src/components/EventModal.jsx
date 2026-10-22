@@ -10,7 +10,6 @@ export default function EventModal({ isOpen, onClose, onCreated, tiers = [] }) {
   const [date, setDate] = useState('2026-11-25');
   const [time, setTime] = useState('18:30 - 21:30 EST');
   const [location, setLocation] = useState('Executive Penthouse & Live Webcast');
-  const [category, setCategory] = useState('Networking');
   const [capacity, setCapacity] = useState(100);
   const [selectedTiers, setSelectedTiers] = useState([]);
   const [imageUrl, setImageUrl] = useState('https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=600&q=80');
@@ -35,7 +34,7 @@ export default function EventModal({ isOpen, onClose, onCreated, tiers = [] }) {
         date,
         time,
         location,
-        category,
+        category: 'Networking',
         capacity: Number(capacity),
         allowedTiers: selectedTiers,
         imageUrl,

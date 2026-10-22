@@ -9,6 +9,8 @@ import tierRouter from '../routes/tiers.js';
 import { getAccountContext, normaliseTierInput, resolveSelectedOrganisation } from '../services/organisationAccess.js';
 import { requireOrganisationOwner, requireOrganisationMembership } from '../middleware/organisationAccess.js';
 import { MAX_IMAGE_SIZE } from '../../shared/imageUploads.js';
+import { emailService } from '../services/emailService.js';
+import { getOrganisationEmailSettings } from '../../shared/organisationEmails.js';
 
 const pngBytes = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=', 'base64');
 const pngImage = `data:image/png;base64,${pngBytes.toString('base64')}`;
@@ -16,7 +18,7 @@ const pngImage = `data:image/png;base64,${pngBytes.toString('base64')}`;
 // These tests replace only Mongo operations. They exercise real auth middleware,
 // organisation routes, account context, and the transaction boundary without Atlas.
 const models = { User, Organisation, OrganisationMembership, Tier, ActivityLog };
-let records, serial, failTierCreation;
+let records, serial, failTierCreation, welcomeCalls;
 const originals = [];
 const clone = value => structuredClone(value);
 const asDocument = value => {
@@ -52,6 +54,10 @@ function patch(target, name, replacement) {
   target[name] = replacement;
 }
 before(() => {
+  patch(emailService, 'sendOrganisationWelcome', async (user, membership, organisation) => {
+    welcomeCalls.push({ userId: user._id, membershipId: membership._id, organisationId: organisation._id });
+    return { status: 'sent', sentAt: new Date().toISOString() };
+  });
   for (const [name, model] of Object.entries(models)) {
     const collection = () => records[name];
     patch(model, 'find', filter => query(collection().filter(record => matches(record, filter))));
@@ -113,6 +119,7 @@ after(() => {
 beforeEach(() => {
   serial = 0;
   failTierCreation = false;
+  welcomeCalls = [];
   records = Object.fromEntries(Object.keys(models).map(name => [name, []]));
   records.User.push({ _id: 'alice', name: 'Alice Owner', email: 'alice@example.test', password: 'secret', emailVerificationHash: 'secret-hash', emailVerificationAttempts: 0, emailVerified: true, role: 'member', status: 'active', onboardingCompleted: false, activeOrganisationId: '' });
 });
@@ -308,14 +315,81 @@ test('Free joining activates membership; paid joining stays pending and cannot b
   assert.equal(free.status, 200);
   assert.equal(free.body.membership.status, 'active');
   assert.equal(free.body.requiresPayment, false);
+  assert.equal(welcomeCalls.length, 1);
+  assert.equal(welcomeCalls[0].organisationId, 'free-org');
+  assert.ok(records.OrganisationMembership[0].welcomeEmailSentAt);
+  assert.equal(records.OrganisationMembership[0].welcomeEmailEligible, false);
+  await request(organisationRouter, 'POST', '/:id/join', { userId: 'alice', params: { id: 'free-org' }, body: { tierId: 'free-org-free' } });
+  assert.equal(welcomeCalls.length, 1, 'Repeated joins must not send a second welcome');
   const paid = await request(organisationRouter, 'POST', '/:id/join', { userId: 'alice', params: { id: 'paid-org' }, body: { tierId: 'paid-org-paid' } });
   assert.equal(paid.body.membership.status, 'pending');
   assert.equal(paid.body.requiresPayment, true);
+  assert.equal(welcomeCalls.length, 1, 'Pending paid memberships receive no welcome');
+  assert.equal(records.OrganisationMembership[1].welcomeEmailEligible, true);
   const repeat = await request(organisationRouter, 'POST', '/:id/join', { userId: 'alice', params: { id: 'paid-org' }, body: { tierId: 'paid-org-free' } });
   assert.equal(repeat.body.membership.status, 'pending');
   assert.equal(repeat.body.membership.tierId, 'paid-org-paid');
   assert.equal(records.OrganisationMembership.length, 2);
   assert.equal(repeat.body.user.activeOrganisationId, 'paid-org');
+});
+
+test('Email settings defaults, customisation and access remain specific to the organisation owner', async () => {
+  seedOrganisation('owned', 'alice');
+  seedOrganisation('other', 'bob');
+  const initial = await request(organisationRouter, 'GET', '/:id/email-settings', { userId: 'alice', params: { id: 'owned' } });
+  assert.equal(initial.status, 200);
+  assert.deepEqual(initial.body.emailSettings, getOrganisationEmailSettings());
+  const settings = getOrganisationEmailSettings({ welcome: { subject: 'Welcome to our art club, {memberName}' }, renewal: { enabled: true, daysBefore: 7 } });
+  const updated = await request(organisationRouter, 'PUT', '/:id/email-settings', { userId: 'alice', params: { id: 'owned' }, body: settings });
+  assert.equal(updated.status, 200);
+  assert.deepEqual(updated.body.emailSettings, settings);
+  assert.deepEqual(records.Organisation[0].emailSettings, settings);
+  assert.equal(records.Organisation[1].emailSettings, undefined);
+  for (const method of ['GET', 'PUT']) {
+    const forbidden = await request(organisationRouter, method, '/:id/email-settings', { userId: 'alice', params: { id: 'other' }, body: settings });
+    assert.equal(forbidden.status, 403);
+  }
+  records.User[0].role = 'admin';
+  const globalAdmin = await request(organisationRouter, 'PUT', '/:id/email-settings', { userId: 'alice', params: { id: 'other' }, body: settings });
+  assert.equal(globalAdmin.status, 403);
+});
+
+test('Email templates stay private in public discovery, organisation details and member join responses', async () => {
+  seedOrganisation('owned', 'alice');
+  const settings = getOrganisationEmailSettings({ welcome: { body: 'Private owner template for {memberName}' } });
+  records.Organisation[0].emailSettings = settings;
+  records.User.push({ ...records.User[0], _id: 'bob', name: 'Bob Member', email: 'bob@example.test' });
+
+  const discovery = await request(organisationRouter, 'GET', '/');
+  assert.equal(discovery.status, 200);
+  assert.equal(discovery.body.organisations[0].emailSettings, undefined);
+  const details = await request(organisationRouter, 'GET', '/:id', { params: { id: 'owned' } });
+  assert.equal(details.status, 200);
+  assert.equal(details.body.organisation.emailSettings, undefined);
+  const ownerDetails = await request(organisationRouter, 'GET', '/:id', { userId: 'alice', params: { id: 'owned' } });
+  assert.deepEqual(ownerDetails.body.organisation.emailSettings, settings);
+
+  const joined = await request(organisationRouter, 'POST', '/:id/join', { userId: 'bob', params: { id: 'owned' }, body: { tierId: 'owned-free' } });
+  assert.equal(joined.status, 200);
+  assert.equal(joined.body.organisation.emailSettings, undefined);
+  const memberDiscovery = await request(organisationRouter, 'GET', '/', { userId: 'bob' });
+  assert.equal(memberDiscovery.body.organisations[0].emailSettings, undefined);
+  const forbidden = await request(organisationRouter, 'GET', '/:id/email-settings', { userId: 'bob', params: { id: 'owned' } });
+  assert.equal(forbidden.status, 403);
+  assert.deepEqual(records.Organisation[0].emailSettings, settings);
+});
+
+test('Email settings reject invalid schedules, header injection and unknown placeholders', async () => {
+  seedOrganisation('owned', 'alice');
+  for (const changes of [
+    { renewal: { daysBefore: 0 } }, { renewal: { daysBefore: 366 } }, { renewal: { daysBefore: 1.5 } }, { renewal: { daysBefore: '7' } },
+    { welcome: { subject: 'Hello\nBcc: victim@example.test' } }, { welcome: { subject: '{password}' } }, { welcome: { body: '' } },
+    { welcome: { body: 'x'.repeat(5001) } }, { welcome: { enabled: 'false' } }
+  ]) {
+    const result = await request(organisationRouter, 'PUT', '/:id/email-settings', { userId: 'alice', params: { id: 'owned' }, body: getOrganisationEmailSettings(changes) });
+    assert.equal(result.status, 400);
+    assert.equal(records.Organisation[0].emailSettings, undefined);
+  }
 });
 
 test('Joining enforces public visibility, same organisation tiers, and suspended membership restrictions', async () => {

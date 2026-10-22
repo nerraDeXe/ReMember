@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useToast } from '../../context/ToastContext.jsx';
-import { Calendar, MapPin, Clock, Users, CheckCircle, XCircle, RefreshCw, Filter, Sparkles } from 'lucide-react';
+import { Calendar, MapPin, Clock, Users, CheckCircle, XCircle, RefreshCw, Filter } from 'lucide-react';
 import { api } from '../../api.js';
 
 export default function EventsCalendarPage() {
@@ -35,7 +35,7 @@ export default function EventsCalendarPage() {
     try {
       const response = await api.rsvpEvent(event._id);
       if (response.success) {
-        showToast(response.message || `RSVP confirmed for "${event.title}"! Confirmation email dispatched.`, 'success');
+        showToast(response.message || `RSVP confirmed for "${event.title}"!`, response.emailDelivery && response.emailDelivery !== 'sent' ? 'info' : 'success');
         await loadEvents();
       }
     } catch (err) {
