@@ -6,12 +6,16 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "test": "node --test tests/navigation.test.js tests/account.test.js tests/api.test.js tests/organisations.test.js tests/analytics-range.test.js tests/email-delivery.test.js",
+    "test": "node --test tests/navigation.test.js tests/account.test.js tests/api.test.js tests/organisations.test.js tests/analytics-range.test.js tests/email-delivery.test.js tests/post-content-rendering.test.js tests/event-display.test.js",
     "lint": "oxlint",
     "preview": "vite preview"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
+    "@tiptap/extension-image": "^3.32.0",
+    "@tiptap/pm": "^3.32.0",
+    "@tiptap/react": "^3.32.0",
+    "@tiptap/starter-kit": "^3.32.0",
     "autoprefixer": "^10.4.20",
     "libphonenumber-js": "^1.13.15",
     "lucide-react": "^0.469.0",

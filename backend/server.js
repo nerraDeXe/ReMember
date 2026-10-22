@@ -8,6 +8,7 @@ import authRoutes from './routes/auth.js';
 import memberRoutes from './routes/members.js';
 import tierRoutes from './routes/tiers.js';
 import eventRoutes from './routes/events.js';
+import postRoutes from './routes/posts.js';
 import paymentRoutes from './routes/payments.js';
 import walletRoutes from './routes/wallet.js';
 import adminRoutes from './routes/admin.js';
@@ -22,6 +23,9 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
+// Three inline description images and an optional post cover can total 8 MB
+// before base64 encoding. Keep the larger allowance specific to posts.
+app.use('/api/posts', express.json({ limit: '12mb' }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
@@ -54,6 +58,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/members', memberRoutes);
 app.use('/api/tiers', tierRoutes);
 app.use('/api/events', eventRoutes);
+app.use('/api/posts', postRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/wallet', walletRoutes);
 app.use('/api/admin', adminRoutes);

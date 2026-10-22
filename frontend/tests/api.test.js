@@ -76,6 +76,24 @@ test('Query helpers encode special characters and omit empty query strings', asy
   assert.equal(urls[7].href, 'https://remember.example/api/admin/dashboard-analytics');
 });
 
+test('Event requests carry the captured organisation for stale portal checks', async (t) => {
+  const browser = mockBrowser(t);
+  const organisationId = 'org/a & b';
+  await api.getEvents(organisationId);
+  await api.rsvpEvent('event-1', organisationId);
+  await api.cancelRsvpEvent('event-1', organisationId);
+  await api.deleteEvent('event-1', organisationId);
+  for (const index of [0, 3]) assert.equal(new URL(browser.requests[index].url, 'https://remember.example').searchParams.get('organisationId'), organisationId);
+  for (const index of [1, 2]) assert.deepEqual(JSON.parse(browser.requests[index].body), { organisationId });
+  assert.equal(browser.requests[1].method, 'POST');
+  assert.equal(browser.requests[3].method, 'DELETE');
+  await api.searchEventLocations('Hall & Garden, Kuala Lumpur', organisationId);
+  const searchUrl = new URL(browser.requests[4].url, 'https://remember.example');
+  assert.equal(searchUrl.pathname, '/api/events/locations/search');
+  assert.equal(searchUrl.searchParams.get('q'), 'Hall & Garden, Kuala Lumpur');
+  assert.equal(searchUrl.searchParams.get('organisationId'), organisationId);
+});
+
 test('CSV exports return a Blob through shared authentication even with a generic MIME type', async (t) => {
   const csv = 'Name,Email\r\nMember,member@example.com';
   const browser = mockBrowser(t, (state) => new Response(csv, {

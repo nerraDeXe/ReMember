@@ -4,7 +4,7 @@ import { isAccountPage } from '../navigation.js';
 import {
   User,
   LogOut,
-  Mail,
+  Megaphone,
   Building2,
   ChevronDown
 } from 'lucide-react';
@@ -55,6 +55,10 @@ export default function Navbar({ onNavigate, currentPage }) {
             {/* User Profile Pill */}
             <div className="relative">
               <button
+                type="button"
+                aria-label="Account menu"
+                aria-expanded={userMenuOpen}
+                aria-controls="account-menu"
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
                 className="flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-slate-100 border border-transparent hover:border-slate-200 transition-colors"
               >
@@ -77,6 +81,7 @@ export default function Navbar({ onNavigate, currentPage }) {
               {/* Dropdown Menu */}
               {userMenuOpen && (
                 <div
+                  id="account-menu"
                   className="absolute right-0 mt-2 w-56 rounded-xl bg-white border border-slate-200 shadow-xl py-2 z-50 animate-fadeIn"
                   onMouseLeave={() => setUserMenuOpen(false)}
                 >
@@ -103,16 +108,16 @@ export default function Navbar({ onNavigate, currentPage }) {
 
                     <button onClick={() => { onNavigate('member-organisations'); setUserMenuOpen(false); }} className="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2"><Building2 className="w-3.5 h-3.5" />Find Organisations</button>
                     <button onClick={() => { onNavigate('organisation-setup'); setUserMenuOpen(false); }} className="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2"><Building2 className="w-3.5 h-3.5" />Create Organisation</button>
-                    {isAdmin && (
+                    {user?.activeOrganisationId && (
                       <button
                         onClick={() => {
-                          onNavigate('admin-email-settings');
+                          onNavigate(isAdmin ? 'admin-posts' : 'member-communication');
                           setUserMenuOpen(false);
                         }}
                         className="w-full text-left px-4 py-2 text-xs text-slate-700 hover:text-slate-900 hover:bg-slate-50 flex items-center gap-2"
                       >
-                        <Mail className="w-3.5 h-3.5 text-slate-400" />
-                        <span>Email Settings</span>
+                        <Megaphone className="w-3.5 h-3.5 text-slate-400" />
+                        <span>Communication</span>
                       </button>
                     )}
                   </div>

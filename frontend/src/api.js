@@ -74,12 +74,13 @@ export const api = {
   deleteTier: (id) => remove(`/tiers/${id}`),
 
   // Events
-  getEvents: () => apiRequest('/events'),
-  rsvpEvent: (id) => post(`/events/${id}/rsvp`),
-  cancelRsvpEvent: (id) => post(`/events/${id}/cancel-rsvp`),
+  searchEventLocations: (query, organisationId) => get('/events/locations/search', { q: query, ...(organisationId ? { organisationId } : {}) }),
+  getEvents: (organisationId) => get('/events', organisationId ? { organisationId } : {}),
+  rsvpEvent: (id, organisationId) => post(`/events/${id}/rsvp`, organisationId ? { organisationId } : undefined),
+  cancelRsvpEvent: (id, organisationId) => post(`/events/${id}/cancel-rsvp`, organisationId ? { organisationId } : undefined),
   createEvent: (eventData) => post('/events', eventData),
   updateEvent: (id, eventData) => put(`/events/${id}`, eventData),
-  deleteEvent: (id) => remove(`/events/${id}`),
+  deleteEvent: (id, organisationId) => remove(`/events/${id}${organisationId ? `?${new URLSearchParams({ organisationId })}` : ''}`),
 
   // Payments
   processRenewal: (paymentData) => post('/payments/renew', paymentData),
@@ -95,6 +96,12 @@ export const api = {
   getDashboardAnalytics: (range = {}) => get('/admin/dashboard-analytics', range),
   getActivityLogs: (params) => get('/admin/activity-logs', params),
   exportMembersCsv: (params) => get('/admin/export-csv', params, { responseType: 'blob' }),
+
+  // Organisation communication
+  getPosts: (params) => get('/posts', params),
+  createPost: (data) => post('/posts', data),
+  updatePost: (id, data) => put(`/posts/${encodeURIComponent(id)}`, data),
+  deletePost: (id, organisationId) => apiRequest(`/posts/${encodeURIComponent(id)}${organisationId ? `?${new URLSearchParams({ organisationId })}` : ''}`, { method: 'DELETE' }),
 
   // Organisations
   getOrganisations: (params) => get('/organisations', params),

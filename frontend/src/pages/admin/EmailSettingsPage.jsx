@@ -15,7 +15,7 @@ const emailTypes = [
   { key: 'renewal', title: 'Renewal reminder', description: 'Sent once before each membership expiry, at the lead time you choose.' },
 ];
 
-export default function EmailSettingsPage() {
+export default function EmailSettingsPage({ embedded = false }) {
   const { user } = useAuth();
   const { showToast } = useToast();
   const organisationId = user?.activeOrganisationId;
@@ -86,10 +86,10 @@ export default function EmailSettingsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
+      {!embedded && <div>
         <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2"><Mail className="w-6 h-6" />Email Settings</h1>
         <p className="text-sm text-slate-600 mt-2">Customise member emails for <strong>{organisationName}</strong>.</p>
-      </div>
+      </div>}
 
       {loading ? (
         <div role="status" className="flex items-center gap-3 py-12 text-sm text-slate-600"><RefreshCw className="w-5 h-5 animate-spin" />Loading email settings...</div>

@@ -120,6 +120,10 @@ before(() => {
       const index = collection().findIndex(value => value._id === id);
       return query(index < 0 ? null : collection().splice(index, 1)[0], name);
     });
+    patch(model, 'findOneAndDelete', filter => {
+      const index = collection().findIndex(value => matches(value, filter));
+      return query(index < 0 ? null : collection().splice(index, 1)[0], name);
+    });
   }
   patch(mongoose, 'startSession', async () => ({
     async withTransaction(callback) {
@@ -265,8 +269,10 @@ test('Event mutation and creation cannot target a foreign organisation', async (
   const remove = await request(eventRouter, 'DELETE', '/:id', { userId: 'ownerA', params: { id: 'event-B' } });
   assert.equal(remove.status, 404);
   const create = await request(eventRouter, 'POST', '/', { userId: 'ownerA', body: { title: 'A new event', description: 'Community event', date: '2099-02-01', organisationId: 'B' } });
-  assert.equal(create.status, 201);
-  assert.equal(create.body.event.organisationId, 'A');
+  assert.equal(create.status, 409, 'A stale page cannot create an event in a newly selected organisation');
+  const ownCreate = await request(eventRouter, 'POST', '/', { userId: 'ownerA', body: { title: 'A new event', description: 'Community event', startDate: '2099-02-01', endDate: '2099-02-01', schedule: [{ date: '2099-02-01', startTime: '09:00', endTime: '17:00' }], location: 'Kuala Lumpur', organisationId: 'A' } });
+  assert.equal(ownCreate.status, 201);
+  assert.equal(ownCreate.body.event.organisationId, 'A');
 });
 
 test('Wallet passes belong to the selected organisation and members can sync only themselves', async () => {

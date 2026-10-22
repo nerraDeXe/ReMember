@@ -60,6 +60,32 @@ test('All confirmation templates reach SMTP and record sent only after provider 
   assert.deepEqual(savedStatuses, ['sent', 'sent', 'sent']);
 });
 
+test('RSVP confirmations include every event day, time zone and an encoded Google Maps link', async t => {
+  t.mock.method(mailDelivery, 'isConfigured', () => true);
+  const messages = [];
+  t.mock.method(mailDelivery, 'send', async message => { messages.push(message); return { accepted: true }; });
+  await emailService.sendEventRsvpConfirmation(member, {
+    ...event,
+    title: 'Community <Workshop>',
+    location: 'Hall A & B, Kuala Lumpur',
+    locationLatitude: 3.153, locationLongitude: 101.713,
+    startDate: '2099-01-01', endDate: '2099-01-02', timeZone: 'Asia/Kuala_Lumpur',
+    schedule: [{ date: '2099-01-01', startTime: '09:00', endTime: '12:00' }, { date: '2099-01-02', startTime: '14:00', endTime: '17:30' }],
+  });
+  assert.equal(messages.length, 1);
+  assert.match(messages[0].html, /2099-01-01: 09:00/);
+  assert.match(messages[0].html, /2099-01-02: 14:00/);
+  assert.match(messages[0].html, /17:30/);
+  assert.match(messages[0].html, /Asia\/Kuala_Lumpur/);
+  assert.match(messages[0].html, /Community &lt;Workshop&gt;/);
+  assert.match(messages[0].html, /Open in Google Maps/);
+  assert.match(messages[0].text, /2099-01-02: 14:00/);
+  const link = messages[0].text.split('Open in Google Maps: ')[1].split('\n')[0];
+  assert.equal(new URL(link).searchParams.get('query'), '3.153,101.713');
+  assert.match(messages[0].html, /OpenStreetMap contributors/);
+  assert.match(messages[0].text, /https:\/\/www.openstreetmap.org\/copyright/);
+});
+
 test('SMTP failure preserves the in-app confirmation without claiming it was sent', async t => {
   t.mock.method(mailDelivery, 'isConfigured', () => true);
   t.mock.method(mailDelivery, 'send', async () => { throw new Error('Provider rejected the message'); });

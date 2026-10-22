@@ -1,8 +1,13 @@
-export function eventView(event, userId, isOwner = false) {
+import { getEventMapsUrl, getEligibleEventTiers, getEventAccessLabel } from '../../shared/events.js';
+
+export function eventView(event, userId, isOwner = false, tiers = []) {
   const value = event.toObject ? event.toObject() : { ...event };
   const rsvps = value.rsvps || [];
   return {
     ...value,
+    ...(value.tierAccess === 'minimum' && tiers.length ? { allowedTiers: getEligibleEventTiers(tiers, value.minimumTierId).map(tier => tier.name) } : {}),
+    mapsUrl: getEventMapsUrl(value),
+    tierAccessLabel: getEventAccessLabel(value, tiers),
     rsvps: isOwner ? rsvps : [],
     rsvpCount: rsvps.length,
     spotsLeft: Math.max(0, Number(value.capacity || 0) - rsvps.length),

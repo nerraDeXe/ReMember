@@ -64,6 +64,62 @@
   background: var(--color-muted);
 }
 
+/* Post descriptions use the same supported formatting in the editor and feed. */
+.post-description-editor .tiptap {
+  min-height: 12rem;
+  max-height: 30rem;
+  overflow-y: auto;
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.75;
+  overflow-wrap: anywhere;
+  outline: none;
+}
+
+.post-description-editor .tiptap p + p,
+.post-description-editor .tiptap ol,
+.post-description-editor .tiptap img {
+  margin-top: 0.75rem;
+}
+
+.post-description-editor .tiptap ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+}
+
+.post-description-editor .tiptap li > p {
+  margin: 0;
+}
+
+.post-description-editor .tiptap img {
+  display: block;
+  max-width: 100%;
+  max-height: 18rem;
+  object-fit: contain;
+  border-radius: 0.5rem;
+}
+
+.post-description-editor .tiptap .ProseMirror-selectednode {
+  outline: 2px solid var(--color-primary);
+}
+
+.post-description-editor .tiptap:has(> p:only-child > br.ProseMirror-trailingBreak:only-child)::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.post-description-editor .tiptap[contenteditable="false"] {
+  background-color: var(--color-background);
+  color: var(--color-muted);
+}
+
+.post-description-editor .tiptap:focus-visible {
+  outline: none;
+}
+
 /* Stored notification HTML also follows the current light theme. */
 .email-preview [style] {
   color: var(--color-ink) !important;

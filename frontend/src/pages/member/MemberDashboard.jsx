@@ -14,6 +14,7 @@ import { api } from '../../api.js';
 import StatusBadge from '../../components/StatusBadge.jsx';
 import GoogleWalletPass from '../../components/GoogleWalletPass.jsx';
 import PaymentModal from '../../components/PaymentModal.jsx';
+import EventSchedule, { EventLocation } from '../../components/EventSchedule.jsx';
 
 export default function MemberDashboard({ onNavigate }) {
   const { user, refreshUser } = useAuth();
@@ -214,15 +215,12 @@ export default function MemberDashboard({ onNavigate }) {
                 {dashboardData?.upcomingRsvps?.map((evt) => (
                   <div
                     key={evt._id}
-                    className="p-3.5 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-between gap-4"
+                    className="p-3.5 rounded-lg bg-slate-50 border border-slate-200 flex flex-wrap items-start justify-between gap-4"
                   >
-                    <div>
+                    <div className="min-w-0 flex-1 basis-52 space-y-3">
                       <div className="text-xs font-bold text-slate-900">{evt.title}</div>
-                      <div className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-2">
-                        <span>📅 {evt.date}</span>
-                        <span>•</span>
-                        <span>📍 {evt.location}</span>
-                      </div>
+                      <EventSchedule event={evt} compact />
+                      <EventLocation event={evt} />
                     </div>
                     <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-brand-50 text-brand-ink border border-brand-primary shrink-0">
                       RSVP Confirmed

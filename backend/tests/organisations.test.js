@@ -3,7 +3,7 @@ import { after, before, beforeEach, test } from 'node:test';
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import { config } from '../config/config.js';
-import { User, Organisation, OrganisationMembership, Tier, ActivityLog } from '../models/index.js';
+import { User, Organisation, OrganisationMembership, OrganisationPost, Tier, ActivityLog } from '../models/index.js';
 import organisationRouter from '../routes/organisations.js';
 import tierRouter from '../routes/tiers.js';
 import { getAccountContext, normaliseTierInput, resolveSelectedOrganisation } from '../services/organisationAccess.js';
@@ -17,7 +17,7 @@ const pngImage = `data:image/png;base64,${pngBytes.toString('base64')}`;
 
 // These tests replace only Mongo operations. They exercise real auth middleware,
 // organisation routes, account context, and the transaction boundary without Atlas.
-const models = { User, Organisation, OrganisationMembership, Tier, ActivityLog };
+const models = { User, Organisation, OrganisationMembership, OrganisationPost, Tier, ActivityLog };
 let records, serial, failTierCreation, welcomeCalls;
 const originals = [];
 const clone = value => structuredClone(value);
@@ -236,6 +236,32 @@ test('Tier write failure rolls back organisation creation and account promotion'
   assert.equal(records.OrganisationMembership.length, 0);
   assert.equal(records.User[0].role, 'member');
   assert.equal(records.User[0].onboardingCompleted, false);
+});
+
+test('Deleting an organisation removes its posts and keeps another organisation posts', async () => {
+  seedOrganisation('owned', 'alice');
+  seedOrganisation('other');
+  records.User[0].activeOrganisationId = 'owned';
+  records.OrganisationPost.push({ _id: 'owned-post', organisationId: 'owned', imageUrl: pngImage }, { _id: 'other-post', organisationId: 'other' });
+  const result = await request(organisationRouter, 'DELETE', '/:id', { userId: 'alice', params: { id: 'owned' } });
+  assert.equal(result.status, 200);
+  assert.deepEqual(records.OrganisationPost.map(post => post._id), ['other-post']);
+  assert.deepEqual(records.Organisation.map(organisation => organisation._id), ['other']);
+  assert.equal(records.User[0].activeOrganisationId, '');
+});
+
+test('Post cleanup failure rolls back the organisation deletion transaction', async t => {
+  seedOrganisation('owned', 'alice');
+  records.User[0].activeOrganisationId = 'owned';
+  records.OrganisationPost.push({ _id: 'owned-post', organisationId: 'owned', imageUrl: pngImage });
+  t.mock.method(OrganisationPost, 'deleteMany', async () => { throw new Error('Deliberate post cleanup failure'); });
+  t.mock.method(console, 'error', () => {});
+  const result = await request(organisationRouter, 'DELETE', '/:id', { userId: 'alice', params: { id: 'owned' } });
+  assert.equal(result.status, 500);
+  assert.equal(records.Organisation[0]._id, 'owned');
+  assert.equal(records.OrganisationPost[0]._id, 'owned-post');
+  assert.equal(records.Tier.length, 2);
+  assert.equal(records.User[0].activeOrganisationId, 'owned');
 });
 
 test('Organisation owners can upload, replace, remove and read images without changing another organisation', async () => {

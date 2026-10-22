@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { POST_LIMITS } from '../../shared/posts.js';
 
 // Define Mongoose schemas for live Mongo connections
 const userSchema = new mongoose.Schema({
@@ -83,10 +84,20 @@ const eventSchema = new mongoose.Schema({
   description: { type: String, required: true },
   date: { type: String, required: true }, // YYYY-MM-DD
   time: { type: String, default: '18:00 - 21:00 EST' },
+  startDate: { type: String },
+  endDate: { type: String },
+  timeZone: { type: String },
+  schedule: [{ _id: false, date: String, startTime: String, endTime: String }],
   location: { type: String, default: 'Innovation Center Ballroom & Hybrid Stream' },
+  locationPlaceId: { type: String, default: '' },
+  locationLatitude: { type: Number, default: null, min: -90, max: 90 },
+  locationLongitude: { type: Number, default: null, min: -180, max: 180 },
   category: { type: String, default: 'Networking' },
   capacity: { type: Number, default: 100 },
   allowedTiers: [{ type: String }], // e.g. ['Bronze Explorer', 'Silver Patron', 'Gold VIP', 'Platinum Elite']
+  // No default: historical allowedTiers lists retain their exact-name policy.
+  tierAccess: { type: String, enum: ['all', 'minimum'] },
+  minimumTierId: { type: String },
   imageUrl: { type: String },
   rsvps: [{
     userId: String,
@@ -95,6 +106,19 @@ const eventSchema = new mongoose.Schema({
     rsvpDate: String
   }]
 }, { timestamps: true });
+
+const organisationPostSchema = new mongoose.Schema({
+  _id: { type: String, default: () => new mongoose.Types.ObjectId().toString() },
+  organisationId: { type: String, required: true },
+  title: { type: String, required: true, maxlength: POST_LIMITS.title },
+  subtitle: { type: String, required: true, maxlength: POST_LIMITS.subtitle },
+  description: { type: String, required: true, maxlength: POST_LIMITS.description },
+  descriptionContent: { type: mongoose.Schema.Types.Mixed },
+  imageUrl: { type: String, default: '' },
+  authorId: { type: String, required: true },
+  authorName: { type: String, required: true },
+}, { timestamps: true });
+organisationPostSchema.index({ organisationId: 1, createdAt: -1, _id: -1 });
 
 const invoiceSchema = new mongoose.Schema({
   _id: { type: String, default: () => new mongoose.Types.ObjectId().toString() },
@@ -202,6 +226,7 @@ organisationMembershipSchema.index({ organisationId: 1, userId: 1 }, { unique: t
 export const User = mongoose.models.User || mongoose.model('User', userSchema);
 export const Tier = mongoose.models.Tier || mongoose.model('Tier', tierSchema);
 export const Event = mongoose.models.Event || mongoose.model('Event', eventSchema);
+export const OrganisationPost = mongoose.models.OrganisationPost || mongoose.model('OrganisationPost', organisationPostSchema);
 export const Invoice = mongoose.models.Invoice || mongoose.model('Invoice', invoiceSchema);
 export const ActivityLog = mongoose.models.ActivityLog || mongoose.model('ActivityLog', activityLogSchema);
 export const EmailNotification = mongoose.models.EmailNotification || mongoose.model('EmailNotification', emailNotificationSchema);

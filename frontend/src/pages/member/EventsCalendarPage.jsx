@@ -1,62 +1,81 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useToast } from '../../context/ToastContext.jsx';
-import { Calendar, MapPin, Clock, Users, CheckCircle, XCircle, RefreshCw, Filter } from 'lucide-react';
+import { Calendar, Users, CheckCircle, XCircle, RefreshCw, Filter } from 'lucide-react';
 import { api } from '../../api.js';
+import EventSchedule, { EventLocation } from '../../components/EventSchedule.jsx';
+import { getEventAccessLabel } from '../../../../shared/events.js';
 
 export default function EventsCalendarPage() {
-  const { user } = useAuth();
+  const { user, getCurrentUser } = useAuth();
   const { showToast } = useToast();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [actionPendingId, setActionPendingId] = useState(null);
+  const organisationId = user?.activeOrganisationId;
+  const requestVersion = useRef(0);
+  const isCurrentOrganisation = (snapshot) => getCurrentUser()?.activeOrganisationId === snapshot;
 
   const loadEvents = async () => {
+    const snapshot = organisationId;
+    const version = ++requestVersion.current;
     try {
-      const data = await api.getEvents();
+      const data = await api.getEvents(snapshot);
+      if (version !== requestVersion.current || !isCurrentOrganisation(snapshot)) return;
       if (data.success) {
         setEvents(data.events || []);
       }
     } catch (err) {
+      if (version !== requestVersion.current || !isCurrentOrganisation(snapshot)) return;
       console.error('Failed to load events:', err);
       showToast('Could not load events: ' + err.message, 'error');
     } finally {
-      setLoading(false);
+      if (version === requestVersion.current && isCurrentOrganisation(snapshot)) setLoading(false);
     }
   };
 
   useEffect(() => {
+    setEvents([]);
+    setLoading(true);
+    setActionPendingId(null);
     loadEvents();
-  }, []);
+    return () => { requestVersion.current += 1; };
+  }, [organisationId]);
 
   const handleRsvp = async (event) => {
+    const snapshot = organisationId;
     setActionPendingId(event._id);
     try {
-      const response = await api.rsvpEvent(event._id);
+      const response = await api.rsvpEvent(event._id, snapshot);
+      if (!isCurrentOrganisation(snapshot)) return;
       if (response.success) {
         showToast(response.message || `RSVP confirmed for "${event.title}"!`, response.emailDelivery && response.emailDelivery !== 'sent' ? 'info' : 'success');
         await loadEvents();
       }
     } catch (err) {
+      if (!isCurrentOrganisation(snapshot)) return;
       showToast(err.message || 'RSVP failed.', 'error');
     } finally {
-      setActionPendingId(null);
+      if (isCurrentOrganisation(snapshot)) setActionPendingId(null);
     }
   };
 
   const handleCancelRsvp = async (event) => {
+    const snapshot = organisationId;
     setActionPendingId(event._id);
     try {
-      const response = await api.cancelRsvpEvent(event._id);
+      const response = await api.cancelRsvpEvent(event._id, snapshot);
+      if (!isCurrentOrganisation(snapshot)) return;
       if (response.success) {
         showToast('RSVP cancelled.', 'info');
         await loadEvents();
       }
     } catch (err) {
+      if (!isCurrentOrganisation(snapshot)) return;
       showToast(err.message || 'Failed to cancel RSVP.', 'error');
     } finally {
-      setActionPendingId(null);
+      if (isCurrentOrganisation(snapshot)) setActionPendingId(null);
     }
   };
 
@@ -112,6 +131,7 @@ export default function EventsCalendarPage() {
           {filteredEvents.map((event) => {
             const isRsvped = event.isRsvped;
             const isEligible = event.isAllowedTier;
+            const accessLabel = event.tierAccessLabel || getEventAccessLabel(event);
             const capacityRatio = Math.min(100, Math.round(((event.rsvpCount || 0) / (event.capacity || 100)) * 100));
 
             return (
@@ -126,11 +146,12 @@ export default function EventsCalendarPage() {
                 <div>
                   {/* Event Thumbnail */}
                   <div className="h-44 relative overflow-hidden bg-slate-100">
-                    <img
-                      src={event.imageUrl || 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=600&q=80'}
+                    {event.imageUrl ? <img
+                      src={event.imageUrl}
                       alt={event.title}
                       className="w-full h-full object-cover opacity-90"
-                    />
+                      loading="lazy"
+                    /> : <div className="flex h-full items-center justify-center bg-gradient-to-br from-brand-50 to-slate-100"><Calendar aria-hidden="true" className="h-16 w-16 text-slate-300" /><span className="sr-only">Community event</span></div>}
 
                     <div className="absolute top-3 left-3 flex gap-2">
                       <span className="px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider bg-white text-brand-ink border border-brand-silver">
@@ -158,16 +179,8 @@ export default function EventsCalendarPage() {
                     </div>
 
                     <div className="space-y-2 text-xs text-slate-700">
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-brand-ink shrink-0" />
-                        <span>
-                          <strong>{event.date}</strong> &bull; {event.time}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-4 h-4 text-brand-ink shrink-0" />
-                        <span className="truncate">{event.location}</span>
-                      </div>
+                      <EventSchedule event={event} compact />
+                      <EventLocation event={event} />
                     </div>
 
                     {/* Capacity Meter */}
@@ -195,11 +208,8 @@ export default function EventsCalendarPage() {
                       <span className="text-[10px] uppercase font-bold text-slate-500">
                         Eligible Tiers:
                       </span>
-                      {(!event.allowedTiers || event.allowedTiers.length === 0) ? (
-                        <span className="text-[10px] px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
-                          All Membership Levels
-                        </span>
-                      ) : (
+                      <span className="text-[10px] px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">{accessLabel}</span>
+                      {event.allowedTiers?.length > 0 && (
                         event.allowedTiers.map((tName, i) => (
                           <span
                             key={i}
@@ -237,7 +247,7 @@ export default function EventsCalendarPage() {
                       disabled
                       className="w-full py-2.5 rounded-lg bg-slate-100 border border-slate-200 text-slate-400 font-medium text-xs cursor-not-allowed"
                     >
-                      Requires Tier Upgrade ({event.allowedTiers?.join(', ')})
+                      Requires Tier Upgrade · {accessLabel}
                     </button>
                   ) : event.spotsLeft === 0 ? (
                     <button

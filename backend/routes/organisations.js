@@ -1,7 +1,7 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import { randomUUID } from 'node:crypto';
-import { Organisation, OrganisationMembership, User, Tier, ActivityLog } from '../models/index.js';
+import { Organisation, OrganisationMembership, OrganisationPost, User, Tier, ActivityLog } from '../models/index.js';
 import { authenticateToken, requireVerifiedEmail } from '../middleware/auth.js';
 import { optionalAuth } from '../middleware/organisationAccess.js';
 import { normaliseOrganisationImage } from '../services/organisationImages.js';
@@ -285,6 +285,7 @@ router.delete('/:id', authenticateToken, requireVerifiedEmail, requireTargetOwne
     await session.withTransaction(async () => {
       await Organisation.findByIdAndDelete(req.params.id, { session });
       await OrganisationMembership.deleteMany({ organisationId: req.params.id }, { session });
+      await OrganisationPost.deleteMany({ organisationId: req.params.id }, { session });
       await Tier.deleteMany({ organisationId: req.params.id }, { session });
       await User.updateMany({ activeOrganisationId: req.params.id }, { $set: { activeOrganisationId: '' } }, { session });
     });

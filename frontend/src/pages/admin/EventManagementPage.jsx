@@ -2,43 +2,57 @@ import React, { useState, useEffect } from 'react';
 import { Calendar, Plus, Trash2, RefreshCw, Eye, X } from 'lucide-react';
 import { api } from '../../api.js';
 import { useToast } from '../../context/ToastContext.jsx';
+import { useAuth } from '../../context/AuthContext.jsx';
 import EventModal from '../../components/EventModal.jsx';
+import EventSchedule, { EventLocation } from '../../components/EventSchedule.jsx';
+import { getEventAccessLabel, getEligibleEventTiers } from '../../../../shared/events.js';
 
 export default function EventManagementPage() {
   const { showToast } = useToast();
+  const { user } = useAuth();
+  const organisationId = user?.activeOrganisationId;
   const [events, setEvents] = useState([]);
+  const [tiers, setTiers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [tiersError, setTiersError] = useState('');
+  const [reload, setReload] = useState(0);
+  const [deletingId, setDeletingId] = useState('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [inspectEvent, setInspectEvent] = useState(null);
 
-  const loadEvents = async () => {
-    try {
-      const data = await api.getEvents();
-      if (data.success) {
-        setEvents(data.events || []);
-      }
-    } catch (err) {
-      console.error('Failed to load events:', err);
-      showToast('Could not load events: ' + err.message, 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    loadEvents();
-  }, []);
+    let cancelled = false;
+    setLoading(true);
+    setLoadError('');
+    setTiersError('');
+    Promise.allSettled([api.getEvents(organisationId), api.getTiers(organisationId)]).then(([eventResult, tierResult]) => {
+      if (cancelled) return;
+      if (eventResult.status === 'fulfilled' && eventResult.value.success) setEvents(eventResult.value.events || []);
+      else setLoadError(eventResult.reason?.message || eventResult.value?.message || 'Could not load events.');
+      if (tierResult.status === 'fulfilled' && tierResult.value.success) setTiers(tierResult.value.tiers || []);
+      else setTiersError(tierResult.reason?.message || tierResult.value?.message || 'Could not load membership tiers.');
+      setLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, [organisationId, reload]);
+
+  const loadEvents = () => setReload(value => value + 1);
 
   const handleDeleteEvent = async (event) => {
+    if (deletingId) return;
     if (!window.confirm(`Delete event "${event.title}"?`)) return;
+    setDeletingId(event._id);
     try {
-      const response = await api.deleteEvent(event._id);
+      const response = await api.deleteEvent(event._id, organisationId);
       if (response.success) {
         showToast(response.message, 'success');
-        await loadEvents();
+        loadEvents();
       }
     } catch (err) {
       showToast(err.message || 'Failed to delete event.', 'error');
+    } finally {
+      setDeletingId('');
     }
   };
 
@@ -52,24 +66,34 @@ export default function EventManagementPage() {
             Community Event Operations
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            Create new event listings with date, capacity limits, and tier access policies.
+            Publish events for {user?.activeOrganisation?.name || 'your organisation'} with daily schedules, venues and membership access.
           </p>
         </div>
 
         <button
           onClick={() => setIsCreateOpen(true)}
-          className="py-2.5 px-4 rounded-lg bg-brand-primary hover:bg-brand-secondary text-brand-ink font-bold text-xs flex items-center gap-2 transition-colors self-start sm:self-auto shadow-sm"
+          disabled={loading || Boolean(tiersError)}
+          className="py-2.5 px-4 rounded-lg bg-brand-primary hover:bg-brand-secondary text-brand-ink font-bold text-xs flex items-center gap-2 transition-colors self-start sm:self-auto shadow-sm disabled:opacity-50"
         >
           <Plus className="w-4 h-4" />
           <span>Create New Event</span>
         </button>
       </div>
 
+      {tiersError && <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-300 bg-white p-4 text-sm text-slate-700">
+        <p>Membership access options could not be loaded. {tiersError}</p>
+        <button onClick={loadEvents} className="font-semibold underline">Retry</button>
+      </div>}
+
       {/* Events List */}
       <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
         {loading ? (
           <div className="py-20 flex justify-center">
             <RefreshCw className="w-8 h-8 text-brand-ink animate-spin" />
+          </div>
+        ) : loadError ? (
+          <div role="alert" className="p-8 text-center text-sm text-slate-600">
+            <p>{loadError}</p><button onClick={loadEvents} className="mt-3 font-semibold underline">Retry</button>
           </div>
         ) : events.length === 0 ? (
           <div className="p-12 text-center text-xs text-slate-500">
@@ -92,6 +116,8 @@ export default function EventManagementPage() {
               <tbody className="divide-y divide-slate-100">
                 {events.map((evt) => {
                   const rsvpsCount = evt.rsvps?.length || 0;
+                  const accessLabel = getEventAccessLabel(evt, tiers);
+                  const eligibleTiers = evt.tierAccess === 'minimum' ? getEligibleEventTiers(tiers, evt.minimumTierId) : [];
                   return (
                     <tr key={evt._id} className="hover:bg-slate-50/75 transition-colors">
                       <td className="p-4">
@@ -101,13 +127,12 @@ export default function EventManagementPage() {
                         </div>
                       </td>
 
-                      <td className="p-4 text-slate-600">
-                        <div className="font-semibold text-slate-900">{evt.date}</div>
-                        <div className="text-[11px] text-slate-500">{evt.time}</div>
+                      <td className="p-4 min-w-[215px] text-slate-600">
+                        <EventSchedule event={evt} compact />
                       </td>
 
-                      <td className="p-4 text-slate-600 truncate max-w-[180px]">
-                        {evt.location}
+                      <td className="p-4 min-w-[170px] max-w-[230px] text-slate-600">
+                        <EventLocation event={evt} />
                       </td>
 
                       <td className="p-4">
@@ -127,31 +152,28 @@ export default function EventManagementPage() {
                       </td>
 
                       <td className="p-4">
+                        <p className="mb-1.5 text-xs font-semibold text-slate-700">{accessLabel}</p>
                         <div className="flex flex-wrap gap-1">
-                          {(!evt.allowedTiers || evt.allowedTiers.length === 0) ? (
-                            <span className="text-[10px] px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
-                              All
-                            </span>
-                          ) : (
-                            evt.allowedTiers.map((t, idx) => (
+                          {(evt.tierAccess === 'minimum' ? eligibleTiers.map(tier => tier.name) : evt.allowedTiers || []).map((name, idx) => (
                               <span
                                 key={idx}
                                 className="text-[10px] px-1.5 py-0.5 rounded bg-brand-50 text-brand-ink border border-brand-primary/30 font-medium"
                               >
-                                {t}
+                                {name}
                               </span>
-                            ))
-                          )}
+                            ))}
                         </div>
                       </td>
 
                       <td className="p-4 text-right">
                         <button
                           onClick={() => handleDeleteEvent(evt)}
-                          className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 border border-brand-silver text-brand-ink transition-colors"
+                          disabled={Boolean(deletingId)}
+                          className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 border border-brand-silver text-brand-ink transition-colors disabled:opacity-40"
                           title="Delete Event"
+                          aria-label={`Delete ${evt.title}`}
                         >
-                          <Trash2 className="w-4 h-4" />
+                          {deletingId === evt._id ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                         </button>
                       </td>
                     </tr>
@@ -168,6 +190,8 @@ export default function EventManagementPage() {
         isOpen={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
         onCreated={loadEvents}
+        tiers={tiers}
+        organisationId={organisationId}
       />
 
       {/* Attendee Roster Modal */}

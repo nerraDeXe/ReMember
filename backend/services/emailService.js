@@ -1,6 +1,7 @@
 import { EmailNotification, ActivityLog } from '../models/index.js';
 import { mailDelivery } from './mailDelivery.js';
 import { getOrganisationEmailSettings, interpolateOrganisationEmail } from '../../shared/organisationEmails.js';
+import { formatEventDateRange, formatEventTimeRange, getEventMapsUrl, getEventSchedule, hasEventCoordinates } from '../../shared/events.js';
 
 const escapeHtml = value => String(value).replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]));
 
@@ -105,6 +106,13 @@ export const emailService = {
    */
   async sendEventRsvpConfirmation(user, event) {
     const subject = `RSVP Confirmed: ${event.title} 🎟️`;
+    const schedule = getEventSchedule(event);
+    const scheduleHtml = schedule.map(day => `<li>${escapeHtml(day.date)}: ${escapeHtml(formatEventTimeRange(day))}</li>`).join('');
+    const structuredSchedule = Array.isArray(event.schedule) && event.schedule.length > 0;
+    const mapUrl = getEventMapsUrl(event);
+    const osmAttribution = hasEventCoordinates(event);
+    const timeZone = structuredSchedule && event.timeZone ? ` (${escapeHtml(event.timeZone)})` : '';
+    const textContent = `RSVP confirmed: ${event.title}\n\n${formatEventDateRange(event)}${structuredSchedule && event.timeZone ? ` (${event.timeZone})` : ''}\n${schedule.map(day => `${day.date}: ${formatEventTimeRange(day)}`).join('\n')}\n\nLocation: ${event.location || ''}${mapUrl ? `\nOpen in Google Maps: ${mapUrl}` : ''}${osmAttribution ? '\nLocation data © OpenStreetMap contributors: https://www.openstreetmap.org/copyright' : ''}\n\nGuest: ${user.name} (${user.membershipNumber})\nPlease present your digital membership pass at check-in.`;
     const htmlContent = `
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; background: #FFFFFF; color: #333333; padding: 32px; border-radius: 12px; border: 1px solid #BEBEBE; border-top: 4px solid #FFD700;">
         <div style="text-align: center; margin-bottom: 24px;">
@@ -112,10 +120,12 @@ export const emailService = {
           <p style="color: #555555; font-size: 14px; margin-top: 4px;">Community Event Reservation</p>
         </div>
         <div style="background: #FFFBE6; padding: 24px; border-radius: 8px; margin-bottom: 24px; border-left: 4px solid #F4D03F;">
-          <h2 style="margin-top: 0; color: #333333; font-size: 20px;">${event.title}</h2>
-          <p style="color: #555555; font-size: 14px; margin: 6px 0;"><strong>📅 Date & Time:</strong> ${event.date} (${event.time})</p>
-          <p style="color: #555555; font-size: 14px; margin: 6px 0;"><strong>📍 Location:</strong> ${event.location}</p>
-          <p style="color: #555555; font-size: 14px; margin: 6px 0;"><strong>👤 Guest:</strong> ${user.name} (${user.membershipNumber})</p>
+          <h2 style="margin-top: 0; color: #333333; font-size: 20px;">${escapeHtml(event.title)}</h2>
+          <p style="color: #555555; font-size: 14px; margin: 6px 0;"><strong>Date &amp; time:</strong> ${escapeHtml(formatEventDateRange(event))}${timeZone}</p>
+          <ul style="color: #555555; font-size: 14px; line-height: 1.7;">${scheduleHtml}</ul>
+          <p style="color: #555555; font-size: 14px; margin: 6px 0;"><strong>Location:</strong> ${escapeHtml(event.location || '')}${mapUrl ? ` &bull; <a href="${escapeHtml(mapUrl)}">Open in Google Maps</a>` : ''}</p>
+          ${osmAttribution ? '<p style="color: #777777; font-size: 11px;">Location data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a></p>' : ''}
+          <p style="color: #555555; font-size: 14px; margin: 6px 0;"><strong>Guest:</strong> ${escapeHtml(user.name)} (${escapeHtml(user.membershipNumber)})</p>
           <div style="margin-top: 16px; padding: 12px; background: #FFFFFF; border-radius: 6px; font-size: 13px; color: #555555;">
             Please present your digital membership pass at the check-in desk upon arrival.
           </div>
@@ -129,6 +139,7 @@ export const emailService = {
       type: 'EVENT_RSVP',
       subject,
       htmlContent,
+      textContent,
       userId: user._id,
       organisationId: event.organisationId
     });

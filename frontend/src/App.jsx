@@ -4,6 +4,7 @@ import { ToastProvider, useToast } from './context/ToastContext.jsx';
 
 import Navbar from './components/Navbar.jsx';
 import Sidebar from './components/Sidebar.jsx';
+import CommunicationLayout from './components/CommunicationLayout.jsx';
 
 // Pages
 import LandingPage from './pages/LandingPage.jsx';
@@ -33,6 +34,7 @@ import FinancialAnalyticsPage from './pages/admin/FinancialAnalyticsPage.jsx';
 import ActivityLogPage from './pages/admin/ActivityLogPage.jsx';
 import OrganisationsManagementPage from './pages/OrganisationsManagementPage.jsx';
 const EmailSettingsPage = lazy(() => import('./pages/admin/EmailSettingsPage.jsx'));
+const PostsPage = lazy(() => import('./pages/PostsPage.jsx'));
 
 import { api } from './api.js';
 import { getAccountHomePage, getPageAfterContextChange, isAccountPage } from './navigation.js';
@@ -184,7 +186,7 @@ function MainApp() {
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
       <Navbar onNavigate={handleNavigate} currentPage={currentPage} />
 
-      <div className="flex-1 flex max-w-7xl w-full mx-auto">
+      <div className="flex-1 flex flex-col md:flex-row max-w-7xl w-full mx-auto">
         {!isAccountPage(currentPage) && <Sidebar
           currentPage={currentPage}
           onNavigate={handleNavigate}
@@ -199,6 +201,7 @@ function MainApp() {
           {currentPage === 'member-profile' && <ProfilePage />}
           {currentPage === 'member-events' && <EventsCalendarPage />}
           {currentPage === 'member-invoices' && <InvoicesPage />}
+          {currentPage === 'member-communication' && <CommunicationLayout onNavigate={handleNavigate}><PostsPage /></CommunicationLayout>}
           {currentPage === 'member-pass' && (
             <div className="max-w-xl mx-auto space-y-6">
               <div>
@@ -225,7 +228,8 @@ function MainApp() {
             {currentPage === 'admin-members' && <MembersListPage />}
             {currentPage === 'admin-tiers' && <TiersManagementPage />}
             {currentPage === 'admin-events' && <EventManagementPage />}
-            {currentPage === 'admin-email-settings' && <EmailSettingsPage />}
+            {currentPage === 'admin-posts' && <CommunicationLayout onNavigate={handleNavigate}><PostsPage canManage /></CommunicationLayout>}
+            {currentPage === 'admin-email-settings' && <CommunicationLayout activeTab="email-settings" onNavigate={handleNavigate}><EmailSettingsPage embedded /></CommunicationLayout>}
             {currentPage === 'admin-finances' && <FinancialAnalyticsPage />}
             {currentPage === 'admin-logs' && <ActivityLogPage />}
           </>}
