@@ -1,0 +1,9 @@
+# Deployment metadata and local environment values
+.vercel/
+.env
+.env.*
+!.env.example
+
+# Generated dependencies and builds
+node_modules/
+dist/

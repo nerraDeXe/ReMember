@@ -30,8 +30,6 @@ export default function OrganisationsManagementPage({ onNavigate }) {
   const [visibilityFilter, setVisibilityFilter] = useState('all'); // 'all', 'public', 'private'
   const [openingId, setOpeningId] = useState(null);
   const [loadError, setLoadError] = useState('');
-  const ownedIds = new Set((user.ownedOrganisations || []).map(org => String(org._id)));
-  const joinedOrganisations = (user.memberships || []).filter(membership => !ownedIds.has(String(membership.organisationId)) && ['active', 'pending', 'expired'].includes(membership.status));
 
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -223,7 +221,6 @@ export default function OrganisationsManagementPage({ onNavigate }) {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <button onClick={() => onNavigate('member-organisations')} className="py-2.5 px-4 rounded-lg border border-slate-300 text-slate-700 font-semibold text-xs hover:bg-slate-100">Find Organisations</button>
             <button
               onClick={openCreateModal}
               className="py-2.5 px-4 rounded-lg bg-brand-primary hover:bg-brand-secondary text-brand-ink font-bold text-xs flex items-center gap-2 transition-colors shadow-sm"
@@ -283,22 +280,6 @@ export default function OrganisationsManagementPage({ onNavigate }) {
           <div className="text-[11px] text-slate-500 mt-1">Across your organisations</div>
         </div>
       </div>
-
-      {joinedOrganisations.length > 0 && (
-        <section aria-labelledby="joined-organisations-title" className="space-y-3">
-          <div><h2 id="joined-organisations-title" className="text-lg font-bold">Your Memberships</h2><p className="text-xs text-slate-600 mt-1">Open the member portal for an organisation you have joined.</p></div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {joinedOrganisations.map(membership => (
-              <article key={membership.organisationId} className="bg-white border border-slate-200 rounded-xl p-5 flex flex-col gap-3">
-                <div><h3 className="font-bold text-sm">{membership.organisationName}</h3><p className="text-xs text-slate-600 mt-1">{membership.tierName || 'Membership'} <span className="capitalize">({membership.status})</span></p></div>
-                <button disabled={!!openingId} onClick={() => openPortal(membership.organisationId)} className="mt-auto flex items-center justify-center gap-2 px-4 py-2.5 border border-slate-300 rounded-lg text-xs font-bold hover:bg-slate-100 disabled:opacity-60">
-                  {openingId === membership.organisationId ? <RefreshCw className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}Open Member Portal
-                </button>
-              </article>
-            ))}
-          </div>
-        </section>
-      )}
 
       <div><h2 className="text-lg font-bold">Organisations You Own</h2><p className="text-xs text-slate-600 mt-1">Each organisation has its own administration portal.</p></div>
       {loadError && <div role="alert" className="flex items-center justify-between gap-3 bg-white border border-slate-300 rounded-lg p-4 text-sm"><p>{loadError}</p><button onClick={loadOrganisations} className="font-semibold underline">Retry</button></div>}

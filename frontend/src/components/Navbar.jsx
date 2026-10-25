@@ -4,7 +4,6 @@ import { isAccountPage } from '../navigation.js';
 import {
   User,
   LogOut,
-  Megaphone,
   Building2,
   ChevronDown
 } from 'lucide-react';
@@ -108,18 +107,6 @@ export default function Navbar({ onNavigate, currentPage }) {
 
                     <button onClick={() => { onNavigate('member-organisations'); setUserMenuOpen(false); }} className="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2"><Building2 className="w-3.5 h-3.5" />Find Organisations</button>
                     <button onClick={() => { onNavigate('organisation-setup'); setUserMenuOpen(false); }} className="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2"><Building2 className="w-3.5 h-3.5" />Create Organisation</button>
-                    {user?.activeOrganisationId && (
-                      <button
-                        onClick={() => {
-                          onNavigate(isAdmin ? 'admin-posts' : 'member-communication');
-                          setUserMenuOpen(false);
-                        }}
-                        className="w-full text-left px-4 py-2 text-xs text-slate-700 hover:text-slate-900 hover:bg-slate-50 flex items-center gap-2"
-                      >
-                        <Megaphone className="w-3.5 h-3.5 text-slate-400" />
-                        <span>Communication</span>
-                      </button>
-                    )}
                   </div>
 
                   <div className="border-t border-slate-100 pt-1">

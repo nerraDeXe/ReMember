@@ -98,10 +98,6 @@ export default function LandingPage({ onNavigate }) {
             </span>
           </h1>
 
-          <p className="mt-5 text-base sm:text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
-            Search active communities, innovation consortiums, and cultural societies. Seamless Google Wallet pass issuance, automated access control, and dynamic event ticketing.
-          </p>
-
           {/* Hero Quick Search Shortcut */}
           <div className="mt-8 max-w-2xl mx-auto">
             <div className="relative flex items-center">

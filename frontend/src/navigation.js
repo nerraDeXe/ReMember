@@ -1,4 +1,4 @@
-const accountPages = new Set(['account-organisations', 'member-organisations', 'member-profile', 'organisation-setup']);
+const accountPages = new Set(['account-organisations', 'account-memberships', 'member-organisations', 'member-profile', 'organisation-setup']);
 
 export function isAccountPage(page) {
   return accountPages.has(page);
@@ -6,7 +6,7 @@ export function isAccountPage(page) {
 
 export function getAccountHomePage(account) {
   if (account?.ownedOrganisations?.length || account?.organisationRole === 'owner') return 'account-organisations';
-  return account?.activeOrganisationId ? 'member-dashboard' : 'member-organisations';
+  return account?.activeOrganisationId ? 'member-dashboard' : 'account-memberships';
 }
 
 export function getPageAfterContextChange(page, account) {

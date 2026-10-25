@@ -46,9 +46,7 @@ export default function Sidebar({ currentPage, onNavigate, isAdmin }) {
     { label: 'Your community', links: [
       { id: 'member-communication', label: 'Communication', icon: Megaphone },
       ...(membershipActive ? [{ id: 'member-events', label: 'Events & RSVP', icon: Calendar }] : []),
-      { id: 'member-organisations', label: 'Explore Organisations', icon: Building2 },
     ] },
-    { label: 'Account', links: [{ id: 'member-profile', label: 'Personal Profile', icon: User }] },
   ];
   const accountGroups = [{ label: 'My account', links: [
     { id: 'account-organisations', label: 'My Organisations', icon: Building2 },

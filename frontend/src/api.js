@@ -1,4 +1,5 @@
-const API_BASE = '/api';
+// Vite replaces this public URL at build time; local development uses its proxy.
+const API_BASE = (import.meta.env?.VITE_API_BASE_URL?.trim() || '/api').replace(/\/+$/, '');
 
 // All API calls share authentication, response parsing and expired-session handling.
 export async function apiRequest(endpoint, options = {}) {

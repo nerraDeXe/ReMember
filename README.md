@@ -32,6 +32,8 @@ A web-based Membership Management System engineered with **React**, **Tailwind C
 
 ## 🚀 Quick Start Guide
 
+For hosted deployment, follow the [Vercel deployment guide](docs/VERCEL_DEPLOYMENT.md).
+
 ### 1. Backend Server
 Set `MONGODB_URI` in `backend/.env` using `backend/.env.example` as a guide. The backend requires MongoDB to be available and does not store a local database copy.
 Configure SMTP to send account verification emails. See [account and organisation setup](backend/ACCOUNT_FLOW.md) for the new signup flow and required email settings.

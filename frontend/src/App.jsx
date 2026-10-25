@@ -21,7 +21,6 @@ import MemberDashboard from './pages/member/MemberDashboard.jsx';
 const ProfilePage = lazy(() => import('./pages/member/ProfilePage.jsx'));
 import EventsCalendarPage from './pages/member/EventsCalendarPage.jsx';
 import InvoicesPage from './pages/member/InvoicesPage.jsx';
-import MemberOrganisationsPage from './pages/member/MemberOrganisationsPage.jsx';
 import GoogleWalletPass from './components/GoogleWalletPass.jsx';
 import PaymentModal from './components/PaymentModal.jsx';
 
@@ -32,7 +31,7 @@ import TiersManagementPage from './pages/admin/TiersManagementPage.jsx';
 import EventManagementPage from './pages/admin/EventManagementPage.jsx';
 import FinancialAnalyticsPage from './pages/admin/FinancialAnalyticsPage.jsx';
 import ActivityLogPage from './pages/admin/ActivityLogPage.jsx';
-import OrganisationsManagementPage from './pages/OrganisationsManagementPage.jsx';
+import AccountHomePage from './pages/AccountHomePage.jsx';
 const EmailSettingsPage = lazy(() => import('./pages/admin/EmailSettingsPage.jsx'));
 const PostsPage = lazy(() => import('./pages/PostsPage.jsx'));
 
@@ -115,6 +114,7 @@ function MainApp() {
   };
 
   const handleNavigate = (page, options = {}) => {
+    if (page === 'member-organisations') page = 'account-memberships';
     if (page === 'login' && getCurrentUser()) page = 'account-home';
     if (page === 'login') setLoginEmail(options.email || '');
     if (['forgot-password', 'reset-password', 'login'].includes(page)) {
@@ -141,7 +141,7 @@ function MainApp() {
 
     if (page === 'member-renew') {
       if (!user?.activeOrganisationId || isAdmin) {
-        setCurrentPage('member-organisations');
+        setCurrentPage('account-memberships');
         return;
       }
       setIsRenewModalOpen(true);
@@ -194,10 +194,9 @@ function MainApp() {
         />}
 
         <main key={isAccountPage(currentPage) ? user._id : user.activeOrganisationId || 'account'} className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 overflow-y-auto">
-          {currentPage === 'account-organisations' && <OrganisationsManagementPage onNavigate={handleNavigate} />}
+          {['account-organisations', 'account-memberships', 'member-organisations'].includes(currentPage) && <AccountHomePage activeTab={currentPage === 'account-organisations' ? 'organisations' : 'memberships'} onNavigate={handleNavigate} onJoined={handleJoinedOrganisation} />}
           {/* Member Routes */}
           {currentPage === 'member-dashboard' && <MemberDashboard onNavigate={handleNavigate} />}
-          {currentPage === 'member-organisations' && <MemberOrganisationsPage onNavigate={handleNavigate} onJoined={handleJoinedOrganisation} />}
           {currentPage === 'member-profile' && <ProfilePage />}
           {currentPage === 'member-events' && <EventsCalendarPage />}
           {currentPage === 'member-invoices' && <InvoicesPage />}
