@@ -13,29 +13,20 @@ import {
 import { api } from '../../api.js';
 import StatusBadge from '../../components/StatusBadge.jsx';
 import GoogleWalletPass from '../../components/GoogleWalletPass.jsx';
-import PaymentModal from '../../components/PaymentModal.jsx';
 import EventSchedule, { EventLocation } from '../../components/EventSchedule.jsx';
 
 export default function MemberDashboard({ onNavigate }) {
   const { user, refreshUser } = useAuth();
   const { showToast } = useToast();
   const [dashboardData, setDashboardData] = useState(null);
-  const [tiers, setTiers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isRenewModalOpen, setIsRenewModalOpen] = useState(false);
 
   const loadData = async () => {
     try {
-      const [dashRes, tiersRes] = await Promise.all([
-        api.getMemberDashboard(),
-        api.getTiers(),
-      ]);
+      const dashRes = await api.getMemberDashboard();
 
       if (dashRes.success) {
         setDashboardData(dashRes);
-      }
-      if (tiersRes.success) {
-        setTiers(tiersRes.tiers || []);
       }
     } catch (err) {
       console.error('Failed to load member dashboard:', err);
@@ -112,7 +103,7 @@ export default function MemberDashboard({ onNavigate }) {
           {/* Quick Action Renewal Button */}
           <div className="flex items-center gap-3">
             <button
-              onClick={() => setIsRenewModalOpen(true)}
+              onClick={() => onNavigate('member-renew')}
               className="py-2.5 px-5 rounded-lg bg-brand-primary hover:bg-brand-secondary text-brand-ink font-bold text-xs flex items-center gap-2 transition-colors shadow-sm"
             >
               <CreditCard className="w-4 h-4" />
@@ -146,7 +137,7 @@ export default function MemberDashboard({ onNavigate }) {
               user={membership}
               walletData={membership?.googleWallet}
               onSync={handleWalletSync}
-            /> : <div className="space-y-3 text-sm text-slate-600"><p>Your membership pass will be available when your membership is active.</p><button onClick={() => setIsRenewModalOpen(true)} className="px-4 py-2 rounded-lg bg-brand-primary text-brand-ink font-semibold">Complete Membership</button></div>}
+            /> : <div className="space-y-3 text-sm text-slate-600"><p>Your membership pass will be available when your membership is active.</p><button onClick={() => onNavigate('member-renew')} className="px-4 py-2 rounded-lg bg-brand-primary text-brand-ink font-semibold">Complete Membership</button></div>}
           </div>
         </div>
 
@@ -162,7 +153,7 @@ export default function MemberDashboard({ onNavigate }) {
                 </p>
               </div>
               <button
-                onClick={() => setIsRenewModalOpen(true)}
+                onClick={() => onNavigate('member-renew')}
                 className="text-xs font-semibold text-brand-ink hover:underline"
               >
                 Upgrade Tier &rarr;
@@ -262,17 +253,6 @@ export default function MemberDashboard({ onNavigate }) {
         </div>
       </div>
 
-      {/* Payment Renewal Modal */}
-      <PaymentModal
-        isOpen={isRenewModalOpen}
-        onClose={() => setIsRenewModalOpen(false)}
-        user={membership}
-        tiers={tiers}
-        onSuccess={() => {
-          loadData();
-          refreshUser();
-        }}
-      />
     </div>
   );
 }

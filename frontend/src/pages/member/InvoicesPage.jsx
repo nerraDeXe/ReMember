@@ -3,20 +3,27 @@ import { Receipt, Download, Eye, RefreshCw, CheckCircle2, AlertCircle } from 'lu
 import { api } from '../../api.js';
 import { useToast } from '../../context/ToastContext.jsx';
 import InvoiceModal from '../../components/InvoiceModal.jsx';
+import { useUrlQuery, useUrlState } from '../../routing.jsx';
 
 export default function InvoicesPage() {
   const { showToast } = useToast();
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [invoiceId, setInvoiceId] = useUrlState('invoice');
+  const { closeQuery } = useUrlQuery();
+  const [loadError, setLoadError] = useState('');
+  const selectedInvoice = invoices.find(invoice => String(invoice._id) === invoiceId) || null;
 
   const loadInvoices = async () => {
+    setLoading(true);
+    setLoadError('');
     try {
       const data = await api.getMemberInvoices();
       if (data.success) {
         setInvoices(data.invoices || []);
       }
     } catch (err) {
+      setLoadError(err.message || 'Could not load invoices.');
       console.error('Failed to load invoices:', err);
       showToast('Could not load invoices: ' + err.message, 'error');
     } finally {
@@ -111,7 +118,7 @@ export default function InvoicesPage() {
                       </td>
                       <td className="p-4 text-right space-x-2">
                         <button
-                          onClick={() => setSelectedInvoice(inv)}
+                          onClick={() => setInvoiceId(String(inv._id))}
                           className="p-1.5 rounded bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 transition-colors"
                           title="View Printable Receipt"
                         >
@@ -134,10 +141,19 @@ export default function InvoicesPage() {
         )}
       </div>
 
+      {invoiceId && !selectedInvoice && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-muted/35">
+          <div role="dialog" aria-modal="true" aria-label="Invoice receipt" className="bg-white border border-slate-200 rounded-xl w-full max-w-lg p-6 space-y-4">
+            <p role={loading ? 'status' : 'alert'} className="text-sm text-slate-700">{loading ? 'Loading invoice...' : loadError || 'This invoice could not be found in your current membership.'}</p>
+            {loadError && <button onClick={loadInvoices} className="mr-4 text-sm font-semibold text-brand-ink hover:underline">Retry</button>}
+            <button onClick={() => closeQuery(['invoice'])} className="text-sm font-semibold text-brand-ink hover:underline">Back to invoices</button>
+          </div>
+        </div>
+      )}
       <InvoiceModal
         invoice={selectedInvoice}
         isOpen={!!selectedInvoice}
-        onClose={() => setSelectedInvoice(null)}
+        onClose={() => closeQuery(['invoice'])}
       />
     </div>
   );

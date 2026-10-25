@@ -94,6 +94,18 @@ test('Event requests carry the captured organisation for stale portal checks', a
   assert.equal(searchUrl.searchParams.get('organisationId'), organisationId);
 });
 
+test('Direct member and post reads encode IDs and retain post organisation scope', async (t) => {
+  const browser = mockBrowser(t);
+  await api.getAdminMember('member/a & b');
+  await api.getPost('post/a & b', 'org/a & b');
+  await api.getPost('post-2');
+  assert.equal(browser.requests[0].url, '/api/admin/members/member%2Fa%20%26%20b');
+  const postUrl = new URL(browser.requests[1].url, 'https://remember.example');
+  assert.equal(postUrl.pathname, '/api/posts/post%2Fa%20%26%20b');
+  assert.equal(postUrl.searchParams.get('organisationId'), 'org/a & b');
+  assert.equal(browser.requests[2].url, '/api/posts/post-2');
+});
+
 test('CSV exports return a Blob through shared authentication even with a generic MIME type', async (t) => {
   const csv = 'Name,Email\r\nMember,member@example.com';
   const browser = mockBrowser(t, (state) => new Response(csv, {

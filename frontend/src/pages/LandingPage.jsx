@@ -16,13 +16,17 @@ import {
 import { api } from '../api.js';
 import OrganisationImage from '../components/OrganisationImage.jsx';
 import { filterOrganisations } from '../organisationDirectory.js';
+import { useUrlQuery, useUrlState } from '../routing.jsx';
 
 export default function LandingPage({ onNavigate }) {
   const [organisations, setOrganisations] = useState([]);
   const [loadingOrgs, setLoadingOrgs] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
-  const [selectedOrg, setSelectedOrg] = useState(null);
+  const [searchQuery, setSearchQuery] = useUrlState('search', '', { replace: true });
+  const [selectedCategory, setSelectedCategory] = useUrlState('category', 'All', { replace: true });
+  const [selectedOrgId, setSelectedOrgId] = useUrlState('organisationDetails');
+  const { closeQuery } = useUrlQuery();
+  const [loadError, setLoadError] = useState('');
+  const selectedOrg = organisations.find(org => String(org._id) === selectedOrgId) || null;
 
   useEffect(() => {
     async function fetchOrganisations() {
@@ -34,6 +38,7 @@ export default function LandingPage({ onNavigate }) {
           setOrganisations(data.organisations || []);
         }
       } catch (err) {
+        setLoadError(err.message || 'Could not load public organisations.');
         console.error('Failed to load organisations:', err);
       } finally {
         setLoadingOrgs(false);
@@ -273,7 +278,7 @@ export default function LandingPage({ onNavigate }) {
 
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => setSelectedOrg(org)}
+                      onClick={() => setSelectedOrgId(String(org._id))}
                       className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-200 transition-colors"
                     >
                       Details
@@ -340,15 +345,24 @@ export default function LandingPage({ onNavigate }) {
       </section>
 
       {/* Organisation Details Modal */}
+      {selectedOrgId && !selectedOrg && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-muted/40">
+          <div role="dialog" aria-modal="true" aria-label="Organisation details" className="bg-white border border-slate-200 rounded-xl w-full max-w-lg p-6 space-y-4">
+            <p role={loadingOrgs ? 'status' : 'alert'} className="text-sm text-slate-700">{loadingOrgs ? 'Loading organisation...' : loadError || 'This public organisation could not be found.'}</p>
+            <button onClick={() => closeQuery(['organisationDetails'])} className="text-sm font-semibold text-brand-ink hover:underline">Back to directory</button>
+          </div>
+        </div>
+      )}
       {selectedOrg && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-muted/40 backdrop-blur-xs animate-fadeIn">
-          <div className="bg-white rounded-2xl max-w-xl w-full border border-slate-200 shadow-2xl overflow-hidden animate-scaleUp max-h-[90vh] flex flex-col">
+          <div role="dialog" aria-modal="true" aria-label={`${selectedOrg.name} details`} className="bg-white rounded-2xl max-w-xl w-full border border-slate-200 shadow-2xl overflow-hidden animate-scaleUp max-h-[90vh] flex flex-col">
             {/* Modal Header Banner */}
             <div className="h-36 relative overflow-hidden bg-slate-100 shrink-0">
               <OrganisationImage src={selectedOrg.bannerUrl} kind="banner" alt={`${selectedOrg.name} banner`} className="w-full h-full" />
               <div className="absolute inset-0 bg-brand-muted/10" />
               <button
-                onClick={() => setSelectedOrg(null)}
+                onClick={() => closeQuery(['organisationDetails'])}
+                aria-label="Close organisation details"
                 className="absolute top-3.5 right-3.5 w-8 h-8 rounded-full bg-white hover:bg-slate-100 text-brand-ink flex items-center justify-center transition-colors"
               >
                 <X className="w-4 h-4" />
@@ -441,14 +455,13 @@ export default function LandingPage({ onNavigate }) {
 
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setSelectedOrg(null)}
+                  onClick={() => closeQuery(['organisationDetails'])}
                   className="px-4 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-200 transition-colors"
                 >
                   Close
                 </button>
                 <button
                   onClick={() => {
-                    setSelectedOrg(null);
                     onNavigate('register');
                   }}
                   className="px-5 py-2 rounded-lg text-xs font-bold bg-brand-primary hover:bg-brand-secondary text-brand-ink flex items-center gap-1.5 transition-colors shadow-sm"

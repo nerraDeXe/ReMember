@@ -15,12 +15,13 @@ import {
 } from 'lucide-react';
 import { api } from '../../api.js';
 import { useToast } from '../../context/ToastContext.jsx';
+import { useUrlState } from '../../routing.jsx';
 
 export default function ActivityLogPage() {
   const { showToast } = useToast();
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [actionFilter, setActionFilter] = useState('all');
+  const [actionFilter, setActionFilter] = useUrlState('action', 'all');
 
   const loadLogs = async (currentPage = 1) => {
     setLoading(true);

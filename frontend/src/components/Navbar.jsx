@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { isAccountPage } from '../navigation.js';
+import PageLink from './PageLink.jsx';
 import {
   User,
   LogOut,
@@ -19,8 +20,8 @@ export default function Navbar({ onNavigate, currentPage }) {
       <header className="sticky top-0 z-40 w-full border-b border-slate-200 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           {/* Logo */}
-          <div
-            onClick={() => onNavigate(accountPage ? 'account-home' : adminPortal ? 'admin-dashboard' : 'member-dashboard')}
+          <PageLink
+            page={accountPage ? 'account-home' : adminPortal ? 'admin-dashboard' : 'member-dashboard'} onNavigate={onNavigate}
             className="flex items-center gap-3 cursor-pointer group"
           >
             
@@ -43,13 +44,13 @@ export default function Navbar({ onNavigate, currentPage }) {
               </div>
               
             </div>
-          </div>
+          </PageLink>
 
           {/* Right Tools & Profile */}
           <div className="flex items-center gap-3">
-            <button onClick={() => onNavigate('account-organisations')} aria-label="My Organisations" className={`flex items-center gap-1.5 px-2 sm:px-3 py-2 rounded-lg text-xs font-semibold border ${currentPage === 'account-organisations' ? 'bg-brand-primary border-brand-primary text-brand-ink' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100'}`}>
+            <PageLink page="account-organisations" onNavigate={onNavigate} aria-label="My Organisations" className={`flex items-center gap-1.5 px-2 sm:px-3 py-2 rounded-lg text-xs font-semibold border ${currentPage === 'account-organisations' ? 'bg-brand-primary border-brand-primary text-brand-ink' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100'}`}>
               <Building2 className="w-4 h-4" /><span className="hidden sm:inline">My Organisations</span>
-            </button>
+            </PageLink>
 
             {/* User Profile Pill */}
             <div className="relative">
@@ -93,20 +94,19 @@ export default function Navbar({ onNavigate, currentPage }) {
                   </div>
 
                   <div className="py-1">
-                    <button onClick={() => { onNavigate('account-organisations'); setUserMenuOpen(false); }} className="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2"><Building2 className="w-3.5 h-3.5" />My Organisations</button>
-                      <button
+                    <PageLink page="account-organisations" onNavigate={onNavigate} onClick={() => setUserMenuOpen(false)} className="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2"><Building2 className="w-3.5 h-3.5" />My Organisations</PageLink>
+                      <PageLink page="member-profile" onNavigate={onNavigate}
                         onClick={() => {
-                          onNavigate('member-profile');
                           setUserMenuOpen(false);
                         }}
                         className="w-full text-left px-4 py-2 text-xs text-slate-700 hover:text-slate-900 hover:bg-slate-50 flex items-center gap-2"
                       >
                         <User className="w-3.5 h-3.5 text-slate-400" />
                         <span>Edit Personal Profile</span>
-                      </button>
+                      </PageLink>
 
-                    <button onClick={() => { onNavigate('member-organisations'); setUserMenuOpen(false); }} className="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2"><Building2 className="w-3.5 h-3.5" />Find Organisations</button>
-                    <button onClick={() => { onNavigate('organisation-setup'); setUserMenuOpen(false); }} className="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2"><Building2 className="w-3.5 h-3.5" />Create Organisation</button>
+                    <PageLink page="member-organisations" onNavigate={onNavigate} onClick={() => setUserMenuOpen(false)} className="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2"><Building2 className="w-3.5 h-3.5" />Find Organisations</PageLink>
+                    <PageLink page="organisation-setup" onNavigate={onNavigate} onClick={() => setUserMenuOpen(false)} className="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2"><Building2 className="w-3.5 h-3.5" />Create Organisation</PageLink>
                   </div>
 
                   <div className="border-t border-slate-100 pt-1">

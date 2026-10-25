@@ -225,6 +225,23 @@ test('Status and tier administration affect only the selected organisation assoc
   assert.equal(walletCalls[0].organisationId, 'A');
 });
 
+test('Direct member links require ownership and return only a member of the selected organisation', async () => {
+  const result = await request(adminRouter, 'GET', '/members/:id', { userId: 'ownerA', params: { id: 'member' } });
+  assert.equal(result.status, 200);
+  assert.equal(result.body.member._id, 'member');
+  assert.equal(result.body.member.organisationId, 'A');
+  assert.equal(result.body.member.tierId, 'A-free');
+  assert.ok(!JSON.stringify(result.body).includes('HASH_MUST_NEVER_LEAK'));
+  assert.ok(!JSON.stringify(result.body).includes('CODE_MUST_NEVER_LEAK'));
+  for (const id of ['foreign', 'ownerA', 'missing', '$invalid']) {
+    assert.equal((await request(adminRouter, 'GET', '/members/:id', { userId: 'ownerA', params: { id } })).status, 404);
+  }
+  assert.equal((await request(adminRouter, 'GET', '/members/:id', { params: { id: 'member' } })).status, 403);
+  assert.equal((await request(adminRouter, 'GET', '/members/:id', { userId: null, params: { id: 'member' } })).status, 401);
+  records.User.find(user => user._id === 'ownerA').activeOrganisationId = 'B';
+  assert.equal((await request(adminRouter, 'GET', '/members/:id', { userId: 'ownerA', params: { id: 'member' } })).status, 403);
+});
+
 test('Owner financial totals and audit logs exclude other organisations', async () => {
   const summary = await request(adminRouter, 'GET', '/financial-summary', { userId: 'ownerA' });
   assert.equal(summary.body.metrics.totalRevenue, 25);

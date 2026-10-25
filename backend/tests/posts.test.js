@@ -141,6 +141,21 @@ test('Members read only their selected organisation posts without internal metad
   assert.deepEqual((await request('GET')).body.posts.map(post => post._id), ['post-B']);
 });
 
+test('Direct post links load within the selected organisation without exposing internal fields', async () => {
+  const result = await request('GET', '/:id', { params: { id: 'post-A' }, query: { organisationId: 'A' } });
+  assert.equal(result.status, 200);
+  assert.equal(result.body.post._id, 'post-A');
+  assert.equal(result.body.post.organisationId, 'A');
+  assert.ok(!JSON.stringify(result.body).includes('authorId'));
+  assert.ok(!JSON.stringify(result.body).includes('__v'));
+  for (const id of ['post-B', 'missing', '$invalid']) {
+    assert.equal((await request('GET', '/:id', { params: { id } })).status, 404);
+  }
+  assert.equal((await request('GET', '/:id', { params: { id: 'post-A' }, query: { organisationId: 'B' } })).status, 409);
+  assert.equal((await request('GET', '/:id', { userId: null, params: { id: 'post-A' } })).status, 401);
+  assert.equal((await request('GET', '/:id', { userId: 'outsider', params: { id: 'post-A' } })).status, 400);
+});
+
 test('Pending and expired members retain notices while suspended and revoked members lose access', async () => {
   const membership = records.OrganisationMembership[0];
   for (const status of ['pending', 'expired']) {

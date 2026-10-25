@@ -1,6 +1,7 @@
 import React from 'react';
 import { FileText, Mail, Megaphone, Building2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
+import PageLink from './PageLink.jsx';
 
 export default function CommunicationLayout({ activeTab = 'posts', onNavigate, children }) {
   const { user, isAdmin } = useAuth();
@@ -21,7 +22,7 @@ export default function CommunicationLayout({ activeTab = 'posts', onNavigate, c
         <nav aria-label="Communication sections" className="flex gap-5 px-5 sm:px-6 border-t border-slate-100">
           {tabs.map(tab => {
             const Icon = tab.icon;
-            return <button key={tab.id} type="button" onClick={() => onNavigate(tab.page)} aria-current={activeTab === tab.id ? 'page' : undefined} className={`inline-flex items-center gap-2 py-3.5 border-b-2 text-xs font-bold transition-colors ${activeTab === tab.id ? 'border-brand-primary text-slate-900' : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'}`}><Icon className="w-4 h-4" aria-hidden="true" />{tab.label}</button>;
+            return <PageLink key={tab.id} page={tab.page} onNavigate={onNavigate} aria-current={activeTab === tab.id ? 'page' : undefined} className={`inline-flex items-center gap-2 py-3.5 border-b-2 text-xs font-bold transition-colors ${activeTab === tab.id ? 'border-brand-primary text-slate-900' : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'}`}><Icon className="w-4 h-4" aria-hidden="true" />{tab.label}</PageLink>;
           })}
         </nav>
       </header>

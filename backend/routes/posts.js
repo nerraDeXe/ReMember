@@ -85,6 +85,17 @@ router.get('/', async (req, res) => {
   }
 });
 
+router.get('/:id', async (req, res) => {
+  try {
+    const post = await OrganisationPost.findOne({ _id: req.params.id, organisationId: req.organisationId }).lean();
+    if (!post) return res.status(404).json({ success: false, message: 'Post not found in this organisation.' });
+    res.json({ success: true, post: postView(post) });
+  } catch (error) {
+    console.error('Fetch post error:', error);
+    res.status(500).json({ success: false, message: 'Unable to load this organisation post. Please try again.' });
+  }
+});
+
 router.post('/', requireOrganisationOwner, async (req, res) => {
   let fields;
   try { fields = postInput(req.body, true); }

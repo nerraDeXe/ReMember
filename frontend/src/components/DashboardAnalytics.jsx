@@ -3,6 +3,7 @@ import { AlertCircle, ArrowRight, BarChart3, RefreshCw } from 'lucide-react';
 import { api } from '../api.js';
 import { TrendChart, DonutChart } from './AnalyticsCharts.jsx';
 import { defaultAnalyticsRange, validateAnalyticsRange } from '../analyticsRange.js';
+import { useUrlQuery, useUrlState } from '../routing.jsx';
 
 const number = (value) => Number(value || 0).toLocaleString('en-US');
 const money = (value) => Number(value || 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
@@ -37,14 +38,20 @@ function ChartLoading() {
 }
 
 export default function DashboardAnalytics({ organisationId, onNavigate }) {
-  const [range, setRange] = useState(defaultAnalyticsRange);
-  const [draftRange, setDraftRange] = useState(defaultAnalyticsRange);
+  const { query, updateQuery } = useUrlQuery();
+  const requestedStart = query.get('startMonth');
+  const requestedEnd = query.get('endMonth');
+  const range = requestedStart && requestedEnd && !validateAnalyticsRange(requestedStart, requestedEnd)
+    ? { startMonth: requestedStart, endMonth: requestedEnd } : defaultAnalyticsRange();
+  const [draftRange, setDraftRange] = useState(range);
   const [revision, setRevision] = useState(0);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
-  const [membershipMetric, setMembershipMetric] = useState('newMembers');
-  const [demographic, setDemographic] = useState('countries');
+  const [requestedMetric, setMembershipMetric] = useUrlState('metric', 'newMembers');
+  const membershipMetric = requestedMetric === 'totalMembers' ? 'totalMembers' : 'newMembers';
+  const [requestedDemographic, setDemographic] = useUrlState('demographic', 'countries');
+  const demographic = ['tiers', 'statuses'].includes(requestedDemographic) ? requestedDemographic : 'countries';
   const { startMonth, endMonth } = range;
   const currentMonth = defaultAnalyticsRange().endMonth;
   const rangeError = validateAnalyticsRange(draftRange.startMonth, draftRange.endMonth);
@@ -55,9 +62,11 @@ export default function DashboardAnalytics({ organisationId, onNavigate }) {
     if (draftRange.startMonth === startMonth && draftRange.endMonth === endMonth) {
       setRevision((value) => value + 1);
     } else {
-      setRange({ ...draftRange });
+      updateQuery({ startMonth: draftRange.startMonth, endMonth: draftRange.endMonth });
     }
   };
+
+  useEffect(() => { setDraftRange({ startMonth, endMonth }); }, [startMonth, endMonth]);
 
   useEffect(() => {
     let cancelled = false;

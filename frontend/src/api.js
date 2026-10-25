@@ -91,6 +91,7 @@ export const api = {
 
   // Admin
   getAdminMembers: (params) => get('/admin/members', params),
+  getAdminMember: (id) => apiRequest(`/admin/members/${encodeURIComponent(id)}`),
   updateMemberStatus: (id, status, reason) => put(`/admin/members/${id}/status`, { status, reason }),
   updateMemberTier: (id, tierId) => put(`/admin/members/${id}/tier`, { tierId }),
   getFinancialSummary: () => apiRequest('/admin/financial-summary'),
@@ -100,6 +101,7 @@ export const api = {
 
   // Organisation communication
   getPosts: (params) => get('/posts', params),
+  getPost: (id, organisationId) => get(`/posts/${encodeURIComponent(id)}`, organisationId ? { organisationId } : {}),
   createPost: (data) => post('/posts', data),
   updatePost: (id, data) => put(`/posts/${encodeURIComponent(id)}`, data),
   deletePost: (id, organisationId) => apiRequest(`/posts/${encodeURIComponent(id)}${organisationId ? `?${new URLSearchParams({ organisationId })}` : ''}`, { method: 'DELETE' }),

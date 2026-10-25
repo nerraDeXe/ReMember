@@ -3,10 +3,12 @@ import AccountShell from '../components/AccountShell.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { api } from '../api.js';
 import { PASSWORD_HINT, passwordError } from '../../../shared/accountRules.js';
+import { useUrlQuery } from '../routing.jsx';
 
 export default function ResetPasswordPage({ onNavigate }) {
   const { logout } = useAuth();
-  const token = new URLSearchParams(window.location.hash.split('?')[1]).get('token') || '';
+  const { query, updateQuery } = useUrlQuery();
+  const token = query.get('token') || '';
   const [password, setPassword] = useState('');
   const [confirmation, setConfirmation] = useState('');
   const [busy, setBusy] = useState(false);
@@ -17,7 +19,7 @@ export default function ResetPasswordPage({ onNavigate }) {
     const invalidPassword = passwordError(password);
     if (invalidPassword || password !== confirmation) { setError(invalidPassword || 'The passwords do not match.'); return; }
     setBusy(true); setError('');
-    try { await api.resetPassword(token, password); logout(); window.history.replaceState(null, '', window.location.pathname + window.location.search); setDone(true); }
+    try { await api.resetPassword(token, password); logout(); updateQuery({ token: null }, { replace: true }); setDone(true); }
     catch (err) { setError(err.message); }
     finally { setBusy(false); }
   };

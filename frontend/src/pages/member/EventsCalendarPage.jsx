@@ -5,13 +5,14 @@ import { Calendar, Users, CheckCircle, XCircle, RefreshCw, Filter } from 'lucide
 import { api } from '../../api.js';
 import EventSchedule, { EventLocation } from '../../components/EventSchedule.jsx';
 import { getEventAccessLabel } from '../../../../shared/events.js';
+import { useUrlState } from '../../routing.jsx';
 
 export default function EventsCalendarPage() {
   const { user, getCurrentUser } = useAuth();
   const { showToast } = useToast();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useUrlState('category', 'all');
   const [actionPendingId, setActionPendingId] = useState(null);
   const organisationId = user?.activeOrganisationId;
   const requestVersion = useRef(0);

@@ -51,6 +51,15 @@ router.get('/members', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+router.get('/members/:id', async (req, res, next) => {
+  try {
+    const membership = await OrganisationMembership.findOne({ organisationId: req.organisationId, userId: req.params.id, role: 'member' });
+    const account = membership && await User.findById(req.params.id);
+    if (!account) return res.status(404).json({ success: false, message: 'Member not found in this organisation.' });
+    res.json({ success: true, member: membershipView(account, membership) });
+  } catch (err) { next(err); }
+});
+
 router.put('/members/:id/status', async (req, res, next) => {
   try {
     const { status, reason } = req.body;

@@ -3,6 +3,7 @@ import { Mail, Save, RefreshCw, Eye } from 'lucide-react';
 import { api } from '../../api.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useToast } from '../../context/ToastContext.jsx';
+import { useUrlState } from '../../routing.jsx';
 import {
   getOrganisationEmailSettings,
   normaliseOrganisationEmailSettings,
@@ -25,7 +26,8 @@ export default function EmailSettingsPage({ embedded = false }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [previewType, setPreviewType] = useState('welcome');
+  const [requestedPreview, setPreviewType] = useUrlState('preview', 'welcome');
+  const previewType = emailTypes.some(type => type.key === requestedPreview) ? requestedPreview : 'welcome';
   const [reload, setReload] = useState(0);
 
   useEffect(() => {

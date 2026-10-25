@@ -7,6 +7,7 @@ import ImageUploadField from '../components/ImageUploadField.jsx';
 import PostCard from '../components/PostCard.jsx';
 import { POST_LIMITS } from '../../../shared/posts.js';
 import { postContentText } from '../../../shared/postContent.js';
+import { useUrlState, useNavigation } from '../routing.jsx';
 
 const blankPost = () => ({ title: '', subtitle: '', imageUrl: '', description: '', descriptionContent: null });
 const inputClass = 'w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-primary disabled:bg-slate-50 disabled:text-slate-500';
@@ -20,13 +21,20 @@ export default function PostsPage({ canManage = false }) {
   const organisationName = user?.activeOrganisation?.name || 'your organisation';
   const [posts, setPosts] = useState([]);
   const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
+  const [pageRoute, setPageRoute] = useUrlState('page', '1');
+  const requestedPage = Number(pageRoute);
+  const page = Number.isSafeInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+  const [postRoute, setPostRoute] = useUrlState('post');
+  const { getSnapshot, updateQuery, closeQuery } = useNavigation();
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [reload, setReload] = useState(0);
   const [draft, setDraft] = useState(blankPost);
-  const [editingId, setEditingId] = useState(null);
+  const editingId = postRoute && postRoute !== 'new' ? postRoute : null;
+  const [editorState, setEditorState] = useState(null);
+  const editorReady = editorState?.id === postRoute && editorState?.organisationId === organisationId && editorState.status === 'ready';
+  const editorError = editorState?.id === postRoute && editorState?.organisationId === organisationId ? editorState.error : '';
   const [saving, setSaving] = useState(false);
   const [imageBusy, setImageBusy] = useState(false);
   const [descriptionImageBusy, setDescriptionImageBusy] = useState(false);
@@ -62,7 +70,7 @@ export default function PostsPage({ canManage = false }) {
       setTotalPages(pageCount);
       if (page > pageCount) {
         changingPage = true;
-        setPage(pageCount);
+        setPageRoute(String(pageCount), { replace: true });
         return;
       }
       setPosts(data.posts || []);
@@ -70,7 +78,41 @@ export default function PostsPage({ canManage = false }) {
       if (!cancelled && getCurrentUser()?.activeOrganisationId === organisationId) setLoadError(err.message || 'Could not load posts.');
     }).finally(() => { if (!cancelled && !changingPage) setLoading(false); });
     return () => { cancelled = true; };
-  }, [organisationId, page, reload, getCurrentUser]);
+  }, [organisationId, page, reload, getCurrentUser, setPageRoute]);
+
+  useEffect(() => {
+    setImageBusy(false);
+    setDescriptionImageBusy(false);
+    if (!canManage || !postRoute) return;
+    let cancelled = false;
+    setFieldErrors({});
+    setFormError('');
+    setConfirmDeleteId(null);
+    if (postRoute === 'new') {
+      setDraft(blankPost());
+      setEditorRevision(value => value + 1);
+      setEditorState({ id: postRoute, organisationId, status: 'ready' });
+    } else {
+      setEditorState({ id: postRoute, organisationId, status: 'loading' });
+      api.getPost(postRoute, organisationId).then(data => {
+        if (cancelled || getCurrentUser()?.activeOrganisationId !== organisationId) return;
+        if (!data.success || !data.post) throw new Error(data.message || 'This post could not be found.');
+        const post = data.post;
+        setDraft({ title: post.title || '', subtitle: post.subtitle || '', description: post.description || '', descriptionContent: post.descriptionContent || null, imageUrl: post.imageUrl || '' });
+        setEditorRevision(value => value + 1);
+        setEditorState({ id: postRoute, organisationId, status: 'ready' });
+      }).catch(error => {
+        if (!cancelled && getCurrentUser()?.activeOrganisationId === organisationId) setEditorState({ id: postRoute, organisationId, status: 'error', error: error.message || 'This post could not be loaded.' });
+      });
+    }
+    return () => { cancelled = true; };
+  }, [canManage, postRoute, organisationId, getCurrentUser]);
+
+  useEffect(() => {
+    if (!canManage || !postRoute || !editorReady) return;
+    composerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    titleRef.current?.focus({ preventScroll: true });
+  }, [canManage, postRoute, editorReady]);
 
   const updateDraft = (field, value) => {
     setDraft(previous => ({ ...previous, [field]: value }));
@@ -78,33 +120,36 @@ export default function PostsPage({ canManage = false }) {
     setFormError('');
   };
 
-  const resetDraft = () => {
+  const clearDraft = () => {
     setDraft(blankPost());
     setEditorRevision(value => value + 1);
-    setEditingId(null);
     setFormError('');
     setFieldErrors({});
   };
 
+  const resetDraft = () => {
+    clearDraft();
+    closeQuery(['post']);
+  };
+
   const focusComposer = () => {
+    if (postRoute !== 'new') {
+      setPostRoute('new');
+      return;
+    }
     composerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     titleRef.current?.focus({ preventScroll: true });
   };
 
   const editPost = post => {
     if (mutationPending.current || imageBusy || descriptionImageBusy) return;
-    setDraft({ title: post.title, subtitle: post.subtitle, description: post.description, descriptionContent: post.descriptionContent || null, imageUrl: post.imageUrl || '' });
-    setEditorRevision(value => value + 1);
-    setEditingId(post._id);
-    setFieldErrors({});
-    setFormError('');
-    setConfirmDeleteId(null);
-    focusComposer();
+    setPostRoute(post._id);
   };
 
   const savePost = async event => {
     event.preventDefault();
-    if (mutationPending.current || imageBusy || descriptionImageBusy) return;
+    if (mutationPending.current || imageBusy || descriptionImageBusy || !editorReady) return;
+    const savingRoute = getSnapshot();
     const nextErrors = {};
     for (const field of ['title', 'subtitle', 'description']) {
       if (!draft[field].trim()) nextErrors[field] = `Enter a ${field}.`;
@@ -125,12 +170,14 @@ export default function PostsPage({ canManage = false }) {
       if (!stillCurrent()) return;
       if (!response.success) throw new Error(response.message || 'Could not save this post.');
       showToast(editingId ? 'Post updated. Members can see your changes.' : 'Post published to your members.', 'success');
-      resetDraft();
-      setPage(1);
+      if (getSnapshot() === savingRoute) {
+        clearDraft();
+        updateQuery({ post: null, page: null }, { replace: true });
+      }
       setReload(value => value + 1);
       setConfirmDeleteId(null);
     } catch (err) {
-      if (stillCurrent()) setFormError(err.message || 'Could not publish this post. Your draft is still here.');
+      if (stillCurrent() && getSnapshot() === savingRoute) setFormError(err.message || 'Could not publish this post. Your draft is still here.');
     } finally {
       mutationPending.current = false;
       if (stillCurrent()) setSaving(false);
@@ -139,6 +186,7 @@ export default function PostsPage({ canManage = false }) {
 
   const deletePost = async post => {
     if (mutationPending.current || imageBusy || descriptionImageBusy) return;
+    const deletingRoute = getSnapshot();
     mutationPending.current = true;
     setDeletingId(post._id);
     setDeleteError('');
@@ -146,13 +194,17 @@ export default function PostsPage({ canManage = false }) {
       const response = await api.deletePost(post._id, organisationId);
       if (!stillCurrent()) return;
       if (!response.success) throw new Error(response.message || 'Could not delete this post.');
-      if (editingId === post._id) resetDraft();
+      if (getSnapshot() === deletingRoute) {
+        if (postRoute === post._id) {
+          clearDraft();
+          updateQuery({ post: null, page: posts.length === 1 && page > 1 ? String(page - 1) : page === 1 ? null : String(page) }, { replace: true });
+        } else if (posts.length === 1 && page > 1) setPageRoute(String(page - 1), { replace: true });
+      }
       setConfirmDeleteId(null);
-      if (posts.length === 1 && page > 1) setPage(value => value - 1);
       setReload(value => value + 1);
       showToast('Post deleted.', 'success');
     } catch (err) {
-      if (stillCurrent()) setDeleteError(err.message || 'Could not delete this post. Please try again.');
+      if (stillCurrent() && getSnapshot() === deletingRoute) setDeleteError(err.message || 'Could not delete this post. Please try again.');
     } finally {
       mutationPending.current = false;
       if (stillCurrent()) setDeletingId(null);
@@ -160,7 +212,7 @@ export default function PostsPage({ canManage = false }) {
   };
 
   const changePage = next => {
-    setPage(next);
+    setPageRoute(String(next));
     setConfirmDeleteId(null);
     setDeleteError('');
     feedRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -178,14 +230,23 @@ export default function PostsPage({ canManage = false }) {
           <p className="mt-1 text-xs leading-relaxed text-slate-500">{canManage ? 'Share a quick update, an important notice, or something worth knowing.' : `News, notices, and updates from ${organisationName}.`}</p>
         </div>
         {canManage ? (
-          <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600"><Users className="h-3.5 w-3.5" aria-hidden="true" />Visible to this organisation's members</span>
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600"><Users className="h-3.5 w-3.5" aria-hidden="true" />Visible to this organisation's members</span>
+            {postRoute !== 'new' && <button type="button" onClick={focusComposer} disabled={busy} className="inline-flex items-center gap-2 rounded-lg bg-brand-primary px-4 py-2.5 text-xs font-bold text-brand-ink hover:bg-brand-secondary disabled:opacity-50"><Plus className="h-4 w-4" aria-hidden="true" />Create a post</button>}
+          </div>
         ) : (
           !loading && !loadError && <span className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600">{total} {total === 1 ? 'post' : 'posts'}</span>
         )}
       </div>
 
-      <div className={canManage ? 'grid items-start gap-6 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]' : ''}>
-        {canManage && (
+      <div className={canManage && postRoute ? 'grid items-start gap-6 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]' : ''}>
+        {canManage && postRoute && !editorReady && (
+          <section className="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-600">
+            <p role={editorError ? 'alert' : 'status'}>{editorError || 'Loading post editor...'}</p>
+            <button type="button" onClick={() => closeQuery(['post'])} className="mt-4 font-semibold text-brand-ink underline">Return to posts</button>
+          </section>
+        )}
+        {canManage && postRoute && editorReady && (
           <section ref={composerRef} aria-labelledby="post-composer-heading" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div className="flex items-start gap-3 border-b border-slate-100 p-5">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-primary/20 text-brand-ink">{editingId ? <Pencil className="h-5 w-5" aria-hidden="true" /> : <Plus className="h-5 w-5" aria-hidden="true" />}</span>
@@ -226,7 +287,7 @@ export default function PostsPage({ canManage = false }) {
               <ImageUploadField label="Post image (optional)" kind="banner" value={draft.imageUrl} onChange={value => updateDraft('imageUrl', value)} onBusyChange={setImageBusy} disabled={saving || Boolean(deletingId) || descriptionImageBusy} />
               {formError && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-3 text-xs leading-relaxed text-red-700">{formError}</p>}
               <div className="flex flex-wrap items-center gap-3 border-t border-slate-100 pt-4">
-                {editingId && <button type="button" onClick={resetDraft} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg px-2 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-50"><X className="h-3.5 w-3.5" aria-hidden="true" />Cancel editing</button>}
+                <button type="button" onClick={resetDraft} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg px-2 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-50"><X className="h-3.5 w-3.5" aria-hidden="true" />{editingId ? 'Cancel editing' : 'Cancel'}</button>
                 <button type="submit" disabled={busy} className="ml-auto inline-flex items-center justify-center gap-2 rounded-lg bg-brand-primary px-4 py-2.5 text-sm font-bold text-brand-ink shadow-sm hover:bg-brand-secondary disabled:cursor-not-allowed disabled:opacity-50">{saving ? <RefreshCw className="h-4 w-4 animate-spin" aria-hidden="true" /> : editingId ? <CheckCircle2 className="h-4 w-4" aria-hidden="true" /> : <Send className="h-4 w-4" aria-hidden="true" />}{saving ? 'Saving…' : imageBusy || descriptionImageBusy ? 'Reading image…' : editingId ? 'Save changes' : 'Publish post'}</button>
               </div>
             </form>

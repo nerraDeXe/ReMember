@@ -5,15 +5,22 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import { useToast } from '../../context/ToastContext.jsx';
 import OrganisationImage from '../../components/OrganisationImage.jsx';
 import { filterOrganisations } from '../../organisationDirectory.js';
+import { useNavigation, useUrlQuery, useUrlState } from '../../routing.jsx';
 
 export default function MemberOrganisationsPage({ onNavigate, onJoined }) {
   const { user, selectOrganisation } = useAuth();
   const { showToast } = useToast();
+  const { getSnapshot } = useNavigation();
   const [organisations, setOrganisations] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [category, setCategory] = useState('All');
-  const [details, setDetails] = useState(null);
+  const [search, setSearch] = useUrlState('search', '', { replace: true });
+  const [category, setCategory] = useUrlState('category', 'All', { replace: true });
+  const [detailsId, setDetailsId] = useUrlState('organisationDetails');
+  const { closeQuery } = useUrlQuery();
+  const [detailsData, setDetails] = useState(null);
+  const details = String(detailsData?.organisation?._id) === detailsId ? detailsData : null;
+  const [loadingDetails, setLoadingDetails] = useState(false);
+  const [detailsError, setDetailsError] = useState('');
   const [tierId, setTierId] = useState('');
   const [busy, setBusy] = useState(false);
   const [openingId, setOpeningId] = useState(null);
@@ -36,42 +43,50 @@ export default function MemberOrganisationsPage({ onNavigate, onJoined }) {
   const filtered = useMemo(() => filterOrganisations(organisations, {
     search, category, fields: ['name', 'description', 'location', 'tags']
   }), [organisations, search, category]);
-  const openDetails = async (org) => {
-    setBusy(true);
+  useEffect(() => {
+    if (!detailsId) return;
+    let cancelled = false;
+    setLoadingDetails(true);
+    setDetailsError('');
+    setDetails(null);
     setError('');
-    try {
-      const data = await api.getOrganisation(org._id);
+    api.getOrganisation(detailsId).then(data => {
+      if (cancelled) return;
+      if (!data.organisation) throw new Error('This organisation could not be found.');
       setDetails(data);
       setTierId(data.membership?.tierId || data.tiers?.[0]?._id || '');
-    } catch (err) { showToast(err.message, 'error'); }
-    finally { setBusy(false); }
-  };
+    }).catch(err => { if (!cancelled) setDetailsError(err.message || 'This organisation could not be found.'); })
+      .finally(() => { if (!cancelled) setLoadingDetails(false); });
+    return () => { cancelled = true; };
+  }, [detailsId]);
+  const openDetails = org => setDetailsId(String(org._id));
   const handleJoin = async () => {
+    const submittedRoute = getSnapshot();
     setBusy(true);
     setError('');
     try {
       const response = await api.joinOrganisation(details.organisation._id, tierId);
       showToast(response.requiresPayment ? 'Complete checkout to activate your membership.' : 'You have joined this organisation.', 'success');
-      await onJoined(response);
-      setDetails(null);
-    } catch (err) { setError(err.message); }
+      await onJoined(response, { shouldNavigate: () => getSnapshot() === submittedRoute });
+    } catch (err) { if (getSnapshot() === submittedRoute) setError(err.message); }
     finally { setBusy(false); }
   };
   const handleOpen = async () => {
+    const openingRoute = getSnapshot();
     setBusy(true);
     try {
       const account = await selectOrganisation(details.organisation._id);
-      setDetails(null);
-      onNavigate(account.organisationRole === 'owner' ? 'admin-dashboard' : 'member-dashboard');
-    } catch (err) { setError(err.message); }
+      if (getSnapshot() === openingRoute) onNavigate(account.organisationRole === 'owner' ? 'admin-dashboard' : 'member-dashboard');
+    } catch (err) { if (getSnapshot() === openingRoute) setError(err.message); }
     finally { setBusy(false); }
   };
   const openMemberPortal = async (organisationId) => {
     if (openingId || busy) return;
+    const openingRoute = getSnapshot();
     setOpeningId(organisationId);
     try {
       const account = await selectOrganisation(organisationId);
-      onNavigate(account.organisationRole === 'owner' ? 'admin-dashboard' : 'member-dashboard');
+      if (getSnapshot() === openingRoute) onNavigate(account.organisationRole === 'owner' ? 'admin-dashboard' : 'member-dashboard');
     } catch (err) {
       showToast(err.message || 'Could not open this membership.', 'error');
     } finally {
@@ -124,8 +139,12 @@ export default function MemberOrganisationsPage({ onNavigate, onJoined }) {
         ))}</div>
       )}
       </section>
+      {detailsId && !details && <div className="fixed inset-0 z-50 bg-brand-muted/35 flex items-center justify-center p-4"><div role="dialog" aria-modal="true" aria-label="Organisation details" className="bg-white border border-slate-200 rounded-xl w-full max-w-lg p-6 space-y-4">
+        <p role={loadingDetails || !detailsError ? 'status' : 'alert'} className="text-sm text-slate-700">{loadingDetails || !detailsError ? 'Loading organisation...' : detailsError}</p>
+        <button onClick={() => closeQuery(['organisationDetails'])} className="text-sm font-semibold text-brand-ink hover:underline">Back to memberships</button>
+      </div></div>}
       {details && <div className="fixed inset-0 z-50 bg-brand-muted/35 flex items-center justify-center p-4"><div role="dialog" aria-modal="true" aria-labelledby="join-organisation-title" className="bg-white border border-slate-200 rounded-xl w-full max-w-lg max-h-[90vh] overflow-auto p-6 space-y-5">
-        <div className="flex justify-between items-start gap-4"><div><h2 id="join-organisation-title" className="text-xl font-bold">{details.organisation.name}</h2><p className="text-sm text-slate-600 mt-2">{details.organisation.description}</p></div><button aria-label="Close organisation details" disabled={busy} onClick={() => setDetails(null)} className="p-1"><X className="w-5 h-5" /></button></div>
+        <div className="flex justify-between items-start gap-4"><div><h2 id="join-organisation-title" className="text-xl font-bold">{details.organisation.name}</h2><p className="text-sm text-slate-600 mt-2">{details.organisation.description}</p></div><button aria-label="Close organisation details" disabled={busy} onClick={() => closeQuery(['organisationDetails'])} className="p-1"><X className="w-5 h-5" /></button></div>
         {!alreadyJoined && <fieldset className="space-y-2"><legend className="text-sm font-semibold mb-2">Choose Your Membership</legend>{details.tiers?.map(tier => <label key={tier._id} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer ${tierId === tier._id ? 'border-brand-primary bg-brand-50' : 'border-slate-300'}`}><input type="radio" name="join-tier" checked={tierId === tier._id} onChange={() => setTierId(tier._id)} value={tier._id} className="accent-brand-primary" /><span className="flex-1 text-sm"><strong>{tier.name}</strong>{tier.description && <span className="block text-xs text-slate-600 mt-1">{tier.description}</span>}</span><span className="font-semibold text-sm">{Number(tier.price) === 0 ? 'Free' : `$${Number(tier.price).toFixed(2)}`}<span className="block text-xs font-normal text-slate-500">{Number(tier.price) > 0 ? `/${tier.interval}` : ''}</span></span></label>)}{!details.tiers?.length && <p className="text-sm text-slate-600">Membership tiers are not available yet.</p>}</fieldset>}
         {details.membership?.status === 'pending' && <p className="text-sm text-slate-600">Your membership is awaiting payment. Continue to checkout to activate it.</p>}
         {error && <p role="alert" className="text-sm text-slate-800">{error}</p>}

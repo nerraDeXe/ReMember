@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Users,
   Search,
@@ -15,6 +15,7 @@ import {
 import { api } from '../../api.js';
 import { useToast } from '../../context/ToastContext.jsx';
 import StatusBadge from '../../components/StatusBadge.jsx';
+import { useNavigation } from '../../routing.jsx';
 
 export default function MembersListPage() {
   const { showToast } = useToast();
@@ -22,23 +23,44 @@ export default function MembersListPage() {
   const [pagination, setPagination] = useState({ page: 1, limit: 8, totalMembers: 0, totalPages: 1 });
   const [tiers, setTiers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { route, getSnapshot, updateQuery, closeQuery } = useNavigation();
+  const query = route.query;
+  const requestedPage = Number(query.get('page') || 1);
+  const page = Number.isSafeInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
 
   // Filters
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [tierFilter, setTierFilter] = useState('all');
+  const searchTerm = query.get('search') || '';
+  const statusFilter = query.get('status') || 'all';
+  const tierFilter = query.get('tier') || 'all';
 
   // Tier change modal
-  const [tierChangeMember, setTierChangeMember] = useState(null);
+  const tierMemberId = query.get('memberTier') || '';
+  const [memberDetail, setMemberDetail] = useState(null);
+  const currentMemberDetail = memberDetail?.route === route ? memberDetail : null;
+  const tierChangeMember = currentMemberDetail ? currentMemberDetail.member : members.find(member => member._id === tierMemberId);
+  const detailPending = Boolean(tierMemberId) && !currentMemberDetail;
+  const closeTierChange = () => closeQuery(['memberTier']);
   const [selectedNewTierId, setSelectedNewTierId] = useState('');
+  const tierSelectionRoute = useRef(null);
   const [updatingTier, setUpdatingTier] = useState(false);
+  const membersRequest = useRef(0);
+  const mounted = useRef(false);
 
-  const loadMembers = async (page = 1) => {
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
+
+  const stillOnDirectory = previousRoute => mounted.current && getSnapshot().page === previousRoute.page
+    && getSnapshot().query.get('organisation') === previousRoute.query.get('organisation');
+
+  const loadMembers = useCallback(async (requestedPage = page) => {
+    const request = ++membersRequest.current;
     setLoading(true);
     try {
       const [membersData, tiersData] = await Promise.all([
         api.getAdminMembers({
-          page,
+          page: requestedPage,
           limit: 8,
           search: searchTerm,
           status: statusFilter,
@@ -46,8 +68,13 @@ export default function MembersListPage() {
         }),
         api.getTiers(),
       ]);
+      if (request !== membersRequest.current) return;
 
       if (membersData.success) {
+        if (membersData.pagination && requestedPage > membersData.pagination.totalPages) {
+          updateQuery({ page: membersData.pagination.totalPages <= 1 ? null : String(membersData.pagination.totalPages) }, { replace: true });
+          return;
+        }
         setMembers(membersData.members || []);
         setPagination(membersData.pagination || { page: 1, limit: 8, totalMembers: 0, totalPages: 1 });
       }
@@ -55,23 +82,46 @@ export default function MembersListPage() {
         setTiers(tiersData.tiers || []);
       }
     } catch (err) {
+      if (request !== membersRequest.current) return;
       console.error('Failed to load members:', err);
       showToast('Could not load member directory: ' + err.message, 'error');
     } finally {
-      setLoading(false);
+      if (request === membersRequest.current) setLoading(false);
     }
-  };
+  }, [page, searchTerm, statusFilter, tierFilter, showToast, updateQuery]);
+  const reloadCurrentMembers = useRef(loadMembers);
 
   useEffect(() => {
-    loadMembers(1);
-  }, [searchTerm, statusFilter, tierFilter]);
+    reloadCurrentMembers.current = loadMembers;
+    loadMembers();
+    return () => { membersRequest.current += 1; };
+  }, [loadMembers]);
+
+  useEffect(() => {
+    if (!tierMemberId) return;
+    let cancelled = false;
+    api.getAdminMember(tierMemberId).then(data => {
+      if (!data.success || !data.member) throw new Error(data.message || 'This member could not be found.');
+      if (!cancelled) setMemberDetail({ route, member: data.member });
+    }).catch(error => {
+      if (!cancelled) setMemberDetail({ route, member: null, error: error.message });
+    });
+    return () => { cancelled = true; };
+  }, [tierMemberId, route]);
+
+  useEffect(() => {
+    // A delayed earlier save can refresh this record after the editor reopens.
+    // Keep a target the user has already chosen in this opening.
+    if (tierSelectionRoute.current !== route) setSelectedNewTierId(tierChangeMember?.tierId || '');
+  }, [route, tierChangeMember?._id, tierChangeMember?.tierId]);
 
   const handleStatusChange = async (member, newStatus) => {
+    const savingRoute = getSnapshot();
     try {
       const response = await api.updateMemberStatus(member._id, newStatus, 'Administrative review');
       if (response.success) {
         showToast(response.message, 'success');
-        await loadMembers(pagination.page);
+        if (stillOnDirectory(savingRoute)) await reloadCurrentMembers.current();
       }
     } catch (err) {
       showToast(err.message || 'Status update failed.', 'error');
@@ -80,6 +130,7 @@ export default function MembersListPage() {
 
   const handleApplyTierChange = async () => {
     if (!tierChangeMember || !selectedNewTierId) return;
+    const savingRoute = getSnapshot();
     setUpdatingTier(true);
     try {
       const response = await api.updateMemberTier(tierChangeMember._id, selectedNewTierId);
@@ -88,13 +139,19 @@ export default function MembersListPage() {
           `Tier updated to ${response.member?.tierName}! Google Wallet Object updated automatically via API.`,
           'success'
         );
-        setTierChangeMember(null);
-        await loadMembers(pagination.page);
+        if (getSnapshot() === savingRoute) closeTierChange();
+        if (stillOnDirectory(savingRoute)) {
+          const currentRoute = getSnapshot();
+          if (response.member && currentRoute.query.get('memberTier') === response.member._id) {
+            setMemberDetail({ route: currentRoute, member: response.member });
+          }
+          await reloadCurrentMembers.current();
+        }
       }
     } catch (err) {
       showToast(err.message || 'Tier update failed.', 'error');
     } finally {
-      setUpdatingTier(false);
+      if (mounted.current) setUpdatingTier(false);
     }
   };
 
@@ -150,7 +207,7 @@ export default function MembersListPage() {
           <input
             type="text"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => updateQuery({ search: e.target.value || null, page: null }, { replace: true })}
             placeholder="Search by name, email, or member number..."
             className="w-full pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
           />
@@ -161,7 +218,7 @@ export default function MembersListPage() {
         <div className="flex items-center gap-2">
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+            onChange={(e) => updateQuery({ status: e.target.value === 'all' ? null : e.target.value, page: null })}
             className="px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
           >
             <option value="all">All Statuses</option>
@@ -174,7 +231,7 @@ export default function MembersListPage() {
           {/* Tier Filter */}
           <select
             value={tierFilter}
-            onChange={(e) => setTierFilter(e.target.value)}
+            onChange={(e) => updateQuery({ tier: e.target.value === 'all' ? null : e.target.value, page: null })}
             className="px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
           >
             <option value="all">All Tiers</option>
@@ -238,10 +295,7 @@ export default function MembersListPage() {
                       <div className="flex items-center gap-2">
                         <span className="font-semibold text-slate-900">{member.tierName}</span>
                         <button
-                          onClick={() => {
-                            setTierChangeMember(member);
-                            setSelectedNewTierId(member.tierId);
-                          }}
+                          onClick={() => updateQuery({ memberTier: member._id })}
                           className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-[10px] transition-colors"
                           title="Change membership tier (auto-updates Google Wallet)"
                         >
@@ -317,7 +371,7 @@ export default function MembersListPage() {
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => loadMembers(pagination.page - 1)}
+              onClick={() => updateQuery({ page: pagination.page <= 2 ? null : String(pagination.page - 1) })}
               disabled={!pagination.hasPrevPage}
               className="p-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-slate-700 shadow-sm"
             >
@@ -327,7 +381,7 @@ export default function MembersListPage() {
               Page {pagination.page} of {pagination.totalPages}
             </span>
             <button
-              onClick={() => loadMembers(pagination.page + 1)}
+              onClick={() => updateQuery({ page: String(pagination.page + 1) })}
               disabled={!pagination.hasNextPage}
               className="p-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-slate-700 shadow-sm"
             >
@@ -338,7 +392,7 @@ export default function MembersListPage() {
       </div>
 
       {/* Tier Change & Automatic Google Wallet Update Modal */}
-      {tierChangeMember && (
+      {tierMemberId && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-brand-muted/35 flex items-center justify-center p-4">
           <div className="relative w-full max-w-md bg-white border border-slate-200 rounded-xl p-6 space-y-5 shadow-2xl">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
@@ -347,13 +401,19 @@ export default function MembersListPage() {
                 <h3 className="text-base font-bold text-slate-900">Adjust Membership Tier</h3>
               </div>
               <button
-                onClick={() => setTierChangeMember(null)}
+                onClick={closeTierChange}
                 className="text-slate-400 hover:text-slate-700"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
+            {!tierChangeMember ? (
+              <div className="text-xs text-slate-600">
+                <p role={detailPending ? 'status' : 'alert'}>{detailPending ? 'Loading member...' : currentMemberDetail?.error || 'This member could not be found in your organisation.'}</p>
+                <button onClick={closeTierChange} className="mt-4 font-semibold underline">Return to members</button>
+              </div>
+            ) : <>
             <div className="text-xs text-slate-600">
               Select new tier for <strong>{tierChangeMember.name}</strong> ({tierChangeMember.membershipNumber}).
             </div>
@@ -362,7 +422,7 @@ export default function MembersListPage() {
               {tiers.map((t) => (
                 <button
                   key={t._id}
-                  onClick={() => setSelectedNewTierId(t._id)}
+                  onClick={() => { tierSelectionRoute.current = route; setSelectedNewTierId(t._id); }}
                   className={`w-full p-3 rounded-lg border text-left transition-all flex items-center justify-between ${
                     selectedNewTierId === t._id
                       ? 'bg-brand-50 border-brand-primary shadow-sm'
@@ -390,7 +450,7 @@ export default function MembersListPage() {
 
             <div className="flex justify-end gap-2 pt-2">
               <button
-                onClick={() => setTierChangeMember(null)}
+                onClick={closeTierChange}
                 className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-xs font-semibold"
               >
                 Cancel
@@ -410,6 +470,7 @@ export default function MembersListPage() {
                 )}
               </button>
             </div>
+            </>}
           </div>
         </div>
       )}

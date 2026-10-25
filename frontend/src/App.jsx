@@ -1,4 +1,4 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext.jsx';
 import { ToastProvider, useToast } from './context/ToastContext.jsx';
 
@@ -36,56 +36,87 @@ const EmailSettingsPage = lazy(() => import('./pages/admin/EmailSettingsPage.jsx
 const PostsPage = lazy(() => import('./pages/PostsPage.jsx'));
 
 import { api } from './api.js';
-import { getAccountHomePage, getPageAfterContextChange, isAccountPage } from './navigation.js';
+import { getAccountHomePage, getPageUrl, isAccountPage, isPortalPage, parseRoute, resolvePageAccess } from './navigation.js';
+import { NavigationProvider, useNavigation } from './routing.jsx';
 
 function MainApp() {
-  const { user, isAuthenticated, isAdmin, loading, refreshUser, getCurrentUser, sessionExpired } = useAuth();
+  const { user, isAuthenticated, isAdmin, loading, refreshUser, getCurrentUser, selectOrganisation, sessionExpired } = useAuth();
   const { showToast } = useToast();
-  const [currentPage, setCurrentPage] = useState(() => window.location.hash.startsWith('#reset-password') ? 'reset-password' : 'landing');
+  const { route, navigate, updateQuery, closeQuery, getSnapshot } = useNavigation();
+  const currentPage = route.page;
+  const displayPage = currentPage === 'member-renew' ? 'member-dashboard' : currentPage;
   const [loginEmail, setLoginEmail] = useState('');
-  const [isRenewModalOpen, setIsRenewModalOpen] = useState(false);
+  const isRenewModalOpen = currentPage === 'member-renew' || route.query.get('renew') === '1';
+  const [contextRequest, setContextRequest] = useState(null);
+  const contextRequestRef = useRef(null);
+  const [memberDataRevision, setMemberDataRevision] = useState(0);
   const [tiers, setTiers] = useState([]);
+  const [tiersLoading, setTiersLoading] = useState(false);
+  const [tiersError, setTiersError] = useState('');
   const [walletData, setWalletData] = useState(null);
   const [walletError, setWalletError] = useState('');
   const [checkoutOrganisationId, setCheckoutOrganisationId] = useState(null);
 
-  // Auto-route on auth change
+  const requestedOrganisationId = route.query.get('organisation');
+  const needsOrganisation = !!(user?.emailVerified && user?.onboardingCompleted && isPortalPage(currentPage)
+    && requestedOrganisationId && requestedOrganisationId !== user.activeOrganisationId);
+  const allowedPage = resolvePageAccess(currentPage, user);
+
+  // Restore the organisation from a deep link or a previous history entry before
+  // mounting any portal page or evaluating its organisation role.
   useEffect(() => {
-    if (!loading) {
-      if (isAuthenticated) {
-        setCurrentPage(page => ['landing', 'login', 'register'].includes(page) ? getAccountHomePage(user) : page);
-      } else {
-        setCurrentPage(page => ['login', 'register', 'google-signup', 'forgot-password', 'reset-password'].includes(page) ? page : 'landing');
-      }
+    if (loading || !needsOrganisation || contextRequestRef.current) return;
+    const target = requestedOrganisationId;
+    contextRequestRef.current = target;
+    setContextRequest(target);
+    selectOrganisation(target).catch(error => {
+      if (!getCurrentUser() || getSnapshot().query.get('organisation') !== target) return;
+      showToast(error.message || 'This organisation is no longer available.', 'error');
+      navigate(getPageUrl(getAccountHomePage(getCurrentUser()), { organisationId: getCurrentUser()?.activeOrganisationId }), { replace: true });
+    }).finally(() => { contextRequestRef.current = null; setContextRequest(null); });
+  }, [loading, needsOrganisation, requestedOrganisationId, contextRequest, getSnapshot, navigate, getCurrentUser, selectOrganisation, showToast]);
+
+  const returnDestination = useCallback(() => {
+    const next = route.query.get('next');
+    if (!next?.startsWith('/') || next.startsWith('//')) return null;
+    const destination = parseRoute(new URL(next, window.location.origin));
+    if (!isPortalPage(destination.page) && !isAccountPage(destination.page)) return null;
+    return getPageUrl(destination.page, { query: destination.query, organisationId: destination.query.get('organisation') });
+  }, [route.query]);
+
+  useEffect(() => {
+    if (loading || needsOrganisation || contextRequest) return;
+    if (allowedPage !== currentPage) {
+      const next = !user && allowedPage === 'login' ? route.url : route.query.get('next');
+      const destination = user?.emailVerified && user?.onboardingCompleted ? returnDestination() : null;
+      navigate(destination || getPageUrl(allowedPage, {
+        query: next ? { next } : undefined, organisationId: user?.activeOrganisationId,
+      }), { replace: true });
+    } else if (isPortalPage(currentPage) && user?.activeOrganisationId && !requestedOrganisationId) {
+      navigate(getPageUrl(currentPage, { query: route.query, organisationId: user.activeOrganisationId }), { replace: true });
     }
-  }, [isAuthenticated, isAdmin, loading, user?.activeOrganisationId]);
+  }, [loading, currentPage, allowedPage, route.url, route.query, needsOrganisation, contextRequest, user, requestedOrganisationId, returnDestination, navigate]);
 
   useEffect(() => {
-    if (user?.emailVerified && user?.onboardingCompleted) {
-      setCurrentPage(page => getPageAfterContextChange(page, user));
-    }
-    setIsRenewModalOpen(false);
-    setWalletData(null);
-  }, [user?.activeOrganisationId, user?.emailVerified, user?.onboardingCompleted, isAdmin]);
+    if (sessionExpired) showToast('Your session has ended. Please sign in again.', 'info');
+  }, [sessionExpired, showToast]);
 
   useEffect(() => {
-    if (sessionExpired) { setCurrentPage(page => ['forgot-password', 'reset-password'].includes(page) ? page : 'login'); showToast('Your session has ended. Please sign in again.', 'info'); }
-  }, [sessionExpired]);
-
-  useEffect(() => {
-    const handleResetLink = () => { if (window.location.hash.startsWith('#reset-password')) setCurrentPage('reset-password'); };
-    window.addEventListener('hashchange', handleResetLink);
-    return () => window.removeEventListener('hashchange', handleResetLink);
-  }, []);
+    document.title = `${currentPage === 'landing' ? 'ReMember' : currentPage.split('-').map(word => word[0].toUpperCase() + word.slice(1)).join(' ')} | Membership Management`;
+  }, [currentPage]);
 
   // Load tiers for modal renewal usage
   useEffect(() => {
     let cancelled = false;
     setTiers([]);
+    setTiersError('');
+    setTiersLoading(false);
     if (isAuthenticated && user?.emailVerified && user?.activeOrganisationId) {
+      setTiersLoading(true);
       api.getTiers().then((res) => {
         if (!cancelled && res.success) setTiers(res.tiers || []);
-      }).catch(console.error);
+      }).catch(error => { if (!cancelled) setTiersError(error.message || 'Could not load membership tiers.'); })
+        .finally(() => { if (!cancelled) setTiersLoading(false); });
     }
     return () => { cancelled = true; };
   }, [isAuthenticated, user?.emailVerified, user?.activeOrganisationId]);
@@ -101,15 +132,20 @@ function MainApp() {
   }, [currentPage, user?.activeOrganisationId]);
 
   useEffect(() => {
+    if (checkoutOrganisationId && currentPage !== 'member-dashboard') {
+      setCheckoutOrganisationId(null);
+      return;
+    }
     if (checkoutOrganisationId === user?.activeOrganisationId && tiers.length && tiers.every(tier => tier.organisationId === checkoutOrganisationId)) {
-      setIsRenewModalOpen(true);
+      updateQuery({ renew: '1' });
       setCheckoutOrganisationId(null);
     }
-  }, [checkoutOrganisationId, user?.activeOrganisationId, tiers]);
+  }, [checkoutOrganisationId, currentPage, user?.activeOrganisationId, tiers, updateQuery]);
 
-  const handleJoinedOrganisation = async (response) => {
+  const handleJoinedOrganisation = async (response, { shouldNavigate = () => getSnapshot() === route } = {}) => {
     await refreshUser();
-    setCurrentPage('member-dashboard');
+    if (!shouldNavigate()) return;
+    handleNavigate('member-dashboard');
     if (response.requiresPayment) setCheckoutOrganisationId(String(response.organisation._id));
   };
 
@@ -117,42 +153,32 @@ function MainApp() {
     if (page === 'member-organisations') page = 'account-memberships';
     if (page === 'login' && getCurrentUser()) page = 'account-home';
     if (page === 'login') setLoginEmail(options.email || '');
-    if (['forgot-password', 'reset-password', 'login'].includes(page)) {
-      if (page !== 'reset-password') window.history.replaceState(null, '', window.location.pathname + window.location.search);
-      setCurrentPage(page);
-      return;
-    }
     const account = getCurrentUser();
-    if (account && !account.emailVerified) {
-      setCurrentPage('verify-email');
-      return;
-    }
-    if (account && !account.onboardingCompleted && page !== 'organisation-setup') {
-      setCurrentPage('account-onboarding');
+    if (page === 'account-home' && account?.emailVerified && account?.onboardingCompleted && returnDestination()) {
+      navigate(returnDestination(), { replace: true });
       return;
     }
     if (page === 'account-home') page = getAccountHomePage(account);
-    // RBAC client-side guard
-    if (page.startsWith('admin-') && account?.organisationRole !== 'owner') {
+    const requestedPage = page;
+    page = resolvePageAccess(page, account);
+    if (requestedPage.startsWith('admin-') && account?.organisationRole !== 'owner') {
       showToast('Access Denied: Administrative privileges required.', 'error');
-      setCurrentPage(getAccountHomePage(account));
-      return;
     }
-
     if (page === 'member-renew') {
-      if (!user?.activeOrganisationId || isAdmin) {
-        setCurrentPage('account-memberships');
-        return;
-      }
-      setIsRenewModalOpen(true);
+      if (isPortalPage(currentPage)) updateQuery({ renew: '1' });
+      else navigate(getPageUrl(page, { organisationId: account?.activeOrganisationId }));
       return;
     }
-
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const next = route.query.get('next');
+    const authStep = ['login', 'register', 'google-signup', 'forgot-password', 'verify-email', 'account-onboarding', 'organisation-setup'].includes(page);
+    navigate(getPageUrl(page, { query: next && authStep ? { next } : undefined, organisationId: account?.activeOrganisationId }), options);
   };
 
-  if (loading) {
+  const closeRenewal = () => currentPage === 'member-renew'
+    ? navigate(getPageUrl('member-dashboard', { organisationId: user.activeOrganisationId }), { replace: true })
+    : closeQuery(['renew']);
+
+  if (loading || needsOrganisation || contextRequest || allowedPage !== currentPage) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center text-slate-900">
         <div className="flex flex-col items-center gap-3">
@@ -164,6 +190,8 @@ function MainApp() {
       </div>
     );
   }
+
+  if (currentPage === 'not-found') return <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-slate-50"><h1 className="text-2xl font-bold">Page not found</h1><p className="text-sm text-slate-600">This address does not match a ReMember page.</p><a href={getPageUrl(user ? getAccountHomePage(user) : 'landing', { organisationId: user?.activeOrganisationId })} onClick={event => { event.preventDefault(); handleNavigate(user ? 'account-home' : 'landing'); }} className="font-semibold underline">Go to home</a></div>;
 
   // Public unauthenticated pages
   if (currentPage === 'forgot-password') return <ForgotPasswordPage onNavigate={handleNavigate} />;
@@ -184,11 +212,11 @@ function MainApp() {
   // Authenticated layout
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
-      <Navbar onNavigate={handleNavigate} currentPage={currentPage} />
+      <Navbar onNavigate={handleNavigate} currentPage={displayPage} />
 
       <div className="flex-1 flex flex-col md:flex-row max-w-7xl w-full mx-auto">
         {!isAccountPage(currentPage) && <Sidebar
-          currentPage={currentPage}
+          currentPage={displayPage}
           onNavigate={handleNavigate}
           isAdmin={isAdmin}
         />}
@@ -196,7 +224,7 @@ function MainApp() {
         <main key={isAccountPage(currentPage) ? user._id : user.activeOrganisationId || 'account'} className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 overflow-y-auto">
           {['account-organisations', 'account-memberships', 'member-organisations'].includes(currentPage) && <AccountHomePage activeTab={currentPage === 'account-organisations' ? 'organisations' : 'memberships'} onNavigate={handleNavigate} onJoined={handleJoinedOrganisation} />}
           {/* Member Routes */}
-          {currentPage === 'member-dashboard' && <MemberDashboard onNavigate={handleNavigate} />}
+          {displayPage === 'member-dashboard' && <MemberDashboard key={memberDataRevision} onNavigate={handleNavigate} />}
           {currentPage === 'member-profile' && <ProfilePage />}
           {currentPage === 'member-events' && <EventsCalendarPage />}
           {currentPage === 'member-invoices' && <InvoicesPage />}
@@ -236,15 +264,18 @@ function MainApp() {
       </div>
 
       {/* Renewal Modal */}
+      {isRenewModalOpen && !isAdmin && !!user?.activeOrganisationId && (tiersLoading || !tiers.length) && <div role="dialog" aria-modal="true" aria-label="Membership checkout" className="fixed inset-0 z-50 flex items-center justify-center bg-brand-muted/35 p-4"><div className="w-full max-w-lg rounded-xl border border-slate-200 bg-white p-6 shadow-2xl"><h2 className="text-base font-bold">Membership Checkout</h2><p className="mt-3 text-sm text-slate-600">{tiersLoading ? 'Loading membership tiers…' : tiersError || 'No membership tiers are currently available. Contact your organisation.'}</p><button type="button" onClick={closeRenewal} className="mt-5 text-sm font-semibold underline">Back</button></div></div>}
       <PaymentModal
-        isOpen={isRenewModalOpen}
-        onClose={() => setIsRenewModalOpen(false)}
+        isOpen={isRenewModalOpen && !isAdmin && !!user?.activeOrganisationId && tiers.length > 0}
+        onClose={closeRenewal}
         user={user}
         tiers={tiers}
         onSuccess={() => {
           showToast('Membership renewed successfully!', 'success');
           refreshUser();
-          setCurrentPage('member-dashboard');
+          setMemberDataRevision(value => value + 1);
+          if (getSnapshot() !== route) return;
+          navigate(getPageUrl('member-dashboard', { organisationId: user.activeOrganisationId }), { replace: true });
         }}
       />
     </div>
@@ -253,10 +284,10 @@ function MainApp() {
 
 export default function App() {
   return (
-    <AuthProvider>
+    <NavigationProvider><AuthProvider>
       <ToastProvider>
         <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center text-sm text-slate-600">Loading…</div>}><MainApp /></Suspense>
       </ToastProvider>
-    </AuthProvider>
+    </AuthProvider></NavigationProvider>
   );
 }

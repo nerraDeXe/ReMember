@@ -4,6 +4,7 @@ import { api } from '../api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import AccountShell from '../components/AccountShell.jsx';
+import { useNavigation, useUrlQuery, useUrlState } from '../routing.jsx';
 
 const inputClass = 'w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:border-brand-primary';
 const labelClass = 'block text-xs font-semibold text-slate-700 mb-1.5';
@@ -12,7 +13,11 @@ const newTier = () => ({ key: crypto.randomUUID(), name: '', price: '', interval
 export default function OrganisationSetupPage({ onNavigate }) {
   const { user, refreshUser, selectOrganisation } = useAuth();
   const { showToast } = useToast();
-  const [step, setStep] = useState(1);
+  const { getSnapshot } = useNavigation();
+  const [stepValue, setStepValue] = useUrlState('step', '1');
+  const { closeQuery } = useUrlQuery();
+  const step = stepValue === '2' ? 2 : 1;
+  const goToTiers = () => { closeQuery(['step']); setError(''); };
   const [tiers, setTiers] = useState(() => [newTier()]);
   const [form, setForm] = useState({ name: '', description: '', category: '', location: '', visibility: 'public' });
   const [saving, setSaving] = useState(false);
@@ -42,11 +47,12 @@ export default function OrganisationSetupPage({ onNavigate }) {
     event.preventDefault();
     setError('');
     if (!validateTiers()) return;
-    if (step === 1) { setStep(2); return; }
+    if (step === 1) { setStepValue('2'); return; }
     if (!form.name.trim() || !form.description.trim()) {
       setError('Please enter an organisation name and description.');
       return;
     }
+    const submittedRoute = getSnapshot();
     setSaving(true);
     let organisation = createdOrganisation;
     try {
@@ -65,11 +71,11 @@ export default function OrganisationSetupPage({ onNavigate }) {
         setCreatedOrganisation(organisation);
       }
       await refreshUser();
-      if (organisation?._id) await selectOrganisation(organisation._id);
+      if (getSnapshot() === submittedRoute && organisation?._id) await selectOrganisation(organisation._id);
       showToast(`Your organisation "${form.name.trim()}" is ready.`, 'success');
-      onNavigate('admin-dashboard');
+      if (getSnapshot() === submittedRoute) onNavigate('admin-dashboard');
     } catch (err) {
-      setError(organisation ? 'Your organisation was created, but we could not open its dashboard. Retry below to continue.' : err.message || 'We could not create your organisation. Please try again.');
+      if (getSnapshot() === submittedRoute) setError(organisation ? 'Your organisation was created, but we could not open its dashboard. Retry below to continue.' : err.message || 'We could not create your organisation. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -121,13 +127,13 @@ export default function OrganisationSetupPage({ onNavigate }) {
               </div>
             </fieldset>
             <div className="rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-600">
-              {`${tiers.length} membership ${tiers.length === 1 ? 'tier' : 'tiers'} ready.`}{' '}<button type="button" onClick={() => { setStep(1); setError(''); }} disabled={saving || !!createdOrganisation} className="font-semibold text-brand-ink hover:underline">Edit tiers</button>
+              {`${tiers.length} membership ${tiers.length === 1 ? 'tier' : 'tiers'} ready.`}{' '}<button type="button" onClick={goToTiers} disabled={saving || !!createdOrganisation} className="font-semibold text-brand-ink hover:underline">Edit tiers</button>
             </div>
           </>
         )}
         {error && <p role="alert" className="rounded-lg border border-slate-300 bg-slate-50 p-3 text-sm text-slate-800">{error}</p>}
         <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-200">
-          <button type="button" onClick={() => { if (step === 2) { setStep(1); setError(''); } else onNavigate(user?.onboardingCompleted ? 'account-organisations' : 'account-onboarding'); }} disabled={saving || !!createdOrganisation} className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 px-2 py-2"><ArrowLeft className="w-4 h-4" aria-hidden="true" /> Back</button>
+          <button type="button" onClick={() => { if (step === 2) goToTiers(); else onNavigate(user?.onboardingCompleted ? 'account-organisations' : 'account-onboarding'); }} disabled={saving || !!createdOrganisation} className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 px-2 py-2"><ArrowLeft className="w-4 h-4" aria-hidden="true" /> Back</button>
           <div className="flex flex-wrap items-center gap-3">
             <button type="submit" disabled={saving} className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg font-bold text-sm bg-brand-primary hover:bg-brand-secondary text-brand-ink disabled:opacity-60 disabled:cursor-not-allowed">
               {saving ? <RefreshCw className="w-4 h-4 animate-spin" aria-hidden="true" /> : step === 1 ? <ArrowRight className="w-4 h-4" aria-hidden="true" /> : <Building2 className="w-4 h-4" aria-hidden="true" />}

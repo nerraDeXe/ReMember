@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useToast } from '../context/ToastContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import {
@@ -20,20 +20,26 @@ import { api } from '../api.js';
 import OrganisationImage from '../components/OrganisationImage.jsx';
 import ImageUploadField from '../components/ImageUploadField.jsx';
 import { filterOrganisations } from '../organisationDirectory.js';
+import { useNavigation, useUrlQuery, useUrlState } from '../routing.jsx';
 
 export default function OrganisationsManagementPage({ onNavigate }) {
   const { user, refreshUser, selectOrganisation } = useAuth();
   const { showToast } = useToast();
+  const { route, getSnapshot } = useNavigation();
+  const editorRoute = useRef(null);
   const [organisations, setOrganisations] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [visibilityFilter, setVisibilityFilter] = useState('all'); // 'all', 'public', 'private'
+  const [search, setSearch] = useUrlState('search', '', { replace: true });
+  const [visibilityFilter, setVisibilityFilter] = useUrlState('visibility', 'all', { replace: true });
   const [openingId, setOpeningId] = useState(null);
   const [loadError, setLoadError] = useState('');
 
   // Modal state
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingOrg, setEditingOrg] = useState(null);
+  const [editingOrgId, setEditingOrgId] = useUrlState('orgEdit');
+  const { closeQuery } = useUrlQuery();
+  const editingOrg = organisations.find(org => String(org._id) === editingOrgId) || null;
+  const isModalOpen = !!editingOrg;
+  const closeEditModal = () => closeQuery(['orgEdit']);
   const [saving, setSaving] = useState(false);
   const [togglingId, setTogglingId] = useState(null);
 
@@ -72,11 +78,12 @@ export default function OrganisationsManagementPage({ onNavigate }) {
   }, []);
 
   const openPortal = async (organisationId, owner = false) => {
+    const openingRoute = getSnapshot();
     setOpeningId(organisationId);
     try {
       const account = await selectOrganisation(organisationId);
       if (owner && account.organisationRole !== 'owner') throw new Error('You no longer own this organisation.');
-      onNavigate(account.organisationRole === 'owner' ? 'admin-dashboard' : 'member-dashboard');
+      if (getSnapshot() === openingRoute) onNavigate(account.organisationRole === 'owner' ? 'admin-dashboard' : 'member-dashboard');
     } catch (err) {
       showToast(err.message || 'Could not open this organisation.', 'error');
     } finally {
@@ -88,8 +95,11 @@ export default function OrganisationsManagementPage({ onNavigate }) {
     onNavigate('organisation-setup');
   };
 
-  const openEditModal = (org) => {
-    setEditingOrg(org);
+  useEffect(() => {
+    if (!editingOrg) { editorRoute.current = null; return; }
+    if (editorRoute.current === route) return;
+    editorRoute.current = route;
+    const org = editingOrg;
     setFormName(org.name || '');
     setFormCategory(org.category || 'General');
     setFormDescription(org.description || '');
@@ -101,8 +111,9 @@ export default function OrganisationsManagementPage({ onNavigate }) {
     setFormLogoUrl(org.logoUrl || '');
     setFormBannerUrl(org.bannerUrl || '');
     setReadingImages({ logo: false, banner: false });
-    setIsModalOpen(true);
-  };
+  }, [editingOrg, route]);
+
+  const openEditModal = (org) => setEditingOrgId(String(org._id));
 
   // Toggle Public / Private visibility
   const handleToggleVisibility = async (org) => {
@@ -141,6 +152,7 @@ export default function OrganisationsManagementPage({ onNavigate }) {
       return;
     }
 
+    const submittedRoute = getSnapshot();
     setSaving(true);
     const isPub = formVisibility === 'public';
     const payload = {
@@ -161,7 +173,7 @@ export default function OrganisationsManagementPage({ onNavigate }) {
       const res = await api.updateOrganisation(editingOrg._id, payload);
       if (res.success) {
         showToast(`Organisation "${payload.name}" updated successfully.`, 'success');
-        setIsModalOpen(false);
+        if (getSnapshot() === submittedRoute) closeEditModal();
         await loadOrganisations();
         await refreshUser();
       }
@@ -446,6 +458,14 @@ export default function OrganisationsManagementPage({ onNavigate }) {
       )}
 
       {/* Create / Edit Organisation Modal */}
+      {editingOrgId && !editingOrg && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-muted/35">
+          <div role="dialog" aria-modal="true" aria-label="Edit organisation" className="bg-white border border-slate-200 rounded-xl w-full max-w-lg p-6 space-y-4">
+            <p role={loading ? 'status' : 'alert'} className="text-sm text-slate-700">{loading ? 'Loading organisation...' : loadError || 'This organisation could not be found or you no longer own it.'}</p>
+            <button onClick={closeEditModal} className="text-sm font-semibold text-brand-ink hover:underline">Back to organisations</button>
+          </div>
+        </div>
+      )}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-muted/35 backdrop-blur-xs animate-fadeIn">
           <div className="bg-white rounded-2xl max-w-xl w-full border border-slate-200 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
@@ -464,7 +484,8 @@ export default function OrganisationsManagementPage({ onNavigate }) {
                 </div>
               </div>
               <button
-                onClick={() => setIsModalOpen(false)}
+                onClick={closeEditModal}
+                aria-label="Close organisation editor"
                 className="p-1 text-slate-400 hover:text-slate-600 rounded-lg"
               >
                 <X className="w-5 h-5" />
@@ -648,7 +669,7 @@ export default function OrganisationsManagementPage({ onNavigate }) {
               <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={closeEditModal}
                   className="px-4 py-2.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
                 >
                   Cancel

@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import EventModal from '../../components/EventModal.jsx';
 import EventSchedule, { EventLocation } from '../../components/EventSchedule.jsx';
 import { getEventAccessLabel, getEligibleEventTiers } from '../../../../shared/events.js';
+import { useNavigation } from '../../routing.jsx';
 
 export default function EventManagementPage() {
   const { showToast } = useToast();
@@ -18,8 +19,11 @@ export default function EventManagementPage() {
   const [tiersError, setTiersError] = useState('');
   const [reload, setReload] = useState(0);
   const [deletingId, setDeletingId] = useState('');
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [inspectEvent, setInspectEvent] = useState(null);
+  const { route, getSnapshot, updateQuery, closeQuery } = useNavigation();
+  const query = route.query;
+  const eventRoute = query.get('event');
+  const rosterId = query.get('roster');
+  const inspectEvent = events.find(event => event._id === rosterId) || null;
 
   useEffect(() => {
     let cancelled = false;
@@ -71,7 +75,7 @@ export default function EventManagementPage() {
         </div>
 
         <button
-          onClick={() => setIsCreateOpen(true)}
+          onClick={() => updateQuery({ event: 'new', roster: null })}
           disabled={loading || Boolean(tiersError)}
           className="py-2.5 px-4 rounded-lg bg-brand-primary hover:bg-brand-secondary text-brand-ink font-bold text-xs flex items-center gap-2 transition-colors self-start sm:self-auto shadow-sm disabled:opacity-50"
         >
@@ -141,7 +145,7 @@ export default function EventManagementPage() {
                             {rsvpsCount} / {evt.capacity}
                           </span>
                           <button
-                            onClick={() => setInspectEvent(evt)}
+                            onClick={() => updateQuery({ roster: evt._id, event: null })}
                             className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 border border-slate-200 text-brand-ink text-[10px] font-semibold flex items-center gap-1 transition-colors"
                             title="Inspect attendee list"
                           >
@@ -187,24 +191,37 @@ export default function EventManagementPage() {
 
       {/* Create Event Modal */}
       <EventModal
-        isOpen={isCreateOpen}
-        onClose={() => setIsCreateOpen(false)}
-        onCreated={loadEvents}
+        isOpen={eventRoute === 'new' && !loading && !tiersError}
+        onClose={() => { if (getSnapshot() === route) closeQuery(['event']); }}
+        onCreated={() => { if (getSnapshot() === route) loadEvents(); }}
         tiers={tiers}
         organisationId={organisationId}
       />
 
+      {eventRoute === 'new' && !loading && tiersError && (
+        <div role="alert" className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600">
+          <p>Membership access options are needed before creating an event. Retry loading the membership tiers above.</p>
+          <button onClick={() => closeQuery(['event'])} className="mt-3 font-semibold underline">Return to events</button>
+        </div>
+      )}
+
       {/* Attendee Roster Modal */}
-      {inspectEvent && (
+      {eventRoute && eventRoute !== 'new' && (
+        <div role="alert" className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600">
+          <p>This event page could not be found.</p>
+          <button onClick={() => closeQuery(['event'])} className="mt-3 font-semibold underline">Return to events</button>
+        </div>
+      )}
+      {rosterId && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-brand-muted/35 flex items-center justify-center p-4">
           <div className="relative w-full max-w-lg bg-white border border-slate-200 rounded-xl p-6 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <div>
-                <h3 className="text-base font-bold text-slate-900">{inspectEvent.title}</h3>
-                <p className="text-xs text-slate-500">Attendee Guest List ({inspectEvent.rsvps?.length || 0} confirmed)</p>
+                <h3 className="text-base font-bold text-slate-900">{inspectEvent?.title || 'Event attendees'}</h3>
+                {inspectEvent && <p className="text-xs text-slate-500">Attendee Guest List ({inspectEvent.rsvps?.length || 0} confirmed)</p>}
               </div>
               <button
-                onClick={() => setInspectEvent(null)}
+                onClick={() => closeQuery(['roster'])}
                 className="text-slate-400 hover:text-slate-700"
               >
                 <X className="w-5 h-5" />
@@ -212,7 +229,11 @@ export default function EventManagementPage() {
             </div>
 
             <div className="max-h-72 overflow-y-auto divide-y divide-slate-100">
-              {(inspectEvent.rsvps || []).length === 0 ? (
+              {loading ? (
+                <p role="status" className="py-8 text-center text-xs text-slate-500">Loading event attendees...</p>
+              ) : !inspectEvent ? (
+                <p role="alert" className="py-8 text-center text-xs text-slate-600">{loadError || 'This event could not be found. It may have been removed.'}</p>
+              ) : (inspectEvent.rsvps || []).length === 0 ? (
                 <div className="py-8 text-center text-xs text-slate-400">
                   No attendees have RSVP'd yet.
                 </div>
@@ -233,7 +254,7 @@ export default function EventManagementPage() {
 
             <div className="pt-2 text-right">
               <button
-                onClick={() => setInspectEvent(null)}
+                onClick={() => closeQuery(['roster'])}
                 className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-lg text-xs font-semibold transition-colors"
               >
                 Close

@@ -1,24 +1,33 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { getTierBadgeColor } from '../../theme.js';
 import { Layers, Plus, Edit2, Trash2, Check, RefreshCw } from 'lucide-react';
 import { api } from '../../api.js';
 import { useToast } from '../../context/ToastContext.jsx';
 import TierModal from '../../components/TierModal.jsx';
+import { useUrlState, useNavigation } from '../../routing.jsx';
 
 export default function TiersManagementPage() {
   const { showToast } = useToast();
   const [tiers, setTiers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editingTier, setEditingTier] = useState(null);
+  const [loadError, setLoadError] = useState('');
+  const [tierRoute, setTierRoute] = useUrlState('tier');
+  const { route, getSnapshot, closeQuery } = useNavigation();
+  const mounted = useRef(false);
+  const editingTier = tiers.find(tier => tier._id === tierRoute) || null;
+  const closeEditor = () => {
+    if (mounted.current && getSnapshot() === route) closeQuery(['tier']);
+  };
 
   const loadTiers = async () => {
+    setLoading(true);
+    setLoadError('');
     try {
       const data = await api.getTiers();
-      if (data.success) {
-        setTiers(data.tiers || []);
-      }
+      if (!data.success) throw new Error(data.message || 'Could not load tiers.');
+      setTiers(data.tiers || []);
     } catch (err) {
+      setLoadError(err.message || 'Could not load tiers.');
       console.error('Failed to load tiers:', err);
       showToast('Could not load tiers: ' + err.message, 'error');
     } finally {
@@ -27,7 +36,9 @@ export default function TiersManagementPage() {
   };
 
   useEffect(() => {
+    mounted.current = true;
     loadTiers();
+    return () => { mounted.current = false; };
   }, []);
 
   const handleDeleteTier = async (tier) => {
@@ -59,10 +70,7 @@ export default function TiersManagementPage() {
         </div>
 
         <button
-          onClick={() => {
-            setEditingTier(null);
-            setModalOpen(true);
-          }}
+          onClick={() => setTierRoute('new')}
           className="py-2.5 px-4 rounded-lg bg-brand-primary hover:bg-brand-secondary text-brand-ink font-bold text-xs flex items-center gap-2 transition-colors self-start sm:self-auto shadow-sm"
         >
           <Plus className="w-4 h-4" />
@@ -74,6 +82,10 @@ export default function TiersManagementPage() {
       {loading ? (
         <div className="py-20 flex justify-center">
           <RefreshCw className="w-8 h-8 text-brand-ink animate-spin" />
+        </div>
+      ) : loadError ? (
+        <div role="alert" className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600">
+          <p>{loadError}</p><button onClick={loadTiers} className="mt-3 font-semibold underline">Retry</button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -121,10 +133,7 @@ export default function TiersManagementPage() {
               {/* Actions Footer */}
               <div className="pt-6 border-t border-slate-100 mt-6 flex items-center justify-end gap-2">
                 <button
-                  onClick={() => {
-                    setEditingTier(tier);
-                    setModalOpen(true);
-                  }}
+                  onClick={() => setTierRoute(tier._id)}
                   className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-xs font-semibold flex items-center gap-1 transition-colors"
                   title="Modify Tier Rules"
                 >
@@ -146,11 +155,18 @@ export default function TiersManagementPage() {
       )}
 
       {/* Tier Create/Edit Modal */}
+      {tierRoute && tierRoute !== 'new' && !loading && !editingTier && (
+        <div role="alert" className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600">
+          <p>{loadError || 'This membership tier could not be found. It may have been removed.'}</p>
+          <button onClick={closeEditor} className="mt-3 font-semibold text-brand-ink underline">Return to tiers</button>
+        </div>
+      )}
       <TierModal
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
+        key={tierRoute}
+        isOpen={Boolean(tierRoute) && (tierRoute === 'new' || Boolean(editingTier))}
+        onClose={closeEditor}
         tierToEdit={editingTier}
-        onSaved={loadTiers}
+        onSaved={() => { if (mounted.current && getSnapshot() === route) loadTiers(); }}
       />
     </div>
   );

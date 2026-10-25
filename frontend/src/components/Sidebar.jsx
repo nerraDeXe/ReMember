@@ -6,6 +6,7 @@ import {
   FileText, ChevronDown,
 } from 'lucide-react';
 import OrganisationImage from './OrganisationImage.jsx';
+import PageLink from './PageLink.jsx';
 
 export default function Sidebar({ currentPage, onNavigate, isAdmin }) {
   const { user } = useAuth();
@@ -67,11 +68,11 @@ export default function Sidebar({ currentPage, onNavigate, isAdmin }) {
     const Icon = link.icon;
     const selected = currentPage === link.id;
     return (
-      <button key={link.id} type="button" onClick={() => onNavigate(link.id)} aria-current={selected ? 'page' : undefined}
+      <PageLink key={link.id} page={link.id} onNavigate={onNavigate} aria-current={selected ? 'page' : undefined}
         className={`w-full flex items-center gap-3 rounded-lg text-xs font-semibold transition-colors text-left ${nested ? 'px-3 py-2.5' : 'px-3.5 py-2.5'} ${selected ? 'bg-brand-primary text-brand-ink shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}>
         <Icon className={`w-4 h-4 shrink-0 ${selected ? 'text-brand-ink' : 'text-slate-500'}`} aria-hidden="true" />
         <span>{link.label}</span>
-      </button>
+      </PageLink>
     );
   };
 
@@ -86,7 +87,7 @@ export default function Sidebar({ currentPage, onNavigate, isAdmin }) {
       </nav>
 
       <aside className="w-64 shrink-0 hidden md:flex flex-col bg-white border-r border-slate-200 min-h-[calc(100vh-4rem)] p-4">
-        <button type="button" onClick={() => onNavigate('account-organisations')} className="w-full flex items-center gap-2 px-3 py-2 mb-3 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg"><ArrowLeft className="w-4 h-4" />My Organisations</button>
+        <PageLink page="account-organisations" onNavigate={onNavigate} className="w-full flex items-center gap-2 px-3 py-2 mb-3 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg"><ArrowLeft className="w-4 h-4" />My Organisations</PageLink>
         <div className="flex items-center gap-3 p-3 mb-5 rounded-xl bg-slate-50 border border-slate-200">
           <OrganisationImage src={user?.activeOrganisation?.logoUrl} alt="" className="w-10 h-10 rounded-lg border border-slate-200 shrink-0" />
           <div className="min-w-0"><p className="text-xs font-bold text-slate-900 break-words">{user?.activeOrganisation?.name || 'My account'}</p><p className="text-[10px] text-slate-500 mt-1">{isAdmin ? 'Admin Portal' : 'Member Portal'}</p></div>
