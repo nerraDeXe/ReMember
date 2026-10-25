@@ -3,6 +3,7 @@ import cors from 'cors';
 import { config } from './config/config.js';
 import { dbManager } from './models/db.js';
 import { startRenewalScheduler } from './services/renewalScheduler.js';
+import { mountFrontend } from './services/frontendHosting.js';
 
 import authRoutes from './routes/auth.js';
 import memberRoutes from './routes/members.js';
@@ -65,6 +66,10 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/emails', emailRoutes);
 app.use('/api/organisations', organisationRoutes);
 app.use('/api/organizations', organisationRoutes);
+
+// One Render web service serves the built website and the existing API.
+// Local development can still run Vite separately when no build exists.
+mountFrontend(app, { required: config.NODE_ENV === 'production' });
 
 // Error Handling Middleware
 app.use((err, req, res, next) => {

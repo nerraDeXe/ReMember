@@ -32,7 +32,7 @@ A web-based Membership Management System engineered with **React**, **Tailwind C
 
 ## 🚀 Quick Start Guide
 
-For hosted deployment, follow the [Vercel deployment guide](docs/VERCEL_DEPLOYMENT.md).
+For one-service hosting, follow the [Render deployment guide](docs/RENDER_DEPLOYMENT.md). The [Vercel deployment guide](docs/VERCEL_DEPLOYMENT.md) describes the alternative with a separately hosted backend.
 
 ### 1. Backend Server
 Set `MONGODB_URI` in `backend/.env` using `backend/.env.example` as a guide. The backend requires MongoDB to be available and does not store a local database copy.

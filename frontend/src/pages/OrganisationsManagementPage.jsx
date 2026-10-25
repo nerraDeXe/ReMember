@@ -232,54 +232,24 @@ export default function OrganisationsManagementPage({ onNavigate }) {
         </div>
       </div>
 
-      {/* Stats Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-5 rounded-xl bg-white border border-slate-200 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">Total Organisations</span>
-            <div className="p-2 rounded-lg bg-brand-50 text-brand-ink">
-              <Building2 className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="text-[35px] font-black text-slate-900 mt-2">{organisations.length}</div>
-          <div className="text-[11px] text-slate-500 mt-1">Managed communities</div>
+      <dl aria-label="Organisation summary" className="grid grid-cols-2 rounded-lg border border-slate-200 bg-white sm:grid-cols-4">
+        <div className="min-w-0 px-4 py-3 sm:px-5">
+          <dt className="text-xs font-medium text-slate-600">Total organisations</dt>
+          <dd className="mt-1 text-[32px] leading-none font-semibold tracking-tight text-slate-900 tabular-nums break-words md:text-[40px]">{organisations.length.toLocaleString()}</dd>
         </div>
-
-        <div className="p-5 rounded-xl bg-white border border-slate-200 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">Public (Searchable)</span>
-            <div className="p-2 rounded-lg bg-brand-50 text-brand-ink">
-              <Globe className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="text-[35px] font-black text-brand-ink mt-2">{publicCount}</div>
-          <div className="text-[11px] text-slate-500 mt-1">Visible on Home Page search</div>
+        <div className="min-w-0 border-l border-slate-200 px-4 py-3 sm:px-5">
+          <dt className="text-xs font-medium text-slate-600">Public</dt>
+          <dd className="mt-1 text-[32px] leading-none font-semibold tracking-tight text-slate-900 tabular-nums break-words md:text-[40px]">{publicCount.toLocaleString()}</dd>
         </div>
-
-        <div className="p-5 rounded-xl bg-white border border-slate-200 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">Private (Invite Only)</span>
-            <div className="p-2 rounded-lg bg-slate-100 text-brand-ink">
-              <Lock className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="text-[35px] font-black text-brand-ink mt-2">{privateCount}</div>
-          <div className="text-[11px] text-slate-500 mt-1">Hidden from public directory</div>
+        <div className="min-w-0 border-t border-slate-200 px-4 py-3 sm:border-l sm:border-t-0 sm:px-5">
+          <dt className="text-xs font-medium text-slate-600">Private</dt>
+          <dd className="mt-1 text-[32px] leading-none font-semibold tracking-tight text-slate-900 tabular-nums break-words md:text-[40px]">{privateCount.toLocaleString()}</dd>
         </div>
-
-        <div className="p-5 rounded-xl bg-white border border-slate-200 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">Community Members</span>
-            <div className="p-2 rounded-lg bg-brand-50 text-brand-ink">
-              <Users className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="text-[35px] font-black text-slate-900 mt-2">
-            {totalMembers.toLocaleString()}
-          </div>
-          <div className="text-[11px] text-slate-500 mt-1">Across your organisations</div>
+        <div className="min-w-0 border-l border-t border-slate-200 px-4 py-3 sm:border-t-0 sm:px-5">
+          <dt className="text-xs font-medium text-slate-600">Community members</dt>
+          <dd className="mt-1 text-[32px] leading-none font-semibold tracking-tight text-slate-900 tabular-nums break-words md:text-[40px]">{totalMembers.toLocaleString()}</dd>
         </div>
-      </div>
+      </dl>
 
       <div><h2 className="text-lg font-bold">Organisations You Own</h2><p className="text-xs text-slate-600 mt-1">Each organisation has its own administration portal.</p></div>
       {loadError && <div role="alert" className="flex items-center justify-between gap-3 bg-white border border-slate-300 rounded-lg p-4 text-sm"><p>{loadError}</p><button onClick={loadOrganisations} className="font-semibold underline">Retry</button></div>}

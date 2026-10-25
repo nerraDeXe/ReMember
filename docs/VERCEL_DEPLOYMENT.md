@@ -20,10 +20,12 @@ Use these settings:
 | --- | --- |
 | Repository | The complete ReMember repository |
 | Root directory | Repository root; leave blank |
-| Build command | `npm ci --prefix backend` |
+| Build command | `npm ci --prefix frontend --include=dev && npm run build --prefix frontend && npm ci --prefix backend` |
 | Start command | `npm start --prefix backend` |
 | Health check path | `/api/health` |
 | Instances | 1 when using the default public OpenStreetMap search provider |
+
+The backend now also serves the built React files, so its production build must include the frontend even when Vercel is your main website host. For a simpler setup using one Render service, follow [RENDER_DEPLOYMENT.md](RENDER_DEPLOYMENT.md).
 
 Keep the host-provided `PORT`. Configure these backend environment variables using your actual values:
 
