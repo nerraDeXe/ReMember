@@ -111,7 +111,7 @@ export default function TierModal({ isOpen, onClose, tierToEdit, onSaved }) {
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Price (USD)</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Price (MYR)</label>
               <input
                 type="number"
                 value={price}

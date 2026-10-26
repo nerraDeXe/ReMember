@@ -111,7 +111,7 @@ export default function TiersManagementPage() {
 
                 {/* Price */}
                 <div className="mb-4">
-                  <span className="text-3xl font-black text-slate-900">${tier.price}</span>
+                  <span className="text-3xl font-black text-slate-900">MYR {tier.price}</span>
                   <span className="text-xs text-slate-500 ml-1">/{tier.interval}</span>
                 </div>
 

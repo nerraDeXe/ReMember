@@ -101,7 +101,7 @@ export default function PaymentModal({ isOpen, onClose, user, tiers = [], onSucc
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">Amount Charged:</span>
-                <span className="font-bold text-brand-ink">${Number(completedInvoice.amount).toFixed(2)} USD</span>
+                <span className="font-bold text-brand-ink">MYR {Number(completedInvoice.amount).toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">New Validity Period:</span>
@@ -141,7 +141,7 @@ export default function PaymentModal({ isOpen, onClose, user, tiers = [], onSucc
                     >
                       <div className="text-xs font-bold text-slate-900 truncate">{t.name}</div>
                       <div className="text-sm font-extrabold text-brand-ink mt-0.5">
-                        ${t.price} <span className="text-[10px] text-slate-500 font-normal">/{t.interval}</span>
+                        MYR {t.price} <span className="text-[10px] text-slate-500 font-normal">/{t.interval}</span>
                       </div>
                     </button>
                   );
@@ -236,11 +236,11 @@ export default function PaymentModal({ isOpen, onClose, user, tiers = [], onSucc
                   <span>Processing Payment via Gateway...</span>
                 </>
               ) : simulateFailure ? (
-                <span>Trigger Simulated Payment Failure ($ {currentTier.price})</span>
+                <span>Trigger Simulated Payment Failure (MYR {currentTier.price})</span>
               ) : (
                 <>
                   <Shield className="w-4 h-4" />
-                  <span>Complete Test Payment (${Number(currentTier.price).toFixed(2)} USD)</span>
+                  <span>Complete Test Payment (MYR {Number(currentTier.price).toFixed(2)})</span>
                 </>
               )}
             </button>

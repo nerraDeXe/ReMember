@@ -102,7 +102,7 @@ export default function InvoicesPage() {
                         {inv.paymentMethod}
                       </td>
                       <td className="p-4 font-bold text-slate-900">
-                        ${Number(inv.amount).toFixed(2)} USD
+                        MYR {Number(inv.amount).toFixed(2)}
                       </td>
                       <td className="p-4">
                         <span

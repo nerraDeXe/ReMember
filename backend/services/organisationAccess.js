@@ -97,7 +97,7 @@ export function normaliseTierInput(input = {}) {
   }
   const price = Number(input.price);
   if (!Number.isFinite(price) || price < 0 || price > 1000000 || Math.abs(price * 100 - Math.round(price * 100)) > 0.00001) {
-    throw new Error('Tier prices must be between USD 0 and USD 1,000,000, with at most two decimal places.');
+    throw new Error('Tier prices must be between MYR 0 and MYR 1,000,000, with at most two decimal places.');
   }
   const interval = input.interval || 'monthly';
   if (!['monthly', 'yearly'].includes(interval)) throw new Error('Choose monthly or yearly billing.');

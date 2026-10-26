@@ -82,12 +82,12 @@ export default function AdminDashboard({ onNavigate }) {
             </div>
           </div>
           <div className="text-2xl font-black text-slate-900 mt-2">
-            ${(metrics.totalRevenue || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+            MYR {(metrics.totalRevenue || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
           </div>
           <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1">
-            <span className="text-brand-ink font-semibold">Sub: ${metrics.totalSubscriptionRevenue || 0}</span>
+            <span className="text-brand-ink font-semibold">Sub: MYR {metrics.totalSubscriptionRevenue || 0}</span>
             <span>•</span>
-            <span>Events: ${metrics.totalEventTicketingRevenue || 0}</span>
+            <span>Events: MYR {metrics.totalEventTicketingRevenue || 0}</span>
           </div>
         </div>
 
@@ -115,10 +115,10 @@ export default function AdminDashboard({ onNavigate }) {
             </div>
           </div>
           <div className="text-2xl font-black text-slate-900 mt-2">
-            ${(metrics.monthlyRecurringRevenue || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+            MYR {(metrics.monthlyRecurringRevenue || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
           </div>
           <div className="text-[11px] text-slate-600 mt-1">
-            ARR Run-Rate: ${(metrics.annualRunRate || 0).toLocaleString()}
+            ARR Run-Rate: MYR {(metrics.annualRunRate || 0).toLocaleString()}
           </div>
         </div>
 

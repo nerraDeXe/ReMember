@@ -6,9 +6,9 @@ import { defaultAnalyticsRange, validateAnalyticsRange } from '../analyticsRange
 import { useUrlQuery, useUrlState } from '../routing.jsx';
 
 const number = (value) => Number(value || 0).toLocaleString('en-US');
-const money = (value) => Number(value || 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+const money = (value) => Number(value || 0).toLocaleString('en-US', { style: 'currency', currency: 'MYR', currencyDisplay: 'code' });
 const compactMoney = (value) => Number(value || 0).toLocaleString('en-US', {
-  style: 'currency', currency: 'USD', notation: Math.abs(value) < 1 ? 'standard' : 'compact',
+  style: 'currency', currency: 'MYR', currencyDisplay: 'code', notation: Math.abs(value) < 1 ? 'standard' : 'compact',
   maximumFractionDigits: Math.abs(value) < 1 ? 3 : 1,
 });
 const chartCard = 'min-w-0 rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm';
@@ -20,7 +20,7 @@ const paymentSeries = [
   { key: 'paidPayments', label: 'Successful', color: '#0f766e' },
   { key: 'failedPayments', label: 'Failed', color: '#be123c' },
 ];
-const revenueSeries = [{ key: 'revenue', label: 'Revenue (USD)', color: '#a16207' }];
+const revenueSeries = [{ key: 'revenue', label: 'Revenue (MYR)', color: '#a16207' }];
 
 function ChartLoading() {
   return (
@@ -177,12 +177,12 @@ export default function DashboardAnalytics({ organisationId, onNavigate }) {
               <div>
                 <h3 className="text-sm font-bold text-slate-900">Revenue received</h3>
                 <p className="mt-2 text-2xl font-extrabold text-slate-900 tabular-nums">{money(summary.revenue)}</p>
-                <p className="mt-0.5 text-xs text-slate-500">USD collected in this period</p>
+                <p className="mt-0.5 text-xs text-slate-500">MYR collected in this period</p>
               </div>
               <button type="button" onClick={() => onNavigate('admin-finances')} className="flex items-center gap-1 py-1 text-xs font-semibold text-slate-600 hover:text-slate-900">Details<ArrowRight className="h-3.5 w-3.5" aria-hidden="true" /></button>
             </div>
-            <div className="mt-5"><TrendChart title="Revenue received in USD" data={data.paymentTrend} series={revenueSeries} valueFormatter={money} axisFormatter={compactMoney} allowDecimals emptyMessage="No USD revenue received in this period." /></div>
-            <p className="mt-3 text-[11px] leading-relaxed text-slate-500">Paid USD invoices only, grouped by payment date (invoice date when unavailable). Pending and failed invoices are excluded.{data.excludedCurrencyPayments > 0 && ` ${number(data.excludedCurrencyPayments)} payments in other currencies appear in payment counts only.`}</p>
+            <div className="mt-5"><TrendChart title="Revenue received in MYR" data={data.paymentTrend} series={revenueSeries} valueFormatter={money} axisFormatter={compactMoney} allowDecimals emptyMessage="No MYR revenue received in this period." /></div>
+            <p className="mt-3 text-[11px] leading-relaxed text-slate-500">Paid MYR invoices only, grouped by payment date (invoice date when unavailable). Pending and failed invoices are excluded.{data.excludedCurrencyPayments > 0 && ` ${number(data.excludedCurrencyPayments)} payments in other currencies appear in payment counts only.`}</p>
           </article>
 
           <article className={chartCard}>

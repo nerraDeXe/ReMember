@@ -145,7 +145,7 @@ export default function InvoiceModal({ invoice, isOpen, onClose }) {
                     {invoice.billingInterval || 'Yearly'}
                   </td>
                   <td className="p-3 text-right font-bold text-slate-900 print:text-black">
-                    ${Number(invoice.amount).toFixed(2)} USD
+                    MYR {Number(invoice.amount).toFixed(2)}
                   </td>
                 </tr>
               </tbody>
@@ -157,16 +157,16 @@ export default function InvoiceModal({ invoice, isOpen, onClose }) {
             <div className="w-56 space-y-1.5 text-xs text-right">
               <div className="flex justify-between text-slate-500 print:text-neutral-600">
                 <span>Subtotal:</span>
-                <span>${Number(invoice.amount).toFixed(2)} USD</span>
+                <span>MYR {Number(invoice.amount).toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-slate-500 print:text-neutral-600">
                 <span>Tax (0%):</span>
-                <span>$0.00 USD</span>
+                <span>MYR 0.00</span>
               </div>
               <div className="flex justify-between text-sm font-extrabold text-slate-900 print:text-black pt-2 border-t border-slate-200 print:border-neutral-300">
                 <span>Total Paid:</span>
                 <span className="text-brand-ink font-black print:text-black">
-                  ${Number(invoice.amount).toFixed(2)} USD
+                  MYR {Number(invoice.amount).toFixed(2)}
                 </span>
               </div>
             </div>

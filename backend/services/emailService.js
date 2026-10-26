@@ -74,7 +74,7 @@ export const emailService = {
             </tr>
             <tr>
               <td style="padding: 8px 0; color: #555555;">Amount Paid</td>
-              <td style="padding: 8px 0; text-align: right; color: #333333; font-size: 18px; font-weight: 700;">$${invoice.amount.toFixed(2)} USD</td>
+              <td style="padding: 8px 0; text-align: right; color: #333333; font-size: 18px; font-weight: 700;">MYR ${invoice.amount.toFixed(2)}</td>
             </tr>
             <tr>
               <td style="padding: 8px 0; color: #555555;">Payment Method</td>

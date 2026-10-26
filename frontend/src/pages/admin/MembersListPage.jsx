@@ -432,7 +432,7 @@ export default function MembersListPage() {
                 >
                   <div>
                     <div className="text-xs font-bold text-slate-900">{t.name}</div>
-                    <div className="text-[11px] text-brand-ink font-semibold">${t.price} / {t.interval}</div>
+                    <div className="text-[11px] text-brand-ink font-semibold">MYR {t.price} / {t.interval}</div>
                   </div>
                   {selectedNewTierId === t._id && (
                     <CheckCircle2 className="w-4 h-4 text-brand-ink" />

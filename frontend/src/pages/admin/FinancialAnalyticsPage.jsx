@@ -73,7 +73,7 @@ export default function FinancialAnalyticsPage() {
             </div>
           </div>
           <div className="text-2xl font-black text-slate-900 mt-2">
-            ${(metrics.totalRevenue || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+            MYR {(metrics.totalRevenue || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
           </div>
           <div className="text-[11px] text-slate-500 mt-1">
             Across {metrics.totalTransactions || 0} total billing attempts
@@ -88,7 +88,7 @@ export default function FinancialAnalyticsPage() {
             </div>
           </div>
           <div className="text-2xl font-black text-slate-900 mt-2">
-            ${subRev.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+            MYR {subRev.toLocaleString('en-US', { minimumFractionDigits: 2 })}
           </div>
           <div className="text-[11px] text-brand-ink mt-1 font-semibold">
             {subPercent}% of total revenue
@@ -103,7 +103,7 @@ export default function FinancialAnalyticsPage() {
             </div>
           </div>
           <div className="text-2xl font-black text-slate-900 mt-2">
-            ${eventRev.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+            MYR {eventRev.toLocaleString('en-US', { minimumFractionDigits: 2 })}
           </div>
           <div className="text-[11px] text-brand-ink mt-1 font-semibold">
             {eventPercent}% of total revenue
@@ -118,10 +118,10 @@ export default function FinancialAnalyticsPage() {
             </div>
           </div>
           <div className="text-2xl font-black text-slate-900 mt-2">
-            ${(metrics.monthlyRecurringRevenue || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+            MYR {(metrics.monthlyRecurringRevenue || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
           </div>
           <div className="text-[11px] text-slate-600 mt-1">
-            Annual Run Rate: ${(metrics.annualRunRate || 0).toLocaleString()}
+            Annual Run Rate: MYR {(metrics.annualRunRate || 0).toLocaleString()}
           </div>
         </div>
       </div>
@@ -140,7 +140,7 @@ export default function FinancialAnalyticsPage() {
                   Membership Subscriptions
                 </span>
                 <span className="font-bold text-slate-900">
-                  ${subRev.toFixed(2)} ({subPercent}%)
+                  MYR {subRev.toFixed(2)} ({subPercent}%)
                 </span>
               </div>
               <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden p-0.5 border border-slate-200">
@@ -158,7 +158,7 @@ export default function FinancialAnalyticsPage() {
                   Event Ticketing
                 </span>
                 <span className="font-bold text-slate-900">
-                  ${eventRev.toFixed(2)} ({eventPercent}%)
+                  MYR {eventRev.toFixed(2)} ({eventPercent}%)
                 </span>
               </div>
               <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden p-0.5 border border-slate-200">
@@ -197,7 +197,7 @@ export default function FinancialAnalyticsPage() {
                   <div className="flex justify-between text-xs mb-1">
                     <span className="font-semibold text-slate-900">{tierName}</span>
                     <span className="font-bold text-brand-ink">
-                      ${Number(amount).toFixed(2)} USD ({tierShare}%)
+                      MYR {Number(amount).toFixed(2)} ({tierShare}%)
                     </span>
                   </div>
                   <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
@@ -242,7 +242,7 @@ export default function FinancialAnalyticsPage() {
                     <td className="p-4 font-semibold text-slate-900">{tx.userName}</td>
                     <td className="p-4 text-slate-700">{tx.tierName}</td>
                     <td className="p-4 text-slate-500 font-mono text-[11px]">{tx.paymentMethod}</td>
-                    <td className="p-4 font-bold text-slate-900">${Number(tx.amount).toFixed(2)}</td>
+                    <td className="p-4 font-bold text-slate-900">MYR {Number(tx.amount).toFixed(2)}</td>
                     <td className="p-4">
                       <span
                         className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
