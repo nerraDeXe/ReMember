@@ -7,6 +7,7 @@ import { OAuth2Client } from 'google-auth-library';
 
 export const GMAIL_SEND_SCOPE = 'https://www.googleapis.com/auth/gmail.send';
 export const CALLBACK_URL = 'http://127.0.0.1:53682/oauth2/callback';
+export const DESKTOP_CALLBACK_URL = 'http://127.0.0.1:53682/';
 const ENV_PATH = fileURLToPath(new URL('../.env', import.meta.url));
 
 class SetupError extends Error {}
@@ -51,24 +52,27 @@ function reply(response, status, message) {
   response.end(message);
 }
 
-async function saveRefreshToken(refreshToken) {
+async function saveRefreshToken(refreshToken, envPath = ENV_PATH) {
   // Read again so unrelated settings edited during consent are preserved.
   let source = '';
-  try { source = await readFile(ENV_PATH, 'utf8'); }
+  try { source = await readFile(envPath, 'utf8'); }
   catch (error) { if (error.code !== 'ENOENT') throw new SetupError('Could not read backend/.env. No settings were changed.'); }
   const result = updateEnvironment(source, { MAIL_TRANSPORT: 'gmail-api', GMAIL_REFRESH_TOKEN: refreshToken });
-  const temporaryPath = `${ENV_PATH}.gmail-oauth-${randomBytes(8).toString('hex')}`;
+  const temporaryPath = `${envPath}.gmail-oauth-${randomBytes(8).toString('hex')}`;
   try {
     await writeFile(temporaryPath, result, { flag: 'wx', mode: 0o600 });
-    await rename(temporaryPath, ENV_PATH);
+    await rename(temporaryPath, envPath);
   } catch {
     throw new SetupError('Could not save backend/.env. Check local file permissions, then run setup again. A temporary .env.gmail-oauth-* file may remain; keep it private.');
   }
 }
 
-export async function authorizeGmail({ environment = process.env, timeoutMs = 10 * 60_000 } = {}) {
+export async function authorizeGmail({ environment = process.env, timeoutMs = 10 * 60_000, desktop = false, port = 53682, envPath = ENV_PATH } = {}) {
+  if (!Number.isInteger(port) || port < 1 || port > 65535) throw new SetupError('The local callback port is invalid.');
+  const callbackUrl = new URL(desktop ? DESKTOP_CALLBACK_URL : CALLBACK_URL);
+  callbackUrl.port = String(port);
   let fileEnvironment = {};
-  try { fileEnvironment = dotenv.parse(await readFile(ENV_PATH, 'utf8')); }
+  try { fileEnvironment = dotenv.parse(await readFile(envPath, 'utf8')); }
   catch (error) { if (error.code !== 'ENOENT') throw new SetupError('Could not read backend/.env. Check local file permissions.'); }
   const config = { ...fileEnvironment, ...environment };
   if (!config.GMAIL_CLIENT_ID?.trim() || !config.GMAIL_CLIENT_SECRET?.trim() || !config.EMAIL_FROM?.trim()) {
@@ -78,7 +82,7 @@ export async function authorizeGmail({ environment = process.env, timeoutMs = 10
   const client = new OAuth2Client({
     clientId: config.GMAIL_CLIENT_ID.trim(),
     clientSecret: config.GMAIL_CLIENT_SECRET.trim(),
-    redirectUri: CALLBACK_URL,
+    redirectUri: callbackUrl.href,
     transporterOptions: { timeout: 30_000 },
   });
   const state = randomBytes(32).toString('hex');
@@ -109,9 +113,9 @@ export async function authorizeGmail({ environment = process.env, timeoutMs = 10
     const interrupted = () => finish(new SetupError('Gmail authorization cancelled. Run setup again if needed.'));
     const server = createServer(async (request, response) => {
       let url;
-      try { url = new URL(request.url, CALLBACK_URL); }
+      try { url = new URL(request.url, callbackUrl); }
       catch { return reply(response, 400, 'Invalid request.'); }
-      if (request.method !== 'GET' || url.pathname !== '/oauth2/callback') {
+      if (request.method !== 'GET' || url.pathname !== callbackUrl.pathname) {
         reply(response, 404, 'Not found.');
         return;
       }
@@ -142,7 +146,7 @@ export async function authorizeGmail({ environment = process.env, timeoutMs = 10
           throw new SetupError('Google did not return a refresh token. Revoke this mail client in your Google account permissions, then run setup again.');
         }
         clearTimeout(timer);
-        await saveRefreshToken(tokens.refresh_token);
+        await saveRefreshToken(tokens.refresh_token, envPath);
         reply(response, 200, 'Gmail authorization saved to backend/.env. You can close this tab and return to the terminal.');
         finish();
       } catch (error) {
@@ -150,8 +154,11 @@ export async function authorizeGmail({ environment = process.env, timeoutMs = 10
         finish(error instanceof SetupError ? error : new SetupError('Could not exchange the Google authorization code. Check the OAuth client, redirect URI and internet connection, then run setup again.'));
       }
     });
-    server.on('error', () => finish(new SetupError('Could not start the local callback on 127.0.0.1:53682. Close any app using that port and run setup again.')));
-    server.listen(53682, '127.0.0.1', () => {
+    server.on('error', () => finish(new SetupError(`Could not start the local callback on 127.0.0.1:${port}. Close any app using that port and run setup again.`)));
+    server.listen(port, '127.0.0.1', () => {
+      console.log(`OAuth client ID: ${config.GMAIL_CLIENT_ID.trim()}`);
+      console.log(`Callback URL: ${callbackUrl.href}`);
+      console.log(desktop ? 'Desktop mode: use credentials from a Desktop app OAuth client.' : 'Web mode: register the callback URL in this Web application client.');
       console.log('This setup writes MAIL_TRANSPORT and GMAIL_REFRESH_TOKEN to the ignored backend/.env file after you grant consent.');
       console.log('Open this link on this computer. Sign in as the Gmail mailbox used in EMAIL_FROM and grant sending permission:');
       console.log(consentUrl);
@@ -166,16 +173,17 @@ export async function authorizeGmail({ environment = process.env, timeoutMs = 10
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   if (process.argv.includes('--help') || process.argv.includes('-h')) {
-    console.log('Usage: node backend/scripts/gmail-oauth.mjs');
+    console.log('Usage: node backend/scripts/gmail-oauth.mjs [--desktop]');
     console.log('Set GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET and EMAIL_FROM in backend/.env first.');
     console.log(`Web application authorized redirect URI: ${CALLBACK_URL}`);
+    console.log(`Desktop mode uses ${DESKTOP_CALLBACK_URL} with a Desktop app OAuth client; no web redirect registration is needed.`);
     console.log('After Google consent, saves MAIL_TRANSPORT=gmail-api and GMAIL_REFRESH_TOKEN to ignored backend/.env.');
     console.log('Run locally on the computer where you will open the consent link. See docs/GMAIL_API_SETUP.md.');
-  } else if (process.argv.length > 2) {
+  } else if (process.argv.slice(2).some(argument => argument !== '--desktop')) {
     console.error('Unknown option. Use --help for setup instructions.');
     process.exitCode = 1;
   } else {
-    authorizeGmail().catch((error) => {
+    authorizeGmail({ desktop: process.argv.includes('--desktop') }).catch((error) => {
       // OAuth library errors can contain credentials and token response data.
       console.error(error instanceof SetupError ? error.message : 'Gmail setup failed. Check docs/GMAIL_API_SETUP.md and run setup again.');
       process.exitCode = 1;

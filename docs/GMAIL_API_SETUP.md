@@ -84,6 +84,25 @@ This integration sends as one mailbox. Google consent may be revoked from that m
 
 ## Troubleshooting
 
+### Repeated redirect mismatch with an apparently correct Web client
+
+If the saved client ID and redirect URI match the request but Google still rejects it, the local helper also supports Google's [Desktop OAuth loopback flow](https://developers.google.com/identity/protocols/oauth2/native-app). This gives the local authorization tool a separate client; it does not require editing your website's Google sign-in client.
+
+1. In the same Google Cloud project with Gmail API enabled, open Google Auth Platform → Clients → Create client and select **Desktop app**. Save its new client ID and client secret privately.
+2. Replace only `GMAIL_CLIENT_ID` and `GMAIL_CLIENT_SECRET` in local `backend/.env` with the new Desktop client's pair. Keep `EMAIL_FROM` set to the sending Gmail address. Existing terminal environment variables take precedence over `.env`; ensure the client ID printed by the helper is the new one.
+3. Stop any previous helper with Ctrl+C, then run from the repository root:
+
+   ```sh
+   node backend/scripts/gmail-oauth.mjs --desktop
+   ```
+
+4. Open its new consent link and authorize the sender. Desktop mode uses `http://127.0.0.1:53682/`; Desktop clients do not have a Web application's Authorized redirect URIs list.
+5. After success, copy the new matching client ID, client secret and saved refresh token to Render, keep `MAIL_TRANSPORT=gmail-api` and `EMAIL_FROM`, then redeploy. A refresh token from the previous Web client must not be mixed with the Desktop client's credentials.
+
+The helper still validates state, uses PKCE, listens only on loopback and requests only `gmail.send`. Testing audience and token-expiration rules above still apply.
+
+### Other failures
+
 | Symptom | Action |
 | --- | --- |
 | `redirect_uri_mismatch` on Google's page | Add exactly `http://127.0.0.1:53682/oauth2/callback` to this Web application client's Authorized redirect URIs. |
