@@ -4,6 +4,7 @@ import { config } from './config/config.js';
 import { dbManager } from './models/db.js';
 import { startRenewalScheduler } from './services/renewalScheduler.js';
 import { mountFrontend } from './services/frontendHosting.js';
+import { mailDelivery } from './services/mailDelivery.js';
 
 import authRoutes from './routes/auth.js';
 import memberRoutes from './routes/members.js';
@@ -101,7 +102,7 @@ async function startServer() {
       console.log(`🛡️  RBAC & JWT Security: ENABLED`);
       console.log(`💳 Integrated Payment Processor: ENABLED`);
       console.log(`🎟️  Google Wallet Pass Engine: ENABLED`);
-      console.log(`✉️  Automated Email Dispatcher: ENABLED`);
+      console.log(`✉️  Automated Email Dispatcher: ${mailDelivery.isConfigured() ? `${mailDelivery.deliveryMethod()} configured` : 'NOT CONFIGURED'}`);
       console.log(`======================================================\n`);
     });
     const stopRenewalScheduler = startRenewalScheduler();

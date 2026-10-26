@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ExternalLink, Check, Copy, RefreshCw, QrCode, ShieldCheck, Sparkles } from 'lucide-react';
+import { ExternalLink, Check, Copy, RefreshCw, QrCode, ShieldCheck, Sparkles, User } from 'lucide-react';
 import { useToast } from '../context/ToastContext.jsx';
 import StatusBadge from './StatusBadge.jsx';
 
@@ -86,8 +86,8 @@ export default function GoogleWalletPass({ user, walletData, onSync }) {
 
           {/* Member Details */}
           <div className="flex items-center gap-4 my-4">
-            <div className="w-14 h-14 rounded-full border-2 border-white/50 bg-white/40" aria-label={user?.avatarUrl ? `${user?.name} profile photo` : 'No profile photo'}>
-              {user?.avatarUrl && <img src={user.avatarUrl} alt={`${user?.name || 'User'} profile`} className="w-full h-full rounded-full object-cover" />}
+            <div className="w-14 h-14 rounded-full border-2 border-white/50 bg-white/40 flex items-center justify-center" role="img" aria-label={user?.avatarUrl ? `${user?.name || 'User'} profile photo` : `${user?.name || 'User'} profile icon`}>
+              {user?.avatarUrl ? <img src={user.avatarUrl} alt={`${user?.name || 'User'} profile`} className="w-full h-full rounded-full object-cover" /> : <User className="w-7 h-7" aria-hidden="true" />}
             </div>
             <div className="flex-1">
               <h3 className="text-lg font-bold leading-tight">

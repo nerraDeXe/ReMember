@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Users,
+  User,
   Search,
   Download,
   ChevronLeft,
@@ -275,8 +276,8 @@ export default function MembersListPage() {
                     {/* Member Name & Email */}
                     <td className="p-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full border border-slate-200 bg-slate-50" aria-label={member.avatarUrl ? `${member.name} profile photo` : 'No profile photo'}>
-                          {member.avatarUrl && <img src={member.avatarUrl} alt={`${member.name} profile`} className="w-full h-full rounded-full object-cover" />}
+                        <div className="w-9 h-9 rounded-full border border-slate-200 bg-slate-50 flex items-center justify-center" role="img" aria-label={member.avatarUrl ? `${member.name} profile photo` : `${member.name || 'User'} profile icon`}>
+                          {member.avatarUrl ? <img src={member.avatarUrl} alt={`${member.name} profile`} className="w-full h-full rounded-full object-cover" /> : <User className="w-5 h-5 text-slate-500" aria-hidden="true" />}
                         </div>
                         <div>
                           <div className="font-bold text-slate-900 leading-tight">{member.name}</div>

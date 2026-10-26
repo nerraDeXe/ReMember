@@ -38,7 +38,7 @@ See [page URLs and browser navigation](docs/NAVIGATION.md) for direct links, for
 
 ### 1. Backend Server
 Set `MONGODB_URI` in `backend/.env` using `backend/.env.example` as a guide. The backend requires MongoDB to be available and does not store a local database copy.
-Configure SMTP to send account verification emails. See [account and organisation setup](backend/ACCOUNT_FLOW.md) for the new signup flow and required email settings.
+Configure email delivery to send account verification emails. Use the [Gmail API setup](docs/GMAIL_API_SETUP.md) on Render Free, or SMTP on a host with outbound SMTP access. See [account and organisation setup](backend/ACCOUNT_FLOW.md) for the signup flow and email settings.
 
 ```bash
 cd backend

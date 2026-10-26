@@ -45,11 +45,11 @@ EMAIL_FROM=ReMember <verified-sender@your-domain.com>
 NOMINATIM_USER_AGENT=ReMember/1.0 (+https://your-project.vercel.app)
 ```
 
-Use the SMTP port and TLS settings required by your email provider. SMTP is needed for account verification, password recovery and member emails. Set a new strong `JWT_SECRET` instead of relying on the development fallback. Allow your backend host to connect to MongoDB using your database provider's network access settings.
+Email delivery is needed for account verification, password recovery and member emails. For a backend on Render Free, use the [Gmail API setup](GMAIL_API_SETUP.md) over HTTPS instead of the SMTP variables above. On hosts with outbound SMTP access, use the port and TLS settings required by your provider. Set a new strong `JWT_SECRET` instead of relying on the development fallback. Allow your backend host to connect to MongoDB using your database provider's network access settings.
 
 Use the intended Vercel/custom frontend URL for `APP_WEB_URL`; update it after Vercel assigns the actual domain. The same applies to `NOMINATIM_USER_AGENT`.
 
-A sleeping free web service will pause the in-process renewal scheduler. Render's free services [sleep when idle and block outbound SMTP ports](https://render.com/docs/free), so choose a service that stays running and supports your SMTP connection if you need all existing email features.
+A sleeping free web service will pause the in-process renewal scheduler. Render's free services [sleep when idle and block outbound SMTP ports](https://render.com/docs/free). Gmail API avoids the SMTP port restriction; scheduled reminders still require a running backend.
 
 After deployment, open `https://YOUR-BACKEND-HOST/api/health`. It should return HTTP 200 with `"status":"healthy"`. Copy the backend's public HTTPS URL for the next step.
 

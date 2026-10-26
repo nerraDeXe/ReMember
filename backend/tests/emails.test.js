@@ -1,17 +1,24 @@
 import assert from 'node:assert/strict';
-import { beforeEach, test } from 'node:test';
+import { afterEach, beforeEach, test } from 'node:test';
 import { once } from 'node:events';
 import net from 'node:net';
 import { EmailNotification, ActivityLog } from '../models/index.js';
 import { emailService } from '../services/emailService.js';
-import { mailDelivery } from '../services/mailDelivery.js';
+import { mailDelivery, logMailDeliveryFailure } from '../services/mailDelivery.js';
+import { gmailDelivery } from '../services/gmailDelivery.js';
+import nodemailer from 'nodemailer';
 import { getOrganisationEmailSettings } from '../../shared/organisationEmails.js';
 
 const member = { _id: 'member', name: 'Test Member', email: 'member@example.test', membershipNumber: 'MEM-TEST', tierName: 'Community', status: 'active' };
 const event = { organisationId: 'org', title: 'Community Meetup', date: '2099-01-01', time: '18:00', location: 'Main Hall' };
 let records, activities, savedStatuses;
+const MAIL_ENV_KEYS = ['MAIL_TRANSPORT', 'SMTP_HOST', 'SMTP_PORT', 'SMTP_SECURE', 'SMTP_REQUIRE_TLS', 'SMTP_USER', 'SMTP_PASSWORD', 'GMAIL_CLIENT_ID', 'GMAIL_CLIENT_SECRET', 'GMAIL_REFRESH_TOKEN', 'EMAIL_FROM'];
+let previousMailEnvironment;
 
 beforeEach(t => {
+  previousMailEnvironment = Object.fromEntries(MAIL_ENV_KEYS.map(key => [key, process.env[key]]));
+  for (const key of MAIL_ENV_KEYS) delete process.env[key];
+  process.env.MAIL_TRANSPORT = 'smtp';
   records = [];
   activities = [];
   savedStatuses = [];
@@ -27,6 +34,119 @@ beforeEach(t => {
     return record;
   });
   t.mock.method(ActivityLog, 'create', async input => { activities.push(input); return input; });
+});
+
+afterEach(() => {
+  for (const [key, value] of Object.entries(previousMailEnvironment)) {
+    if (value === undefined) delete process.env[key];
+    else process.env[key] = value;
+  }
+});
+
+const gmailSettings = () => Object.assign(process.env, {
+  MAIL_TRANSPORT: 'gmail-api', GMAIL_CLIENT_ID: 'fixture-client-id',
+  GMAIL_CLIENT_SECRET: 'fixture-client-secret', GMAIL_REFRESH_TOKEN: 'fixture-refresh-token',
+  EMAIL_FROM: 'ReMember <sender@example.test>',
+});
+
+test('Automatic Gmail selection uses the API even when legacy SMTP settings remain configured', async t => {
+  gmailSettings();
+  Object.assign(process.env, { MAIL_TRANSPORT: 'auto', SMTP_HOST: 'smtp.gmail.com', SMTP_USER: 'sender@example.test', SMTP_PASSWORD: 'fixture-app-password' });
+  t.mock.method(nodemailer, 'createTransport', () => assert.fail('Gmail API delivery must not open SMTP'));
+  const send = t.mock.method(gmailDelivery, 'send', async () => ({ accepted: true, deliveryMethod: 'gmail-api' }));
+  assert.equal(mailDelivery.deliveryMethod(), 'gmail-api');
+  assert.equal(mailDelivery.isConfigured(), true);
+  assert.deepEqual(await mailDelivery.send({ to: member.email, subject: 'Fixture', text: 'Test' }), { accepted: true, deliveryMethod: 'gmail-api' });
+  assert.equal(send.mock.calls.length, 1);
+});
+
+test('Partial Gmail setup and unknown transport fail without silently falling back to SMTP', async t => {
+  Object.assign(process.env, { MAIL_TRANSPORT: 'auto', GMAIL_CLIENT_ID: 'fixture-client-id', SMTP_HOST: 'smtp.gmail.com', EMAIL_FROM: 'sender@example.test' });
+  t.mock.method(nodemailer, 'createTransport', () => assert.fail('Incomplete API setup must not fall back to SMTP'));
+  t.mock.method(gmailDelivery, 'send', () => assert.fail('Incomplete API setup must not send'));
+  assert.equal(mailDelivery.deliveryMethod(), 'gmail-api');
+  assert.equal(mailDelivery.isConfigured(), false);
+  await assert.rejects(mailDelivery.send({ to: member.email, subject: 'Fixture', text: 'Test' }), { code: 'EMAIL_CONFIG' });
+  process.env.MAIL_TRANSPORT = 'unsupported';
+  assert.equal(mailDelivery.isConfigured(), false);
+  await assert.rejects(mailDelivery.send({ to: member.email, subject: 'Fixture', text: 'Test' }), { code: 'EMAIL_CONFIG' });
+  const record = await emailService.sendEventRsvpConfirmation(member, event);
+  assert.equal(record.status, 'unavailable');
+  assert.equal(record.sentAt, undefined);
+});
+
+test('Explicit SMTP selection retains the existing transport when Gmail settings are present', () => {
+  gmailSettings();
+  Object.assign(process.env, { MAIL_TRANSPORT: 'smtp', SMTP_HOST: 'smtp.gmail.com', SMTP_USER: 'sender@example.test', SMTP_PASSWORD: 'fixture-app-password' });
+  assert.equal(mailDelivery.deliveryMethod(), 'smtp');
+  assert.equal(mailDelivery.isConfigured(), true);
+});
+
+test('Gmail confirmations retain their transport and become sent only after API acceptance', async t => {
+  gmailSettings();
+  t.mock.method(gmailDelivery, 'send', async () => {
+    assert.equal(records.at(-1).status, 'pending');
+    return { accepted: true, deliveryMethod: 'gmail-api' };
+  });
+  const record = await emailService.sendEventRsvpConfirmation(member, event);
+  assert.equal(record.deliveryMethod, 'gmail-api');
+  assert.equal(record.status, 'sent');
+  assert.ok(record.sentAt);
+  assert.equal(activities[0].action, 'EMAIL_SENT');
+});
+
+test('Rejected or unacknowledged Gmail delivery never records a sent email', async t => {
+  gmailSettings();
+  t.mock.method(console, 'error', () => {});
+  const send = t.mock.method(gmailDelivery, 'send', async () => { throw Object.assign(new Error('API authorization failed'), { code: 'GMAIL_AUTH' }); });
+  const failed = await emailService.sendEventRsvpConfirmation(member, event);
+  assert.equal(failed.deliveryMethod, 'gmail-api');
+  assert.equal(failed.status, 'failed');
+  assert.equal(failed.sentAt, undefined);
+  send.mock.mockImplementation(async () => ({}));
+  const unacknowledged = await emailService.sendEventRsvpConfirmation(member, event);
+  assert.equal(unacknowledged.status, 'failed');
+  assert.equal(unacknowledged.sentAt, undefined);
+});
+
+test('SMTP failure diagnostics distinguish blocked connections from authentication failures without logging secrets', t => {
+  const log = t.mock.method(console, 'error', () => {});
+  const secret = 'private-app-password-reset-token-member@example.test';
+  const timeout = Object.assign(new Error(secret), {
+    code: 'ETIMEDOUT', command: `CONN ${secret}`, response: secret,
+    stack: secret, auth: { user: secret, pass: secret },
+  });
+  const authentication = Object.assign(new Error(secret), {
+    code: 'EAUTH', responseCode: 535, command: `AUTH ${secret}`, response: secret, stack: secret,
+  });
+
+  logMailDeliveryFailure('verification', timeout);
+  logMailDeliveryFailure('password_reset', authentication);
+
+  assert.equal(log.mock.calls[0].arguments[0], 'Verification email delivery failed.');
+  assert.equal(log.mock.calls[0].arguments[1].code, 'ETIMEDOUT');
+  assert.match(log.mock.calls[0].arguments[1].reason, /outbound SMTP access/);
+  assert.equal(log.mock.calls[1].arguments[0], 'Password reset email delivery failed.');
+  assert.equal(log.mock.calls[1].arguments[1].code, 'EAUTH');
+  assert.equal(log.mock.calls[1].arguments[1].responseCode, 535);
+  assert.match(log.mock.calls[1].arguments[1].reason, /credentials/);
+  assert.equal(JSON.stringify(log.mock.calls.map(call => call.arguments)).includes(secret), false);
+});
+
+test('SMTP failure diagnostics discard unrecognized fields and untrusted context', t => {
+  const log = t.mock.method(console, 'error', () => {});
+  const secret = 'private-provider-response-reset-token';
+  logMailDeliveryFailure(secret, { code: secret, responseCode: `535 ${secret}`, message: secret, response: secret });
+  logMailDeliveryFailure('__proto__', { code: '__proto__', responseCode: 1000 });
+  logMailDeliveryFailure('confirmation', null);
+
+  for (const call of log.mock.calls) {
+    assert.equal(call.arguments[1].code, 'UNKNOWN');
+    assert.equal(Object.hasOwn(call.arguments[1], 'responseCode'), false);
+  }
+  assert.equal(log.mock.calls[0].arguments[0], 'Email delivery failed.');
+  assert.equal(log.mock.calls[1].arguments[0], 'Email delivery failed.');
+  assert.equal(JSON.stringify(log.mock.calls.map(call => call.arguments)).includes(secret), false);
 });
 
 test('All confirmation templates reach SMTP and record sent only after provider acceptance', async t => {
@@ -189,14 +309,7 @@ async function smtpReceiver(t, acceptMessage) {
   server.listen(0, '127.0.0.1');
   await once(server, 'listening');
   const settings = { SMTP_HOST: '127.0.0.1', SMTP_PORT: String(server.address().port), SMTP_SECURE: 'false', SMTP_REQUIRE_TLS: 'false', SMTP_USER: '', SMTP_PASSWORD: '', EMAIL_FROM: 'ReMember <sender@example.test>' };
-  const previous = Object.fromEntries(Object.keys(settings).map(key => [key, process.env[key]]));
   Object.assign(process.env, settings);
-  t.after(() => {
-    for (const [key, value] of Object.entries(previous)) {
-      if (value === undefined) delete process.env[key];
-      else process.env[key] = value;
-    }
-  });
   return { messages, recipients };
 }
 

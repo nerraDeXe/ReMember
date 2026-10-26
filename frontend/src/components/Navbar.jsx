@@ -62,8 +62,8 @@ export default function Navbar({ onNavigate, currentPage }) {
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
                 className="flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-slate-100 border border-transparent hover:border-slate-200 transition-colors"
               >
-                <div className="w-8 h-8 rounded-full border border-brand-secondary bg-slate-50" aria-label={user?.avatarUrl ? `${user?.name} profile photo` : 'No profile photo'}>
-                  {user?.avatarUrl && <img src={user.avatarUrl} alt={`${user?.name || 'User'} profile`} className="w-full h-full rounded-full object-cover" />}
+                <div role="img" className="w-8 h-8 shrink-0 rounded-full border border-brand-secondary bg-slate-50 flex items-center justify-center" aria-label={user?.avatarUrl ? `${user?.name} profile photo` : 'Default profile icon'}>
+                  {user?.avatarUrl ? <img src={user.avatarUrl} alt={`${user?.name || 'User'} profile`} className="w-full h-full rounded-full object-cover" /> : <User className="w-4 h-4 text-slate-500" aria-hidden="true" />}
                 </div>
                 <div className="text-left hidden md:block">
                   <div className="text-xs font-bold text-slate-800 truncate max-w-[120px]">

@@ -3,7 +3,7 @@ import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import { User } from '../models/index.js';
 import { config } from '../config/config.js';
-import { mailDelivery } from '../services/mailDelivery.js';
+import { mailDelivery, logMailDeliveryFailure } from '../services/mailDelivery.js';
 import { passwordError } from '../../shared/accountRules.js';
 
 const router = express.Router();
@@ -34,9 +34,9 @@ router.post('/forgot-password', async (req, res) => {
             to: user.email, subject: 'Reset your ReMember password',
             text: `Use this link to reset your ReMember password: ${link.href}\n\nThis link expires in 30 minutes and can be used once. If you did not request a reset, you can ignore this email.`
           });
-        } catch {
+        } catch (error) {
           await User.updateOne({ _id: user._id, passwordResetHash: tokenHash }, { $unset: { passwordResetHash: '', passwordResetExpiresAt: '' } });
-          console.error('Password reset email delivery failed. Check SMTP configuration and application URL.');
+          logMailDeliveryFailure('password_reset', error);
         }
       }
     }

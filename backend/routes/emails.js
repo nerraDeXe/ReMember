@@ -18,8 +18,8 @@ router.get('/', authenticateToken, async (req, res) => {
       success: true,
       emails: emails.map(email => {
         const record = email.toObject();
-        // Old records said "sent" even though the app never contacted SMTP.
-        return { ...record, status: record.deliveryMethod === 'smtp' ? record.status : 'recorded' };
+        // Old records said "sent" even though the app never contacted a provider.
+        return { ...record, status: ['smtp', 'gmail-api'].includes(record.deliveryMethod) || record.status === 'unavailable' ? record.status : 'recorded' };
       })
     });
   } catch (err) {

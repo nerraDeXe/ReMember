@@ -7,6 +7,6 @@ const statuses = {
 };
 
 export function emailDeliveryStatus(email) {
-  const status = email.deliveryMethod === 'smtp' ? email.status : 'recorded';
+  const status = ['smtp', 'gmail-api'].includes(email.deliveryMethod) || email.status === 'unavailable' ? email.status : 'recorded';
   return statuses[status] || statuses.recorded;
 }

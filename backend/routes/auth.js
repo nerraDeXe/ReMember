@@ -4,7 +4,7 @@ import crypto from 'node:crypto';
 import { User, ActivityLog } from '../models/index.js';
 import { config } from '../config/config.js';
 import { emailService } from '../services/emailService.js';
-import { mailDelivery } from '../services/mailDelivery.js';
+import { mailDelivery, logMailDeliveryFailure } from '../services/mailDelivery.js';
 import { getAccountContext } from '../services/organisationAccess.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { COUNTRIES } from '../../shared/countries.js';
@@ -77,12 +77,12 @@ async function sendVerification(user) {
   try {
     await emailService.sendEmailVerification(pending, code);
     return { delivery: 'sent', message: 'A six-digit verification code has been sent to your email address.', canResendAt };
-  } catch {
+  } catch (error) {
     // A failed delivery must not leave a usable code. Retain the cooldown timestamp.
     await User.updateOne({ _id: user._id, emailVerificationHash: codeHash }, {
       $unset: { emailVerificationHash: '', emailVerificationExpiresAt: '', emailVerificationAttempts: '' }
     });
-    console.error('Verification email delivery failed. Check SMTP configuration and provider availability.');
+    logMailDeliveryFailure('verification', error);
     return { delivery: 'failed', message: 'Your account is saved, but the verification email could not be delivered. Please try again in one minute.', canResendAt };
   }
 }

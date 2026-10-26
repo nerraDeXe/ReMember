@@ -1,5 +1,5 @@
 import { EmailNotification, ActivityLog } from '../models/index.js';
-import { mailDelivery } from './mailDelivery.js';
+import { mailDelivery, logMailDeliveryFailure } from './mailDelivery.js';
 import { getOrganisationEmailSettings, interpolateOrganisationEmail } from '../../shared/organisationEmails.js';
 import { formatEventDateRange, formatEventTimeRange, getEventMapsUrl, getEventSchedule, hasEventCoordinates } from '../../shared/events.js';
 
@@ -146,7 +146,7 @@ export const emailService = {
   },
 
   /**
-   * Keep an in-app copy and record the outcome of real SMTP delivery.
+   * Keep an in-app copy and record the outcome of actual provider delivery.
    */
   async _dispatchAndRecord({ recipientEmail, recipientName, type, subject, htmlContent, textContent, userId, organisationId }) {
     const emailRecord = await EmailNotification.create({
@@ -157,24 +157,26 @@ export const emailService = {
       subject,
       htmlContent,
       status: 'pending',
-      deliveryMethod: 'smtp'
+      deliveryMethod: mailDelivery.deliveryMethod()
     });
 
     if (!mailDelivery.isConfigured()) {
       emailRecord.status = 'unavailable';
     } else {
       try {
-        await mailDelivery.send({ to: recipientEmail, subject, text: textContent, html: htmlContent });
+        const delivery = await mailDelivery.send({ to: recipientEmail, subject, text: textContent, html: htmlContent });
+        if (delivery?.accepted !== true) throw new Error('The email provider did not accept the message.');
+        if (delivery.deliveryMethod) emailRecord.deliveryMethod = delivery.deliveryMethod;
         emailRecord.status = 'sent';
         emailRecord.sentAt = new Date().toISOString();
-      } catch {
+      } catch (error) {
         emailRecord.status = 'failed';
-        console.error('Confirmation email delivery failed. Check SMTP configuration and provider availability.');
+        logMailDeliveryFailure('confirmation', error);
       }
     }
     await emailRecord.save();
 
-    // Only SMTP acceptance counts as sent; it does not confirm inbox placement.
+    // Provider acceptance counts as sent; it does not confirm inbox placement.
     await ActivityLog.create({
       action: emailRecord.status === 'sent' ? 'EMAIL_SENT' : 'EMAIL_DELIVERY_FAILED',
       organisationId,

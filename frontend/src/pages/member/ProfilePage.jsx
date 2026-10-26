@@ -124,8 +124,8 @@ export default function ProfilePage() {
         {/* Profile Details Card */}
         <div className="p-6 rounded-xl bg-white border border-slate-200 shadow-sm space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center gap-5 pb-6 border-b border-slate-200">
-            <div className="w-20 h-20 shrink-0 rounded-full border-2 border-brand-primary bg-slate-50" aria-label={avatarUrl ? `${name} profile photo` : 'No profile photo'}>
-              {avatarUrl && <img src={avatarUrl} alt={`${name} profile`} className="w-full h-full rounded-full object-cover" />}
+            <div role="img" className="w-20 h-20 shrink-0 rounded-full border-2 border-brand-primary bg-slate-50 flex items-center justify-center" aria-label={avatarUrl ? `${name} profile photo` : 'Default profile icon'}>
+              {avatarUrl ? <img src={avatarUrl} alt={`${name} profile`} className="w-full h-full rounded-full object-cover" /> : <User className="w-10 h-10 text-slate-400" aria-hidden="true" />}
             </div>
             <div className="flex-1">
               <p className="text-xs font-semibold text-slate-700 mb-1">Profile Photo</p>

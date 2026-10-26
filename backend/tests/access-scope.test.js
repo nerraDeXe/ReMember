@@ -476,12 +476,14 @@ test('SMTP failure does not undo a completed membership payment', async t => {
 test('Email center reports historical records honestly and keeps unsent records in date order', async () => {
   records.EmailNotification.push(
     { _id: 'old', recipientEmail: 'member@example.test', status: 'sent', sentAt: '2026-10-01T00:00:00Z' },
+    { _id: 'gmail', recipientEmail: 'member@example.test', status: 'sent', deliveryMethod: 'gmail-api', sentAt: '2026-10-22T00:00:00Z' },
+    { _id: 'unconfigured', recipientEmail: 'member@example.test', status: 'unavailable', createdAt: '2026-10-23T00:00:00Z' },
     { _id: 'new', recipientEmail: 'member@example.test', status: 'failed', deliveryMethod: 'smtp', createdAt: '2026-10-20T00:00:00Z' },
     { _id: 'foreign', recipientEmail: 'foreign@example.test', status: 'sent', deliveryMethod: 'smtp', sentAt: '2026-10-21T00:00:00Z' }
   );
   const response = await request(emailRouter, 'GET', '/');
   assert.equal(response.status, 200);
-  assert.deepEqual(response.body.emails.map(email => [email._id, email.status]), [['new', 'failed'], ['old', 'recorded']]);
+  assert.deepEqual(response.body.emails.map(email => [email._id, email.status]), [['unconfigured', 'unavailable'], ['gmail', 'sent'], ['new', 'failed'], ['old', 'recorded']]);
   assert.equal(records.EmailNotification[0].status, 'sent', 'Historical data is not overwritten');
   assert.equal((await request(emailRouter, 'GET', '/', { userId: null })).status, 401);
 });

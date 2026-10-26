@@ -162,8 +162,8 @@ const emailNotificationSchema = new mongoose.Schema({
   subject: { type: String, required: true },
   htmlContent: { type: String, required: true },
   status: { type: String, default: 'pending' },
-  // No default: historical records were saved without any SMTP delivery attempt.
-  deliveryMethod: { type: String, enum: ['smtp'] },
+  // No default: historical records were saved without a provider delivery attempt.
+  deliveryMethod: { type: String, enum: ['smtp', 'gmail-api'] },
   sentAt: { type: String }
 }, { timestamps: true });
 
