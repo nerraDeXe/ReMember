@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
-import { Lock, Mail, ArrowRight, RefreshCw } from 'lucide-react';
+import { Lock, Mail, ArrowRight, RefreshCw, Eye, EyeOff } from 'lucide-react';
 import GoogleSignIn from '../components/GoogleSignIn.jsx';
 
 export default function LoginPage({ onNavigate, initialEmail = '' }) {
@@ -9,6 +9,7 @@ export default function LoginPage({ onNavigate, initialEmail = '' }) {
   const { showToast } = useToast();
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [googleBusy, setGoogleBusy] = useState(false);
@@ -68,17 +69,30 @@ export default function LoginPage({ onNavigate, initialEmail = '' }) {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Password</label>
+            <label htmlFor="login-password" className="block text-xs font-semibold text-slate-700 mb-1.5">Password</label>
             <div className="relative">
               <input
-                type="password"
+                id="login-password"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 placeholder="••••••••••••"
-                className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
+                className="w-full pl-10 pr-12 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
               />
               <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+              <button
+                type="button"
+                onClick={() => setShowPassword((visible) => !visible)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                aria-controls="login-password"
+                aria-pressed={showPassword}
+                className="absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-500 hover:text-slate-900 rounded-r-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-primary"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" aria-hidden="true" /> : <Eye className="w-4 h-4" aria-hidden="true" />}
+              </button>
             </div>
           </div>
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowRight, LockKeyhole, RefreshCw } from 'lucide-react';
+import { ArrowRight, LockKeyhole, RefreshCw, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import AccountShell from '../components/AccountShell.jsx';
@@ -17,6 +17,7 @@ export default function RegisterPage({ onNavigate, googleSignup = false }) {
   const { showToast } = useToast();
   const [form, setForm] = useState({ firstName: googleSignup ? pendingGoogleSignup?.profile.firstName || '' : '', lastName: googleSignup ? pendingGoogleSignup?.profile.lastName || '' : '', email: googleSignup ? pendingGoogleSignup?.profile.email || '' : '', password: '', country: '', phone: '', bio: '' });
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [googleBusy, setGoogleBusy] = useState(false);
   const [accountExists, setAccountExists] = useState(false);
   const [error, setError] = useState('');
@@ -89,7 +90,20 @@ export default function RegisterPage({ onNavigate, googleSignup = false }) {
           </div>
           {!googleSignup && <div>
             <label htmlFor="register-password" className={labelClass}>Password *</label>
-            <input id="register-password" name="password" type="password" autoComplete="new-password" value={form.password} onChange={(event) => update('password', event.target.value)} required minLength={8} maxLength={72} disabled={loading} aria-describedby="register-password-hint" className={inputClass} />
+            <div className="relative">
+              <input id="register-password" name="password" type={showPassword ? 'text' : 'password'} autoComplete="new-password" value={form.password} onChange={(event) => update('password', event.target.value)} required minLength={8} maxLength={72} disabled={loading} aria-describedby="register-password-hint" className={`${inputClass} pr-12`} />
+              <button
+                type="button"
+                onClick={() => setShowPassword((visible) => !visible)}
+                disabled={loading}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                aria-controls="register-password"
+                aria-pressed={showPassword}
+                className="absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-500 hover:text-slate-900 rounded-r-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-primary disabled:opacity-60"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" aria-hidden="true" /> : <Eye className="w-4 h-4" aria-hidden="true" />}
+              </button>
+            </div>
             <p id="register-password-hint" className="mt-1.5 text-xs text-slate-500">{PASSWORD_HINT}</p>
           </div>}
         </div>
