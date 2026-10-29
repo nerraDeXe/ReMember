@@ -1,57 +1,105 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getTierBadgeColor } from '../../theme.js';
-import { Layers, Plus, Edit2, Trash2, Check, RefreshCw } from 'lucide-react';
+import { getOrganisationBadgeColor } from '../../theme.js';
+import { Layers, Plus, Edit2, Trash2, Check, RefreshCw, Save } from 'lucide-react';
 import { api } from '../../api.js';
 import { useToast } from '../../context/ToastContext.jsx';
+import { useAuth } from '../../context/AuthContext.jsx';
 import TierModal from '../../components/TierModal.jsx';
 import { useUrlState, useNavigation } from '../../routing.jsx';
 
 export default function TiersManagementPage() {
   const { showToast } = useToast();
-  const [tiers, setTiers] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { user, getCurrentUser } = useAuth();
+  const organisationId = user?.activeOrganisationId;
+  const [result, setResult] = useState(null);
+  const [requestLoading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
+  const [revision, setRevision] = useState(0);
+  const [badgeColor, setBadgeColor] = useState('#FFD700');
+  const [savingAccent, setSavingAccent] = useState(false);
+  const [accentMessage, setAccentMessage] = useState('');
+  const [accentError, setAccentError] = useState('');
   const [tierRoute, setTierRoute] = useUrlState('tier');
   const { route, getSnapshot, closeQuery } = useNavigation();
   const mounted = useRef(false);
+  const requestRevision = useRef(0);
+  const currentResult = result?.organisationId === organisationId ? result : null;
+  const tiers = currentResult?.tiers || [];
+  const loading = requestLoading || (!currentResult && !loadError);
+  const savedBadgeColor = getOrganisationBadgeColor(currentResult?.organisation);
   const editingTier = tiers.find(tier => tier._id === tierRoute) || null;
   const closeEditor = () => {
     if (mounted.current && getSnapshot() === route) closeQuery(['tier']);
   };
 
-  const loadTiers = async () => {
-    setLoading(true);
-    setLoadError('');
-    try {
-      const data = await api.getTiers();
-      if (!data.success) throw new Error(data.message || 'Could not load tiers.');
-      setTiers(data.tiers || []);
-    } catch (err) {
-      setLoadError(err.message || 'Could not load tiers.');
-      console.error('Failed to load tiers:', err);
-      showToast('Could not load tiers: ' + err.message, 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const loadTiers = () => setRevision(value => value + 1);
 
   useEffect(() => {
     mounted.current = true;
-    loadTiers();
     return () => { mounted.current = false; };
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    requestRevision.current += 1;
+    setLoading(true);
+    setLoadError('');
+    setSavingAccent(false);
+    setAccentMessage('');
+    setAccentError('');
+    Promise.all([api.getTiers(organisationId), api.getOrganisation(organisationId)]).then(([data, organisationData]) => {
+      if (!data.success) throw new Error(data.message || 'Could not load tiers.');
+      if (!organisationData.success || !organisationData.organisation) throw new Error(organisationData.message || 'Could not load the organisation badge accent.');
+      if (cancelled) return;
+      setResult({ organisationId, tiers: data.tiers || [], organisation: organisationData.organisation });
+      setBadgeColor(getOrganisationBadgeColor(organisationData.organisation));
+    }).catch(error => {
+      if (!cancelled) setLoadError(error.message || 'Could not load membership settings.');
+    }).finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; requestRevision.current += 1; };
+  }, [organisationId, revision]);
+
+  const saveBadgeAccent = async event => {
+    event.preventDefault();
+    const colour = badgeColor.trim().toUpperCase();
+    if (!/^#[0-9A-F]{6}$/.test(colour)) {
+      setAccentError('Enter a six-digit hex colour, such as #FFD700.');
+      setAccentMessage('');
+      return;
+    }
+    const expectedUserId = user?._id;
+    const expectedRevision = requestRevision.current;
+    const isCurrent = () => mounted.current && requestRevision.current === expectedRevision && getCurrentUser()?._id === expectedUserId && getCurrentUser()?.activeOrganisationId === organisationId;
+    if (!isCurrent()) return;
+    setSavingAccent(true);
+    setAccentError('');
+    setAccentMessage('');
+    try {
+      const response = await api.updateOrganisation(organisationId, { badgeColor: colour });
+      if (!response.success || !response.organisation) throw new Error(response.message || 'Could not save the badge accent.');
+      if (!isCurrent()) return;
+      setResult(previous => previous?.organisationId === organisationId ? { ...previous, organisation: response.organisation } : previous);
+      setBadgeColor(getOrganisationBadgeColor(response.organisation));
+      setAccentMessage('Badge accent saved for every membership in this organisation.');
+    } catch (error) {
+      if (isCurrent()) setAccentError(error.message || 'Could not save the badge accent.');
+    } finally {
+      if (isCurrent()) setSavingAccent(false);
+    }
+  };
 
   const handleDeleteTier = async (tier) => {
     if (!window.confirm(`Are you sure you want to delete tier "${tier.name}"?`)) return;
 
     try {
       const response = await api.deleteTier(tier._id);
+      if (!mounted.current || getCurrentUser()?.activeOrganisationId !== organisationId) return;
       if (response.success) {
         showToast(response.message, 'success');
-        await loadTiers();
+        loadTiers();
       }
     } catch (err) {
-      showToast(err.message || 'Failed to delete tier.', 'error');
+      if (mounted.current && getCurrentUser()?.activeOrganisationId === organisationId) showToast(err.message || 'Failed to delete tier.', 'error');
     }
   };
 
@@ -71,12 +119,38 @@ export default function TiersManagementPage() {
 
         <button
           onClick={() => setTierRoute('new')}
+          disabled={loading || Boolean(loadError)}
           className="py-2.5 px-4 rounded-lg bg-brand-primary hover:bg-brand-secondary text-brand-ink font-bold text-xs flex items-center gap-2 transition-colors self-start sm:self-auto shadow-sm"
         >
           <Plus className="w-4 h-4" />
-          <span>Create Custom Tier</span>
+          <span>Add Membership Tier</span>
         </button>
       </div>
+
+      {!loading && !loadError && <form onSubmit={saveBadgeAccent} aria-labelledby="membership-badge-accent-title" className="rounded-xl bg-white border border-slate-200 p-5 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-5">
+          <div className="space-y-3">
+            <div>
+              <h2 id="membership-badge-accent-title" className="text-sm font-bold text-slate-900">Membership badge accent</h2>
+              <p className="text-xs text-slate-500 mt-1">One badge colour for all membership tiers in this organisation.</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <input type="color" aria-label="Membership badge accent colour picker" value={/^#[0-9a-f]{6}$/i.test(badgeColor) ? badgeColor : savedBadgeColor} onChange={event => { setBadgeColor(event.target.value); setAccentError(''); setAccentMessage(''); }} disabled={savingAccent} className="h-10 w-14 shrink-0 rounded cursor-pointer bg-white border border-slate-300 p-1" />
+              <div>
+                <label htmlFor="membership-badge-accent" className="block text-xs font-semibold text-slate-700 mb-1">Badge accent hex colour</label>
+                <input id="membership-badge-accent" type="text" value={badgeColor} onChange={event => { setBadgeColor(event.target.value); setAccentError(''); setAccentMessage(''); }} disabled={savingAccent} maxLength={7} spellCheck={false} aria-describedby="membership-badge-accent-help" aria-invalid={Boolean(accentError)} className="w-36 px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 font-mono focus:outline-none focus:border-brand-primary" />
+              </div>
+            </div>
+            <p id="membership-badge-accent-help" className="text-xs text-slate-500">Applies to all membership badges in this organisation.</p>
+          </div>
+          <button type="submit" disabled={savingAccent || badgeColor.trim().toUpperCase() === savedBadgeColor.toUpperCase()} className="inline-flex self-start sm:self-auto items-center justify-center gap-2 rounded-lg bg-brand-primary px-4 py-2.5 text-xs font-bold text-brand-ink hover:bg-brand-secondary disabled:opacity-50">
+            {savingAccent ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            {savingAccent ? 'Saving badge accent...' : 'Save badge accent'}
+          </button>
+        </div>
+        {accentError && <p role="alert" className="mt-3 text-xs text-red-700">{accentError}</p>}
+        {accentMessage && <p role="status" className="mt-3 text-xs text-green-700">{accentMessage}</p>}
+      </form>}
 
       {/* Tiers Grid */}
       {loading ? (
@@ -100,13 +174,11 @@ export default function TiersManagementPage() {
                   <div className="flex items-center gap-2">
                     <span
                       className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: getTierBadgeColor(tier) }}
+                      aria-label={`${tier.name} badge accent`}
+                      style={{ backgroundColor: savedBadgeColor }}
                     />
                     <h3 className="text-base font-bold text-slate-900">{tier.name}</h3>
                   </div>
-                  <span className="text-[10px] font-mono bg-slate-100 text-slate-600 border border-slate-200 px-2 py-0.5 rounded">
-                    Lvl {tier.accessLevel || 1}
-                  </span>
                 </div>
 
                 {/* Price */}
@@ -162,8 +234,8 @@ export default function TiersManagementPage() {
         </div>
       )}
       <TierModal
-        key={tierRoute}
-        isOpen={Boolean(tierRoute) && (tierRoute === 'new' || Boolean(editingTier))}
+        key={`${organisationId}-${tierRoute}`}
+        isOpen={!loading && !loadError && Boolean(tierRoute) && (tierRoute === 'new' || Boolean(editingTier))}
         onClose={closeEditor}
         tierToEdit={editingTier}
         onSaved={() => { if (mounted.current && getSnapshot() === route) loadTiers(); }}

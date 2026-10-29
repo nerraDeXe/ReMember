@@ -55,9 +55,9 @@ export default function MembersListPage() {
   const stillOnDirectory = previousRoute => mounted.current && getSnapshot().page === previousRoute.page
     && getSnapshot().query.get('organisation') === previousRoute.query.get('organisation');
 
-  const loadMembers = useCallback(async (requestedPage = page) => {
+  const loadMembers = useCallback(async (requestedPage = page, { background = false } = {}) => {
     const request = ++membersRequest.current;
-    setLoading(true);
+    if (!background) setLoading(true);
     try {
       const [membersData, tiersData] = await Promise.all([
         api.getAdminMembers({
@@ -84,8 +84,10 @@ export default function MembersListPage() {
       }
     } catch (err) {
       if (request !== membersRequest.current) return;
-      console.error('Failed to load members:', err);
-      showToast('Could not load member directory: ' + err.message, 'error');
+      if (!background) {
+        console.error('Failed to load members:', err);
+        showToast('Could not load member directory: ' + err.message, 'error');
+      }
     } finally {
       if (request === membersRequest.current) setLoading(false);
     }
@@ -97,6 +99,16 @@ export default function MembersListPage() {
     loadMembers();
     return () => { membersRequest.current += 1; };
   }, [loadMembers]);
+
+  useEffect(() => {
+    const refresh = () => {
+      if (document.visibilityState === 'visible') reloadCurrentMembers.current(undefined, { background: true });
+    };
+    const timer = setInterval(refresh, 30_000);
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', refresh);
+    return () => { clearInterval(timer); window.removeEventListener('focus', refresh); document.removeEventListener('visibilitychange', refresh); };
+  }, []);
 
   useEffect(() => {
     if (!tierMemberId) return;
@@ -192,6 +204,10 @@ export default function MembersListPage() {
           </p>
         </div>
 
+        <div className="flex flex-wrap gap-2 self-start sm:self-auto">
+        <button type="button" onClick={() => loadMembers()} disabled={loading} className="py-2 px-4 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-semibold text-xs flex items-center gap-2 disabled:opacity-50">
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} aria-hidden="true" />Refresh members
+        </button>
         <button
           onClick={handleExportCsv}
           className="py-2 px-4 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-semibold text-xs flex items-center gap-2 transition-colors self-start sm:self-auto shadow-sm"
@@ -199,6 +215,7 @@ export default function MembersListPage() {
           <Download className="w-4 h-4 text-brand-ink" />
           <span>Export Segmented CSV</span>
         </button>
+        </div>
       </div>
 
       {/* Search & Filters Bar */}
@@ -218,6 +235,7 @@ export default function MembersListPage() {
         {/* Status Filter */}
         <div className="flex items-center gap-2">
           <select
+            aria-label="Filter members by status"
             value={statusFilter}
             onChange={(e) => updateQuery({ status: e.target.value === 'all' ? null : e.target.value, page: null })}
             className="px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
@@ -227,6 +245,7 @@ export default function MembersListPage() {
             <option value="pending">Pending</option>
             <option value="suspended">Suspended</option>
             <option value="revoked">Revoked</option>
+            <option value="cancelled">Cancelled</option>
           </select>
 
           {/* Tier Filter */}
@@ -308,6 +327,10 @@ export default function MembersListPage() {
                     {/* Status */}
                     <td className="p-4">
                       <StatusBadge status={member.status} />
+                      {member.status === 'cancelled' && <p className="mt-1.5 text-[10px] text-slate-500">
+                        {member.cancellationScheduled && member.expirationDate ? `Access until ${member.expirationDate.split('T')[0]}` : 'Membership access ended'}
+                      </p>}
+                      {member.cancelledAt && <p className="mt-1 text-[10px] text-slate-500">Cancelled on {member.cancelledAt.split('T')[0]}</p>}
                     </td>
 
                     {/* Expiration */}
@@ -326,7 +349,7 @@ export default function MembersListPage() {
                     {/* Status Controls */}
                     <td className="p-4 text-right">
                       <div className="flex items-center justify-end gap-1.5">
-                        {member.status !== 'active' && (
+                        {!['active', 'cancelled'].includes(member.status) && (
                           <button
                             onClick={() => handleStatusChange(member, 'active')}
                             className="px-2 py-1 rounded bg-brand-50 hover:bg-brand-100 border border-brand-primary/30 text-brand-ink text-[10px] font-semibold transition-colors"

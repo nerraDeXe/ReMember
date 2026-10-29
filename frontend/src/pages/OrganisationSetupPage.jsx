@@ -64,7 +64,7 @@ export default function OrganisationSetupPage({ onNavigate }) {
           location: form.location.trim(),
           visibility: form.visibility,
           isPublic: form.visibility === 'public',
-          tiers: tiers.map((tier) => ({ name: tier.name.trim(), price: Number(tier.price), interval: tier.interval, currency: 'USD' })),
+          tiers: tiers.map((tier) => ({ name: tier.name.trim(), price: Number(tier.price), interval: tier.interval, currency: 'MYR' })),
         });
         if (!result.success) throw new Error(result.message || 'We could not create your organisation.');
         organisation = result.organisation;

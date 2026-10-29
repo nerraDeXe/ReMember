@@ -18,8 +18,8 @@ export const PAGE_PATHS = Object.freeze({
   'member-events': '/member/events',
   'member-invoices': '/member/invoices',
   'member-communication': '/member/communication',
-  'member-pass': '/member/pass',
-  'member-renew': '/member/renew',
+  'member-membership': '/member/membership',
+  'member-checkout': '/member/checkout',
   'admin-dashboard': '/admin/dashboard',
   'admin-members': '/admin/members',
   'admin-tiers': '/admin/tiers',
@@ -27,10 +27,12 @@ export const PAGE_PATHS = Object.freeze({
   'admin-posts': '/admin/posts',
   'admin-email-settings': '/admin/email-settings',
   'admin-finances': '/admin/finances',
+  'admin-payments': '/admin/payments',
   'admin-logs': '/admin/logs',
 });
 
 const pathPages = new Map(Object.entries(PAGE_PATHS).map(([page, path]) => [path, page]));
+const membershipAliases = new Set(['/member/pass', '/member/renew']);
 const publicPages = new Set(['landing', 'login', 'register', 'google-signup', 'forgot-password', 'reset-password', 'not-found']);
 
 export function isPortalPage(page) {
@@ -39,6 +41,7 @@ export function isPortalPage(page) {
 
 export function getPageUrl(page, { query, organisationId } = {}) {
   if (page === 'member-organisations') page = 'account-memberships';
+  if (['member-pass', 'member-renew'].includes(page)) page = 'member-membership';
   const path = PAGE_PATHS[page];
   if (!path) throw new Error(`Unknown page: ${page}`);
   const params = new URLSearchParams(query);
@@ -50,15 +53,17 @@ export function getPageUrl(page, { query, organisationId } = {}) {
 
 export function parseRoute({ pathname = '/', search = '', hash = '' } = {}) {
   // Keep password reset emails sent before pathname routing working.
-  const legacy = hash.startsWith('#reset-password');
-  const path = legacy ? '/reset-password' : pathname.replace(/\/+$/, '') || '/';
-  const query = new URLSearchParams(legacy ? (hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '') : search);
-  return { page: pathPages.get(path) || 'not-found', pathname: path, query, legacy,
+  const passwordAlias = hash.startsWith('#reset-password');
+  const path = passwordAlias ? '/reset-password' : pathname.replace(/\/+$/, '') || '/';
+  const legacy = passwordAlias || membershipAliases.has(path);
+  const query = new URLSearchParams(passwordAlias ? (hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '') : search);
+  return { page: membershipAliases.has(path) ? 'member-membership' : pathPages.get(path) || 'not-found', pathname: path, query, legacy,
     url: pathname + search + hash, search, hash };
 }
 
 export function resolvePageAccess(page, account) {
   if (page === 'member-organisations') page = 'account-memberships';
+  if (['member-pass', 'member-renew'].includes(page)) page = 'member-membership';
   if (!account) return publicPages.has(page) ? page : 'login';
   if (['forgot-password', 'reset-password', 'not-found'].includes(page)) return page;
   if (!account.emailVerified) return 'verify-email';
@@ -66,7 +71,9 @@ export function resolvePageAccess(page, account) {
   if (['account-home', 'landing', 'login', 'register', 'google-signup', 'verify-email', 'account-onboarding'].includes(page)) return getAccountHomePage(account);
   if (isPortalPage(page) && !account.activeOrganisationId) return getAccountHomePage(account);
   if (page.startsWith('admin-') && account.organisationRole !== 'owner') return getAccountHomePage(account);
-  if (page === 'member-renew' && account.organisationRole === 'owner') return 'account-memberships';
+  if (page === 'member-membership' && account.organisationRole === 'owner') return 'account-memberships';
+  if (page === 'member-checkout' && account.organisationRole === 'owner') return 'account-memberships';
+  if (isPortalPage(page) && page.startsWith('member-') && account.organisationRole !== 'owner' && account.membershipStatus === 'pending' && page !== 'member-checkout') return 'member-checkout';
   return page;
 }
 
@@ -76,7 +83,7 @@ export function isAccountPage(page) {
 
 export function getAccountHomePage(account) {
   if (account?.ownedOrganisations?.length || account?.organisationRole === 'owner') return 'account-organisations';
-  return account?.activeOrganisationId ? 'member-dashboard' : 'account-memberships';
+  return account?.activeOrganisationId ? (account.membershipStatus === 'pending' ? 'member-checkout' : 'member-dashboard') : 'account-memberships';
 }
 
 export function getPageAfterContextChange(page, account) {
@@ -85,5 +92,5 @@ export function getPageAfterContextChange(page, account) {
   if (isAccountPage(page)) return page;
   if (['landing', 'login', 'register', 'google-signup', 'verify-email', 'account-onboarding'].includes(page)) return getAccountHomePage(account);
   if (account?.organisationRole === 'owner') return 'admin-dashboard';
-  return account?.activeOrganisationId ? 'member-dashboard' : getAccountHomePage(account);
+  return account?.activeOrganisationId ? (account.membershipStatus === 'pending' ? 'member-checkout' : 'member-dashboard') : getAccountHomePage(account);
 }

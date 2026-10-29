@@ -8,6 +8,7 @@ import { eventView } from '../services/eventView.js';
 import { normaliseEventInput } from '../services/eventInput.js';
 import { isEventTierAllowed, getEventAccessLabel } from '../../shared/events.js';
 import { eventLocationService } from '../services/eventLocations.js';
+import { getEventTiming } from '../../shared/eventTiming.js';
 
 const router = express.Router();
 router.use(authenticateToken, requireVerifiedEmail, withSelectedMembership);
@@ -68,6 +69,8 @@ router.post('/:id/rsvp', requireActiveMembership, async (req, res) => {
   try {
     const event = await Event.findOne({ _id: req.params.id, organisationId: req.organisationId });
     if (!event) return res.status(404).json({ success: false, message: 'Event not found.' });
+    const timing = getEventTiming(event);
+    if (!timing.rsvpOpen) return res.status(409).json({ success: false, message: timing.status === 'ended' ? 'This event has ended. RSVPs are closed.' : timing.status === 'in_progress' ? 'This event has started. RSVPs are closed.' : 'This event has no valid registration schedule. Contact the organisation.' });
     const tiers = await organisationTiers(req);
     if (req.membershipRole !== 'owner' && !isEventTierAllowed(event, req.membership, tiers)) {
       return res.status(403).json({ success: false, message: `This event is available to ${getEventAccessLabel(event, tiers)}.` });
@@ -77,11 +80,13 @@ router.post('/:id/rsvp', requireActiveMembership, async (req, res) => {
     if (rsvps.some(rsvp => String(rsvp.userId) === userId)) return res.status(400).json({ success: false, message: 'You have already reserved a place at this event.' });
     if (rsvps.length >= event.capacity) return res.status(400).json({ success: false, message: 'Sorry, this event has reached maximum capacity.' });
     const updated = await Event.findOneAndUpdate(
-      { _id: req.params.id, organisationId: req.organisationId },
+      { _id: req.params.id, organisationId: req.organisationId,
+        ...(event.updatedAt ? { updatedAt: event.updatedAt } : {}),
+        $expr: { $lt: ['$$NOW', new Date(timing.startsAt)] } },
       { $set: { rsvps: [...rsvps, { userId, userName: req.user.name, userEmail: req.user.email, rsvpDate: new Date().toISOString() }] } },
       { new: true },
     );
-    if (!updated) return res.status(404).json({ success: false, message: 'Event not found.' });
+    if (!updated) return res.status(409).json({ success: false, message: 'The event has started or changed. Refresh the event list before trying again.' });
     const confirmation = await emailService.sendEventRsvpConfirmation(req.user, event).catch(() => console.error('Could not send or record RSVP confirmation.'));
     const emailDelivery = confirmation?.status || 'failed';
     await recordActivity(req, 'EVENT_RSVP', event);

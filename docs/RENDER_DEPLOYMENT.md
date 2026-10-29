@@ -27,6 +27,7 @@ SMTP remains available on hosts that allow it, including paid Render web service
 
    ```dotenv
    NODE_ENV=production
+   NODE_VERSION=22
    MONGODB_URI=your-existing-mongodb-connection-string
    JWT_SECRET=your-long-random-secret
    APP_WEB_URL=https://YOUR-ACTUAL-SERVICE.onrender.com
@@ -44,7 +45,7 @@ SMTP remains available on hosts that allow it, including paid Render web service
 
 7. Choose Save, rebuild, and deploy. Open your Render website URL and confirm `/api/health` returns healthy. Test account sign-in, verification emails, both account tabs and an image upload.
 
-Render Free sleeps after 15 idle minutes. Gmail API email works when the app is running, but the renewal scheduler cannot run while the service sleeps. Use an always-on service for reliable unattended reminder timing. Keep one backend instance when using public Nominatim because its throttling is maintained in process memory. Hosting does not replace the existing simulated payment/Wallet integrations with live ones.
+Render Free sleeps after 15 idle minutes. Gmail API email works when the app is running, but the renewal reminder scheduler cannot run while the service sleeps. Use an always-on service for reliable unattended reminders. Keep one backend instance when using public Nominatim because its throttling is maintained in process memory. The [in-app payment gateway demo](PAYMENT_GATEWAY.md) needs no provider keys, external webhook, or separate terminal process. It simulates MYR payments without moving money; renewals require a member to complete another checkout. Google Wallet still requires its own credentials.
 
 No frontend `.env` file or Vercel service is needed for this setup. `/api` is already the frontend default. Local development can continue with `npm run dev` in `frontend` and `npm start` in `backend`; Vite proxies API requests as before.
 

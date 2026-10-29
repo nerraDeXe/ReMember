@@ -4,6 +4,7 @@ import { api } from '../../api.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useToast } from '../../context/ToastContext.jsx';
 import { useUrlState } from '../../routing.jsx';
+import EmailTemplateField from '../../components/EmailTemplateField.jsx';
 import {
   getOrganisationEmailSettings,
   normaliseOrganisationEmailSettings,
@@ -103,7 +104,7 @@ export default function EmailSettingsPage({ embedded = false }) {
       ) : (
         <form onSubmit={save} className="space-y-6">
           <div className="rounded-xl border border-slate-200 bg-white p-4 text-xs text-slate-600 leading-relaxed">
-            Personalise your plain-text messages with <code>{'{memberName}'}</code>, <code>{'{organisationName}'}</code>, <code>{'{tierName}'}</code>, <code>{'{expiryDate}'}</code>, or <code>{'{renewalDays}'}</code>. Member details replace these placeholders automatically.
+            Click where you want a member detail in the subject or message, then choose a tag below that field. Tags insert automatically and are replaced with each member’s details when the email is sent.
           </div>
 
           <div className="grid xl:grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)] gap-6 items-start">
@@ -129,15 +130,10 @@ export default function EmailSettingsPage({ embedded = false }) {
                         </div>
                       </div>
                     )}
-                    <div>
-                      <label htmlFor={`${key}-subject`} className="block text-xs font-semibold text-slate-700 mb-2">Email subject</label>
-                      <input id={`${key}-subject`} type="text" maxLength={160} required value={settings[key].subject} onChange={event => update(key, 'subject', event.target.value)} className={inputClass} />
-                    </div>
-                    <div>
-                      <label htmlFor={`${key}-body`} className="block text-xs font-semibold text-slate-700 mb-2">Message</label>
-                      <textarea id={`${key}-body`} rows={7} maxLength={5000} required value={settings[key].body} onChange={event => update(key, 'body', event.target.value)} className={`${inputClass} resize-y`} />
-                      <p className="text-xs text-slate-500 text-right mt-1">{settings[key].body.length.toLocaleString()} / 5,000</p>
-                    </div>
+                    <EmailTemplateField id={`${key}-subject`} label="Email subject" templateTitle={title}
+                      value={settings[key].subject} onChange={value => update(key, 'subject', value)} maxLength={160} />
+                    <EmailTemplateField id={`${key}-body`} label="Message" templateTitle={title}
+                      value={settings[key].body} onChange={value => update(key, 'body', value)} maxLength={5000} multiline />
                   </fieldset>
                   <button type="button" onClick={() => setPreviewType(key)} className="inline-flex items-center gap-2 mt-4 text-xs font-semibold text-slate-700 underline underline-offset-4"><Eye className="w-4 h-4" />Preview {title.toLowerCase()}</button>
                 </section>

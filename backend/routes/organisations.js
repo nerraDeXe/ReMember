@@ -6,6 +6,9 @@ import { authenticateToken, requireVerifiedEmail } from '../middleware/auth.js';
 import { optionalAuth } from '../middleware/organisationAccess.js';
 import { normaliseOrganisationImage } from '../services/organisationImages.js';
 import { getOrganisationEmailSettings, normaliseOrganisationEmailSettings } from '../../shared/organisationEmails.js';
+import { DEFAULT_MEMBERSHIP_BADGE_COLOR, isBadgeColor } from '../../shared/membershipBadges.js';
+import { effectiveMembershipStatus } from '../services/membershipState.js';
+import { membershipDetails } from '../services/membershipManagement.js';
 import { sendWelcomeForMembership } from '../services/organisationEmailSettings.js';
 import {
   accessibleMembershipStatuses,
@@ -48,6 +51,12 @@ function normaliseOrganisationInput(body, creating = false) {
   if ((creating || body.name !== undefined) && !result.name) throw new Error('Organisation name is required.');
   if (result.name?.length > 120) throw new Error('Organisation names must be at most 120 characters.');
   if ((creating || body.description !== undefined) && !result.description) throw new Error('Organisation description is required.');
+  if (body.badgeColor !== undefined) {
+    if (!isBadgeColor(body.badgeColor)) throw new Error('Choose a valid organisation badge colour using a six-digit hex code.');
+    result.badgeColor = body.badgeColor.toUpperCase();
+  } else if (creating) {
+    result.badgeColor = DEFAULT_MEMBERSHIP_BADGE_COLOR;
+  }
   if (body.visibility !== undefined && !['public', 'private'].includes(body.visibility)) throw new Error('Choose public or private organisation visibility.');
   if (body.isPublic !== undefined && typeof body.isPublic !== 'boolean') throw new Error('Public visibility must be true or false.');
   if (creating || body.isPublic !== undefined || body.visibility !== undefined) {
@@ -204,13 +213,22 @@ router.post('/:id/join', authenticateToken, requireVerifiedEmail, async (req, re
     if (!tier) return res.status(400).json({ success: false, message: 'Choose an active tier belonging to this organisation.' });
     let membership = await OrganisationMembership.findOne({ organisationId: String(organisation._id), userId: String(req.user._id) });
     if (membership && ['suspended', 'revoked'].includes(membership.status) && !owner) return res.status(403).json({ success: false, message: 'Contact this organisation’s owner about your membership status.' });
-    if (!membership || membership.status === 'expired') {
+    if (!membership || ['expired', 'cancelled'].includes(effectiveMembershipStatus(membership))) {
       if (tier.maxMembers && await OrganisationMembership.countDocuments({ organisationId: String(organisation._id), tierId: String(tier._id), status: { $in: ['active', 'pending'] } }) >= tier.maxMembers && !owner) return res.status(409).json({ success: false, message: 'This membership tier has reached its member limit.' });
-      const updates = { role: owner ? 'owner' : 'member', status: owner || tier.price === 0 ? 'active' : 'pending', tierId: String(tier._id), tierName: tier.name, joinedDate: new Date().toISOString() };
+      const updates = { role: owner ? 'owner' : 'member', status: owner || tier.price === 0 ? 'active' : 'pending', tierId: String(tier._id), tierName: tier.name, joinedDate: membership?.joinedDate || new Date().toISOString(), cancelAtPeriodEnd: false };
+      if (tier.price === 0 && !membership?.firstSubscribedAt) {
+        const history = membership ? await membershipDetails(req.user, membership, organisation) : null;
+        updates.firstSubscribedAt = history?.firstSubscribedAt || new Date().toISOString();
+      }
       // Active and pending memberships keep their tier and payment state.
       // The unique user/organisation index also prevents duplicate simultaneous joins.
       if (membership) {
-        membership = await OrganisationMembership.findOneAndUpdate({ _id: membership._id, status: 'expired' }, { $set: updates, $unset: { expirationDate: '' } }, { new: true });
+        const revision = membership.billingRevision
+          ? { billingRevision: membership.billingRevision }
+          : { $or: [{ billingRevision: 0 }, { billingRevision: { $exists: false } }] };
+        membership = await OrganisationMembership.findOneAndUpdate({ _id: membership._id, status: membership.status,
+          expirationDate: membership.expirationDate === undefined ? { $exists: false } : membership.expirationDate, ...revision
+        }, { $set: updates, $unset: { expirationDate: '', cancelledAt: '', scheduledTierId: '', scheduledTierEffectiveAt: '', scheduledTierRequestedAt: '' }, $inc: { billingRevision: 1 } }, { new: true });
         if (!membership) membership = await OrganisationMembership.findOne({ organisationId: String(organisation._id), userId: String(req.user._id) });
       } else {
         try {

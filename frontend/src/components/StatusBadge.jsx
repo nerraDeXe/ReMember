@@ -24,6 +24,11 @@ export default function StatusBadge({ status, className = '' }) {
       dot: 'bg-brand-ink',
       label: 'Revoked'
     },
+    cancelled: {
+      bg: 'bg-slate-100 text-slate-600 border-slate-200',
+      dot: 'bg-slate-400',
+      label: 'Cancelled'
+    },
     expired: {
       bg: 'bg-slate-100 text-slate-600 border-slate-200',
       dot: 'bg-slate-400',

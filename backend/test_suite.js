@@ -103,21 +103,9 @@ async function runTests() {
     })).json();
     assert(profileRes.success && profileRes.user.bio.includes('MongoDB database'), 'Personal profile updated seamlessly in database');
 
-    // 7. Payment Renewal & Invoice Generation (Requirements 5, 8 & 9)
-    console.log('\n--- Test Group 6: Payment Renewal & Invoices ---');
-    const renewRes = await (await fetch(`${BASE_URL}/payments/renew`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${memberLogin.token}`
-      },
-      body: JSON.stringify({
-        tierId: 'tier-gold',
-        paymentMethod: 'Credit Card (•••• 4242)'
-      })
-    })).json();
-    assert(renewRes.success && renewRes.invoice, 'Membership renewal payment processed successfully');
-    assert(renewRes.invoice.invoiceNumber.startsWith('INV-2026-'), 'Invoice generated with official number');
+    // Payment confirmation/access coverage runs in npm test with mocked services.
+    // The manual demo walkthrough is documented in docs/PAYMENT_GATEWAY.md.
+    console.log('\n--- Test Group 6: Invoices (demo checkout: docs/PAYMENT_GATEWAY.md) ---');
 
     // Verify historical invoice retrieval
     const invoicesRes = await (await fetch(`${BASE_URL}/members/invoices`, {
@@ -181,7 +169,6 @@ async function runTests() {
         name: 'Diamond Founder Tier',
         price: 499,
         interval: 'monthly',
-        badgeColor: '#ec4899',
         description: 'Bespoke executive patron tier',
         perks: ['Founders table seating', 'Advisory board seat']
       })

@@ -54,7 +54,7 @@ export default function InvoicesPage() {
           Payment Invoices & Receipts
         </h1>
         <p className="text-xs text-slate-500 mt-1">
-          Review your subscription renewals, transaction receipts, and download records for your files.
+          Review your membership renewals and receipts. Demo payments do not involve real money.
         </p>
       </div>
 

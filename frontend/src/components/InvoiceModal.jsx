@@ -5,6 +5,9 @@ export default function InvoiceModal({ invoice, isOpen, onClose }) {
   if (!isOpen || !invoice) return null;
 
   const isPaid = invoice.paymentStatus === 'paid';
+  const isDemo = invoice.isSimulated === true || /demo/i.test(invoice.paymentMethod || '');
+  const subtotal = Number.isFinite(invoice.subtotalCents) ? invoice.subtotalCents / 100 : Number(invoice.amount);
+  const credit = Number.isFinite(invoice.creditCents) ? invoice.creditCents / 100 : 0;
 
   const handlePrint = () => {
     window.print();
@@ -22,7 +25,7 @@ export default function InvoiceModal({ invoice, isOpen, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-brand-muted/35 flex items-center justify-center p-4 animate-fadeIn">
-      <div className="relative w-full max-w-xl bg-white border border-slate-200 rounded-xl overflow-hidden shadow-2xl print:border-none print:shadow-none print:bg-white print:text-black">
+      <div role="dialog" aria-modal="true" aria-label="Invoice receipt" className="relative w-full max-w-xl bg-white border border-slate-200 rounded-xl overflow-hidden shadow-2xl print:border-none print:shadow-none print:bg-white print:text-black">
         {/* Header */}
         <div className="p-5 border-b border-slate-200 bg-white flex items-center justify-between print:hidden">
           <div className="flex items-center gap-2">
@@ -68,10 +71,10 @@ export default function InvoiceModal({ invoice, isOpen, onClose }) {
                 Re<span className="text-brand-ink print:text-black">Member</span> Club
               </h1>
               <p className="text-xs text-slate-500 print:text-neutral-600 mt-0.5">
-                Global Membership & Experience Services Inc.
+                {invoice.organisationName || 'Membership payment receipt'}
               </p>
               <p className="text-xs text-slate-400 print:text-neutral-500 mt-1">
-                Tax ID: US-99482104-MEM
+                {isDemo ? 'DEMO PAYMENT · NO MONEY CHARGED' : 'Membership billing record'}
               </p>
             </div>
             <div className="text-right">
@@ -135,7 +138,7 @@ export default function InvoiceModal({ invoice, isOpen, onClose }) {
                 <tr>
                   <td className="p-3">
                     <p className="font-semibold text-slate-900 print:text-black">
-                      {invoice.tierName} Membership Subscription
+                      {invoice.tierName} Membership
                     </p>
                     <p className="text-[11px] text-slate-500 print:text-neutral-600">
                       Full digital wallet privileges & exclusive community events
@@ -145,9 +148,14 @@ export default function InvoiceModal({ invoice, isOpen, onClose }) {
                     {invoice.billingInterval || 'Yearly'}
                   </td>
                   <td className="p-3 text-right font-bold text-slate-900 print:text-black">
-                    MYR {Number(invoice.amount).toFixed(2)}
+                    MYR {subtotal.toFixed(2)}
                   </td>
                 </tr>
+                {credit > 0 && <tr>
+                  <td className="p-3"><p className="font-semibold text-slate-900 print:text-black">Membership credit applied</p><p className="text-[11px] text-slate-500 print:text-neutral-600">Unused paid time and available membership credit</p></td>
+                  <td className="p-3 text-center text-slate-500">—</td>
+                  <td className="p-3 text-right font-bold text-slate-900 print:text-black">−MYR {credit.toFixed(2)}</td>
+                </tr>}
               </tbody>
             </table>
           </div>
@@ -157,8 +165,9 @@ export default function InvoiceModal({ invoice, isOpen, onClose }) {
             <div className="w-56 space-y-1.5 text-xs text-right">
               <div className="flex justify-between text-slate-500 print:text-neutral-600">
                 <span>Subtotal:</span>
-                <span>MYR {Number(invoice.amount).toFixed(2)}</span>
+                <span>MYR {subtotal.toFixed(2)}</span>
               </div>
+              {credit > 0 && <div className="flex justify-between text-slate-500 print:text-neutral-600"><span>Membership credit:</span><span>−MYR {credit.toFixed(2)}</span></div>}
               <div className="flex justify-between text-slate-500 print:text-neutral-600">
                 <span>Tax (0%):</span>
                 <span>MYR 0.00</span>
@@ -172,8 +181,10 @@ export default function InvoiceModal({ invoice, isOpen, onClose }) {
             </div>
           </div>
 
+          {invoice.carryForwardCents > 0 && <p className="text-xs text-slate-500 print:text-neutral-600">MYR {(invoice.carryForwardCents / 100).toFixed(2)} membership credit remains available for a future membership payment.</p>}
+
           <div className="pt-4 border-t border-slate-200 print:border-neutral-300 text-center text-[11px] text-slate-500 print:text-neutral-500">
-            Thank you for being a valued member of ReMember Club. This receipt serves as your official proof of payment.
+            {isDemo ? 'This is a simulated payment receipt. No money was charged or transferred.' : 'Thank you for being a valued member. Keep this receipt for your records.'}
           </div>
         </div>
       </div>

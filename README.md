@@ -11,13 +11,15 @@ A web-based Membership Management System engineered with **React**, **Tailwind C
 | **Secure Online Registration** | Multi-field validation, password hashing with bcrypt, unique membership ID (`MEM-2026-XXXX`). | ✅ Complete |
 | **JWT Session Authentication** | Secure Bearer JWT token issuance and validation across all member & admin routes. | ✅ Complete |
 | **Role-Based Access Control (RBAC)** | Strict Node.js RBAC middleware (`requireRole('admin')`) denying standard members (403 Forbidden). | ✅ Complete |
-| **Member Dashboard** | Immediate view of membership status, tier badge, expiration date, and quick renewal. | ✅ Complete |
+| **Member Dashboard** | Membership status, tier, expiry and links to the combined membership overview. | ✅ Complete |
+| **Manage Membership** | Digital pass, subscription dates, prorated upgrades, scheduled downgrades and cancellation with paid access retained until expiry. | ✅ Complete |
 | **MongoDB Profile Persistence** | Full personal profile updating (bio, phone, address, preferences) stored in MongoDB. | ✅ Complete |
-| **Renewal Payment Gateway** | Integrated checkout gateway with instant invoice generation, renewal validity calculation, and decline testing. | ✅ Complete |
+| **Renewal Payment Gateway** | In-app demo checkout for cards, online banking and e-wallets, verification, receipts and decline testing. No money is charged. [Guide](docs/PAYMENT_GATEWAY.md). | ✅ Complete |
 | **Google Wallet Digital Pass** | Generic Pass Object generator with QR/Code128 barcode, holographic card styling, and "Add to Google Wallet" button. | ✅ Complete |
 | **Automated Google Wallet Sync** | Admin tier changes automatically trigger REST API calls to update the Google Wallet object in real time. | ✅ Complete |
 | **Events Calendar & RSVP** | Interactive event cards with capacity meters, tier access restrictions, and live RSVP. | ✅ Complete |
 | **Automated Email Confirmations** | HTML confirmation emails dispatched upon registration, payment renewal, and event RSVPs with in-app email center. | ✅ Complete |
+| **Payment-gated memberships** | Paid memberships stay pending until an approved demo payment. Free tiers activate immediately; paid monthly/yearly periods renew through checkout. | ✅ Complete |
 | **Historical Invoices & Download** | Full billing history with status pills, printable receipt modal (`InvoiceModal`), and JSON/metadata download. | ✅ Complete |
 | **Protected Admin Dashboard** | High-level executive KPIs (Total Revenue, MRR, ARR, active vs. registered members, paid invoices). | ✅ Complete |
 | **Paginated & Searchable Members List** | Dynamic filtering by name, email, tier, and status with pagination controls. | ✅ Complete |

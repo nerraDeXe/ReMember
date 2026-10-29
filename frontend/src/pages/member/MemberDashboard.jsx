@@ -14,10 +14,13 @@ import { api } from '../../api.js';
 import StatusBadge from '../../components/StatusBadge.jsx';
 import GoogleWalletPass from '../../components/GoogleWalletPass.jsx';
 import EventSchedule, { EventLocation } from '../../components/EventSchedule.jsx';
+import { getEventTiming } from '../../../../shared/eventTiming.js';
+import { useEventNow } from '../../useEventNow.js';
 
 export default function MemberDashboard({ onNavigate }) {
   const { user, refreshUser } = useAuth();
   const { showToast } = useToast();
+  const now = useEventNow();
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -59,6 +62,7 @@ export default function MemberDashboard({ onNavigate }) {
   }
 
   const membership = dashboardData?.membership || user;
+  const upcomingRsvps = (dashboardData?.upcomingRsvps || []).filter(event => getEventTiming(event, now).status !== 'ended');
   const formattedExpiry = membership?.expirationDate
     ? new Date(membership.expirationDate).toLocaleDateString('en-US', {
         year: 'numeric',
@@ -103,11 +107,11 @@ export default function MemberDashboard({ onNavigate }) {
           {/* Quick Action Renewal Button */}
           <div className="flex items-center gap-3">
             <button
-              onClick={() => onNavigate('member-renew')}
+              onClick={() => onNavigate('member-membership')}
               className="py-2.5 px-5 rounded-lg bg-brand-primary hover:bg-brand-secondary text-brand-ink font-bold text-xs flex items-center gap-2 transition-colors shadow-sm"
             >
               <CreditCard className="w-4 h-4" />
-              <span>{membership?.status === 'pending' ? 'Complete Membership Payment' : 'Renew Membership'}</span>
+              <span>Manage Membership</span>
             </button>
             <button
               onClick={() => onNavigate('member-events')}
@@ -137,7 +141,7 @@ export default function MemberDashboard({ onNavigate }) {
               user={membership}
               walletData={membership?.googleWallet}
               onSync={handleWalletSync}
-            /> : <div className="space-y-3 text-sm text-slate-600"><p>Your membership pass will be available when your membership is active.</p><button onClick={() => onNavigate('member-renew')} className="px-4 py-2 rounded-lg bg-brand-primary text-brand-ink font-semibold">Complete Membership</button></div>}
+            /> : <div className="space-y-3 text-sm text-slate-600"><p>Your membership pass will be available when your membership is active.</p><button onClick={() => onNavigate('member-membership')} className="px-4 py-2 rounded-lg bg-brand-primary text-brand-ink font-semibold">Manage Membership</button></div>}
           </div>
         </div>
 
@@ -153,10 +157,10 @@ export default function MemberDashboard({ onNavigate }) {
                 </p>
               </div>
               <button
-                onClick={() => onNavigate('member-renew')}
+                onClick={() => onNavigate('member-membership')}
                 className="text-xs font-semibold text-brand-ink hover:underline"
               >
-                Upgrade Tier &rarr;
+                Manage Membership &rarr;
               </button>
             </div>
 
@@ -190,7 +194,7 @@ export default function MemberDashboard({ onNavigate }) {
               </button>
             </div>
 
-            {dashboardData?.upcomingRsvps?.length === 0 ? (
+            {upcomingRsvps.length === 0 ? (
               <div className="text-center py-8 p-4 rounded-lg bg-slate-50 border border-dashed border-slate-200 text-xs text-slate-500">
                 <Calendar className="w-6 h-6 mx-auto mb-2 text-slate-400" />
                 You haven't RSVP'd to any upcoming events yet.
@@ -203,7 +207,7 @@ export default function MemberDashboard({ onNavigate }) {
               </div>
             ) : (
               <div className="space-y-3">
-                {dashboardData?.upcomingRsvps?.map((evt) => (
+                {upcomingRsvps.map((evt) => (
                   <div
                     key={evt._id}
                     className="p-3.5 rounded-lg bg-slate-50 border border-slate-200 flex flex-wrap items-start justify-between gap-4"

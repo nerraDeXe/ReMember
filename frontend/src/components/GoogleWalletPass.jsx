@@ -2,40 +2,16 @@ import React, { useState } from 'react';
 import { ExternalLink, Check, Copy, RefreshCw, QrCode, ShieldCheck, Sparkles, User } from 'lucide-react';
 import { useToast } from '../context/ToastContext.jsx';
 import StatusBadge from './StatusBadge.jsx';
+import { getOrganisationBadgeColor, getBadgeTextColor } from '../theme.js';
 
 export default function GoogleWalletPass({ user, walletData, onSync }) {
   const { showToast } = useToast();
   const [copied, setCopied] = useState(false);
   const [syncing, setSyncing] = useState(false);
 
-  const tierStyles = {
-    'Bronze Explorer': {
-      bg: 'bg-brand-accent',
-      textColor: 'text-brand-ink',
-      badgeBg: 'bg-white/70 text-brand-ink border-brand-muted/30',
-      subtext: 'text-brand-ink'
-    },
-    'Silver Patron': {
-      bg: 'bg-brand-silver',
-      textColor: 'text-brand-ink',
-      badgeBg: 'bg-white/70 text-brand-ink border-brand-muted/30',
-      subtext: 'text-brand-ink'
-    },
-    'Gold VIP': {
-      bg: 'bg-brand-primary',
-      textColor: 'text-brand-ink',
-      badgeBg: 'bg-white/70 text-brand-ink border-brand-muted/30',
-      subtext: 'text-brand-ink'
-    },
-    'Platinum Elite': {
-      bg: 'bg-brand-secondary',
-      textColor: 'text-brand-ink',
-      badgeBg: 'bg-white/70 text-brand-ink border-brand-muted/30',
-      subtext: 'text-brand-ink'
-    }
-  };
-
-  const currentTheme = tierStyles[user?.tierName] || tierStyles['Gold VIP'];
+  const badgeColor = getOrganisationBadgeColor(user?.organisation || user?.activeOrganisation);
+  const textColor = getBadgeTextColor(badgeColor);
+  const panelColor = textColor === '#ffffff' ? 'bg-black/20' : 'bg-white/50';
   const saveUrl = walletData?.saveUrl || user?.googleWallet?.saveUrl || `https://pay.google.com/gp/v/save/mock-pass-${user?._id}`;
   const lastSync = walletData?.lastSyncedAt || user?.googleWallet?.lastSyncedAt;
 
@@ -64,17 +40,19 @@ export default function GoogleWalletPass({ user, walletData, onSync }) {
       {/* Flat Pass Card */}
       <div className="w-full relative" style={{ minHeight: '330px' }}>
         <div
-          className={`w-full h-full rounded-xl p-6 ${currentTheme.bg} ${currentTheme.textColor} border border-brand-muted/30`}
+          aria-label="Membership badge"
+          style={{ backgroundColor: badgeColor, color: textColor }}
+          className="w-full h-full rounded-xl p-6 border border-brand-muted/30"
         >
           {/* Card Header */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded bg-white/50 flex items-center justify-center">
+              <div className={`w-8 h-8 rounded ${panelColor} flex items-center justify-center`}>
                 <Sparkles className="w-4 h-4" />
               </div>
               <div>
                 <span className="text-[10px] tracking-widest uppercase font-bold opacity-80 block">
-                  ReMember Club
+                  {user?.organisation?.name || user?.activeOrganisation?.name || 'ReMember Club'}
                 </span>
                 <span className="text-sm font-extrabold tracking-tight">
                   Official Digital Pass
@@ -86,18 +64,18 @@ export default function GoogleWalletPass({ user, walletData, onSync }) {
 
           {/* Member Details */}
           <div className="flex items-center gap-4 my-4">
-            <div className="w-14 h-14 rounded-full border-2 border-white/50 bg-white/40 flex items-center justify-center" role="img" aria-label={user?.avatarUrl ? `${user?.name || 'User'} profile photo` : `${user?.name || 'User'} profile icon`}>
+            <div className={`w-14 h-14 rounded-full border-2 border-white/50 ${panelColor} flex items-center justify-center`} role="img" aria-label={user?.avatarUrl ? `${user?.name || 'User'} profile photo` : `${user?.name || 'User'} profile icon`}>
               {user?.avatarUrl ? <img src={user.avatarUrl} alt={`${user?.name || 'User'} profile`} className="w-full h-full rounded-full object-cover" /> : <User className="w-7 h-7" aria-hidden="true" />}
             </div>
             <div className="flex-1">
               <h3 className="text-lg font-bold leading-tight">
                 {user?.name}
               </h3>
-              <p className={`text-xs ${currentTheme.subtext} font-mono tracking-wider mt-0.5`}>
+              <p className="text-xs font-mono tracking-wider mt-0.5">
                 {user?.membershipNumber || 'MEM-2026-0000'}
               </p>
               <div className="inline-block mt-1">
-                <span className={`px-2 py-0.5 rounded text-[11px] font-semibold border ${currentTheme.badgeBg}`}>
+                <span className={`px-2 py-0.5 rounded text-[11px] font-semibold border border-brand-muted/30 ${panelColor}`}>
                   {user?.tierName || 'Standard'}
                 </span>
               </div>
@@ -105,7 +83,7 @@ export default function GoogleWalletPass({ user, walletData, onSync }) {
           </div>
 
           {/* Meta Information Bar */}
-          <div className="grid grid-cols-2 gap-2 p-3 rounded-lg bg-white/50 text-xs my-4">
+          <div className={`grid grid-cols-2 gap-2 p-3 rounded-lg ${panelColor} text-xs my-4`}>
             <div>
               <span className="text-[10px] uppercase opacity-75 block">Valid Through</span>
               <span className="font-semibold">

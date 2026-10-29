@@ -6,10 +6,14 @@ import { api } from '../../api.js';
 import EventSchedule, { EventLocation } from '../../components/EventSchedule.jsx';
 import { getEventAccessLabel } from '../../../../shared/events.js';
 import { useUrlState } from '../../routing.jsx';
+import { getEventTiming } from '../../../../shared/eventTiming.js';
+import EventStatusBadge from '../../components/EventStatusBadge.jsx';
+import { useEventNow } from '../../useEventNow.js';
 
 export default function EventsCalendarPage() {
   const { user, getCurrentUser } = useAuth();
   const { showToast } = useToast();
+  const now = useEventNow();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [categoryFilter, setCategoryFilter] = useUrlState('category', 'all');
@@ -45,6 +49,7 @@ export default function EventsCalendarPage() {
   }, [organisationId]);
 
   const handleRsvp = async (event) => {
+    if (!getEventTiming(event).rsvpOpen) { showToast('This event has started or ended. RSVPs are closed.', 'info'); return; }
     const snapshot = organisationId;
     setActionPendingId(event._id);
     try {
@@ -125,11 +130,12 @@ export default function EventsCalendarPage() {
       ) : filteredEvents.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-xl border border-slate-200 p-8 text-slate-500 text-xs shadow-sm">
           <Calendar className="w-8 h-8 mx-auto mb-2 text-slate-400" />
-          No upcoming events found for this filter.
+          No events found for this filter.
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {filteredEvents.map((event) => {
+            const timing = getEventTiming(event, now);
             const isRsvped = event.isRsvped;
             const isEligible = event.isAllowedTier;
             const accessLabel = event.tierAccessLabel || getEventAccessLabel(event);
@@ -163,7 +169,7 @@ export default function EventsCalendarPage() {
                     {isRsvped && (
                       <div className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1 rounded bg-brand-accent text-brand-ink font-bold text-xs shadow-sm">
                         <CheckCircle className="w-3.5 h-3.5" />
-                        <span>You're Attending</span>
+                        <span>{timing.status === 'ended' ? 'RSVP recorded' : "You're Attending"}</span>
                       </div>
                     )}
                   </div>
@@ -174,6 +180,7 @@ export default function EventsCalendarPage() {
                       <h3 className="text-lg font-bold text-slate-900 leading-snug">
                         {event.title}
                       </h3>
+                      <div className="mt-2"><EventStatusBadge status={timing.status} /></div>
                       <p className="text-xs text-slate-600 mt-1 line-clamp-2 leading-relaxed">
                         {event.description}
                       </p>
@@ -230,7 +237,7 @@ export default function EventsCalendarPage() {
 
                 {/* RSVP Action Footer */}
                 <div className="p-6 pt-0">
-                  {isRsvped ? (
+                  {timing.status === 'ended' ? <p className="rounded-lg border border-slate-200 bg-slate-100 px-4 py-3 text-center text-xs font-semibold text-slate-600">Event ended{isRsvped ? ' · Your RSVP is recorded' : ' · RSVPs closed'}</p> : isRsvped ? (
                     <button
                       onClick={() => handleCancelRsvp(event)}
                       disabled={actionPendingId === event._id}
@@ -243,7 +250,7 @@ export default function EventsCalendarPage() {
                       )}
                       <span>Cancel My RSVP</span>
                     </button>
-                  ) : !isEligible ? (
+                  ) : !timing.rsvpOpen ? <button type="button" disabled className="w-full rounded-lg border border-slate-200 bg-slate-100 py-2.5 text-xs font-semibold text-slate-500">{timing.status === 'in_progress' ? 'Event started · RSVPs closed' : 'RSVP unavailable'}</button> : !isEligible ? (
                     <button
                       disabled
                       className="w-full py-2.5 rounded-lg bg-slate-100 border border-slate-200 text-slate-400 font-medium text-xs cursor-not-allowed"

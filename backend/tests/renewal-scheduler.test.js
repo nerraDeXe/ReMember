@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { beforeEach, test } from 'node:test';
 import { setImmediate as nextTick } from 'node:timers/promises';
-import { Organisation, OrganisationMembership, User } from '../models/index.js';
+import { Organisation, OrganisationMembership, User, Tier } from '../models/index.js';
 import { dbManager } from '../models/db.js';
 import { emailService } from '../services/emailService.js';
 import { mailDelivery } from '../services/mailDelivery.js';
@@ -69,6 +69,27 @@ beforeEach(t => {
     sent.push(clone({ user, membership, organisation }));
     return { status: 'sent', sentAt: now.toISOString() };
   });
+});
+
+test('Scheduled cancellations do not receive renewal reminders', async () => {
+  memberships[0].cancelAtPeriodEnd = true;
+  assert.equal(getRenewalEmailSchedule(memberships[0], { enabled: true, daysBefore: 30 }, now), null);
+  assert.deepEqual(await runRenewalEmailScan({ now }), { sent: 0, failed: 0 });
+  assert.equal(sent.length, 0);
+  assert.equal(claims.length, 0);
+});
+
+test('Scheduled free downgrades receive no payment reminder and paid ones name the next tier', async t => {
+  memberships[0].scheduledTierId = 'cheaper';
+  const target = { _id: 'cheaper', organisationId: 'org-a', name: 'Lower tier', price: 0, isActive: true };
+  t.mock.method(Tier, 'findOne', filter => query(matches(target, filter) ? target : null));
+  assert.deepEqual(await runRenewalEmailScan({ now }), { sent: 0, failed: 0 });
+  assert.equal(sent.length, 0);
+  assert.equal(claims.length, 0);
+  target.price = 10;
+  assert.deepEqual(await runRenewalEmailScan({ now }), { sent: 1, failed: 0 });
+  assert.equal(sent[0].membership.tierName, 'Lower tier');
+  assert.equal(memberships[0].tierName, 'Gold', 'A reminder must not change current member access');
 });
 
 test('The reminder starts exactly X days before expiry and uses the expiry instant for deduplication', () => {

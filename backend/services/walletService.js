@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { config } from '../config/config.js';
 import { ActivityLog } from '../models/index.js';
+import { getOrganisationBadgeColor } from '../../shared/membershipBadges.js';
 
 /**
  * Service to generate and update Google Wallet Digital Membership Passes
@@ -17,14 +18,7 @@ export const walletService = {
     const organisationSuffix = user.organisationId ? `_${String(user.organisationId).replace(/[^a-zA-Z0-9_.-]/g, '_')}` : '';
     const objectId = `${issuerId}.${cleanId}${organisationSuffix}`;
 
-    const tierColors = {
-      'Bronze Explorer': '#F4D03F',
-      'Silver Patron': '#BEBEBE',
-      'Gold VIP': '#FFD700',
-      'Platinum Elite': '#FFDA44',
-      'VIP Premium': '#FFD700'
-    };
-    const hexBg = tierColors[user.tierName] || '#FFD700';
+    const hexBg = getOrganisationBadgeColor(user.organisation);
 
     const formattedExpiry = user.expirationDate 
       ? new Date(user.expirationDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })

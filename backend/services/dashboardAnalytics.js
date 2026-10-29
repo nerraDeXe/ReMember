@@ -1,3 +1,5 @@
+import { adminMembershipStatus } from './membershipState.js';
+
 const SUPPORTED_MONTHS = [3, 6, 12];
 const MAX_RANGE_MONTHS = 120;
 const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -90,7 +92,7 @@ function amountCents(value) {
 /**
  * Aggregates an organisation's current roster and invoices without exposing accounts.
  * Roster history reflects current memberships by join date, not historical active status.
- * Revenue is paid USD invoices; payment counts include every currency.
+ * Revenue is paid MYR invoices; payment counts include every currency.
  */
 export function buildDashboardAnalytics({ memberships = [], users = [], invoices = [], months: requestedMonths, startMonth, endMonth, now = new Date() } = {}) {
   const period = dashboardPeriod({ months: requestedMonths, startMonth, endMonth }, now);
@@ -129,8 +131,8 @@ export function buildDashboardAnalytics({ memberships = [], users = [], invoices
     if (!paid && invoice.paymentStatus !== 'failed') continue;
     const date = paid ? recordTime(invoice, 'paidAt', 'createdAt') : timestamp(invoice.createdAt);
     if (date === null || date < previousStart || date > end) continue;
-    const usd = !invoice.currency || String(invoice.currency).trim().toUpperCase() === 'USD';
-    const revenue = paid && usd ? amountCents(invoice.amount) : 0;
+    const myr = String(invoice.currency || '').trim().toUpperCase() === 'MYR';
+    const revenue = paid && myr ? amountCents(invoice.amount) : 0;
     if (date < start) {
       if (paid) {
         summary.previousPaidPayments++;
@@ -144,7 +146,7 @@ export function buildDashboardAnalytics({ memberships = [], users = [], invoices
       bucket.revenue += revenue;
       summary.paidPayments++;
       summary.revenue += revenue;
-      if (!usd) excludedCurrencyPayments++;
+      if (!myr) excludedCurrencyPayments++;
     } else bucket.failedPayments++;
   }
   for (const bucket of paymentTrend) bucket.revenue /= 100;
@@ -160,9 +162,9 @@ export function buildDashboardAnalytics({ memberships = [], users = [], invoices
     period,
     membershipTrend,
     paymentTrend,
-    demographics: { countries: distribution(countries), tiers: distribution(roster.map(member => label(member.tierName))), statuses: distribution(roster.map(member => label(member.status))) },
+    demographics: { countries: distribution(countries), tiers: distribution(roster.map(member => label(member.tierName))), statuses: distribution(roster.map(member => label(adminMembershipStatus(member, now)))) },
     summary,
-    currency: 'USD',
+    currency: 'MYR',
     excludedCurrencyPayments
   };
 }

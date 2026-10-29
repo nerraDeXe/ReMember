@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import {
   LayoutDashboard, Users, Layers, Calendar, BarChart3, ScrollText, Mail,
-  CreditCard, User, Wallet, Receipt, Building2, ArrowLeft, Megaphone,
+  CreditCard, User, Receipt, Building2, ArrowLeft, Megaphone,
   FileText, ChevronDown,
 } from 'lucide-react';
 import OrganisationImage from './OrganisationImage.jsx';
@@ -28,6 +28,7 @@ export default function Sidebar({ currentPage, onNavigate, isAdmin }) {
     { label: 'Manage organisation', links: [
       { id: 'admin-members', label: 'Member Directory', icon: Users },
       { id: 'admin-tiers', label: 'Tiers & Pricing', icon: Layers },
+      { id: 'admin-payments', label: 'Payment Gateway', icon: CreditCard },
       { id: 'admin-events', label: 'Community Events', icon: Calendar },
       communication,
     ] },
@@ -40,13 +41,12 @@ export default function Sidebar({ currentPage, onNavigate, isAdmin }) {
   const memberGroups = [
     { label: 'Your membership', links: [
       { id: 'member-dashboard', label: 'My Dashboard', icon: LayoutDashboard },
-      ...(membershipActive ? [{ id: 'member-pass', label: 'Digital Membership Pass', icon: Wallet }] : []),
-      { id: 'member-renew', label: 'Renew Membership', icon: CreditCard },
+      { id: 'member-membership', label: 'Manage Membership', icon: CreditCard },
       { id: 'member-invoices', label: 'Invoices & Receipts', icon: Receipt },
     ] },
     { label: 'Your community', links: [
       { id: 'member-communication', label: 'Communication', icon: Megaphone },
-      ...(membershipActive ? [{ id: 'member-events', label: 'Events & RSVP', icon: Calendar }] : []),
+      ...(membershipActive ? [{ id: 'member-events', label: 'Community Events', icon: Calendar }] : []),
     ] },
   ];
   const accountGroups = [{ label: 'My account', links: [

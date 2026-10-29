@@ -1,7 +1,9 @@
 import { Organisation, OrganisationMembership } from '../models/index.js';
 import { getAccountContext } from './organisationAccess.js';
+import { getOrganisationBadgeColor } from '../../shared/membershipBadges.js';
+import { effectiveMembershipStatus } from './membershipState.js';
 
-export function membershipView(user, membership) {
+export function membershipView(user, membership, organisation) {
   const account = user.toObject ? user.toObject() : user;
   return {
     _id: String(account._id),
@@ -17,12 +19,20 @@ export function membershipView(user, membership) {
     country: account.country,
     membershipNumber: account.membershipNumber,
     organisationId: membership.organisationId,
+    organisation: organisation ? { _id: String(organisation._id), name: organisation.name, badgeColor: getOrganisationBadgeColor(organisation) } : undefined,
     role: membership.role,
-    status: membership.status,
+    status: effectiveMembershipStatus(membership),
     tierId: membership.tierId,
     tierName: membership.tierName,
     joinedDate: membership.joinedDate,
     expirationDate: membership.expirationDate,
+    firstSubscribedAt: membership.firstSubscribedAt,
+    cancelAtPeriodEnd: membership.cancelAtPeriodEnd === true,
+    cancelledAt: membership.cancelledAt,
+    scheduledTierId: membership.scheduledTierId || null,
+    scheduledTierEffectiveAt: membership.scheduledTierEffectiveAt || null,
+    scheduledTierRequestedAt: membership.scheduledTierRequestedAt || null,
+    creditBalanceCents: membership.creditBalanceCents || 0,
   };
 }
 
@@ -46,7 +56,7 @@ export async function withSelectedMembership(req, res, next) {
     req.membership = membership;
     req.membershipRole = isOwner ? 'owner' : 'member';
     const association = membership.toObject ? membership.toObject() : { ...membership };
-    req.membershipUser = membershipView(req.user, { ...association, role: req.membershipRole, status: isOwner ? 'active' : membership.status });
+    req.membershipUser = membershipView(req.user, { ...association, role: req.membershipRole, status: isOwner ? 'active' : membership.status }, organisation);
     next();
   } catch (err) {
     next(err);
@@ -57,6 +67,13 @@ export function requireActiveMembership(req, res, next) {
   if (req.membershipRole === 'owner') return next();
   if (req.membership.status !== 'active' || (req.membership.expirationDate && new Date(req.membership.expirationDate) < new Date())) {
     return res.status(403).json({ success: false, message: 'An active organisation membership is required.' });
+  }
+  next();
+}
+
+export function requireActivatedMembership(req, res, next) {
+  if (req.membershipRole !== 'owner' && req.membership.status === 'pending') {
+    return res.status(403).json({ success: false, message: 'Complete payment to access your member dashboard.', requiresPayment: true });
   }
   next();
 }

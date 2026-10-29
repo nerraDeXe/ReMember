@@ -91,18 +91,6 @@ export default function LandingPage({ onNavigate }) {
       {/* Hero Section */}
       <section className="pt-20 pb-12">
         <div className="max-w-5xl mx-auto px-4 text-center">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-50 border border-brand-primary text-brand-ink text-xs font-semibold mb-6">
-            <Globe className="w-3.5 h-3.5 text-brand-ink" />
-            Public Community & Organisation Directory
-          </div>
-
-          <h1 className="text-4xl sm:text-6xl font-black tracking-tight font-heading max-w-4xl mx-auto leading-tight text-slate-900">
-            Discover & Join{' '}
-            <span className="text-brand-ink underline decoration-brand-primary decoration-8 underline-offset-8">
-              Public Organisations
-            </span>
-          </h1>
-
           {/* Hero Quick Search Shortcut */}
           <div className="mt-8 max-w-2xl mx-auto">
             <div className="relative flex items-center">
@@ -111,7 +99,7 @@ export default function LandingPage({ onNavigate }) {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search public organisations (e.g. AI, Climate, Arts, London, Founders)..."
+                placeholder="Search public organisations (e.g. AI, Climate, Arts, London)..."
                 className="w-full pl-12 pr-10 py-3.5 bg-white border-2 border-slate-200 hover:border-brand-primary/50 focus:border-brand-primary rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none shadow-sm transition-all"
               />
               {searchQuery && (
@@ -124,7 +112,6 @@ export default function LandingPage({ onNavigate }) {
               )}
             </div>
           </div>
-
         </div>
       </section>
 

@@ -9,7 +9,6 @@ export async function ensureDefaultTiers() {
       slug: 'platinum-elite',
       price: 999,
       interval: 'yearly',
-      badgeColor: '#FFDA44',
       description: 'The highest echelon of membership for visionaries and enterprise patrons.',
       perks: [
         'All Gold VIP privileges with no restrictions',
@@ -19,7 +18,6 @@ export async function ensureDefaultTiers() {
         'Custom engraved physical NFC membership talisman'
       ],
       isActive: true,
-      accessLevel: 4,
       maxMembers: 50
     });
     console.log('✅ Restored default tier-platinum record.');
@@ -45,7 +43,6 @@ export async function seedDatabase() {
         slug: 'bronze-explorer',
         price: 29,
         interval: 'monthly',
-        badgeColor: '#F4D03F',
         description: 'Essential access for community newcomers and casual event attendees.',
         perks: [
           'Access to monthly community meetups',
@@ -54,7 +51,6 @@ export async function seedDatabase() {
           'Community discussion board access'
         ],
         isActive: true,
-        accessLevel: 1,
         maxMembers: 500
       },
       {
@@ -63,7 +59,6 @@ export async function seedDatabase() {
         slug: 'silver-patron',
         price: 79,
         interval: 'monthly',
-        badgeColor: '#BEBEBE',
         description: 'Enhanced tier for dedicated members desiring premium workshops and networking.',
         perks: [
           'All Bronze tier benefits',
@@ -73,7 +68,6 @@ export async function seedDatabase() {
           '10% discount on conference tickets'
         ],
         isActive: true,
-        accessLevel: 2,
         maxMembers: 300
       },
       {
@@ -82,7 +76,6 @@ export async function seedDatabase() {
         slug: 'gold-vip',
         price: 149,
         interval: 'monthly',
-        badgeColor: '#FFD700',
         description: 'Flagship VIP access with private lounge entry and executive dinners.',
         perks: [
           'All Silver tier benefits',
@@ -93,7 +86,6 @@ export async function seedDatabase() {
           'Automated concierge booking'
         ],
         isActive: true,
-        accessLevel: 3,
         maxMembers: 150
       },
       {
@@ -102,7 +94,6 @@ export async function seedDatabase() {
         slug: 'platinum-elite',
         price: 999,
         interval: 'yearly',
-        badgeColor: '#FFDA44',
         description: 'The highest echelon of membership for visionaries and enterprise patrons.',
         perks: [
           'All Gold VIP privileges with no restrictions',
@@ -112,7 +103,6 @@ export async function seedDatabase() {
           'Custom engraved physical NFC membership talisman'
         ],
         isActive: true,
-        accessLevel: 4,
         maxMembers: 50
       }
     ];

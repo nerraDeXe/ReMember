@@ -7,17 +7,24 @@ import eventRouter from '../routes/events.js';
 import { emailService } from '../services/emailService.js';
 import { eventLocationService, EventLocationError } from '../services/eventLocations.js';
 import { normaliseEventInput } from '../services/eventInput.js';
+import { eventLocalDate, getEventTiming } from '../../shared/eventTiming.js';
 import { getEventDates, getEventMapsUrl, getEventSchedule, formatEventTimeRange, formatEventDateRange, sortEventTiers, getEligibleEventTiers, isEventTierAllowed, hasEventCoordinates } from '../../shared/events.js';
 
 const models = { User, Organisation, OrganisationMembership, Event, Tier, ActivityLog };
 const originals = [];
 const clone = value => structuredClone(value);
-let records, serial, mutations;
+let records, serial, mutations, databaseTime;
 const pngImage = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=';
 const validEvent = () => ({ title: 'Community weekend', description: 'A weekend with our members.', location: 'KL Convention Centre', locationPlaceId: 'ChIJ_sample-place', startDate: '2099-05-10', endDate: '2099-05-11', schedule: [{ date: '2099-05-10', startTime: '09:00', endTime: '17:00' }, { date: '2099-05-11', startTime: '10:00', endTime: '15:00' }], timeZone: 'Asia/Kuala_Lumpur', capacity: 30, tierAccess: 'all', imageUrl: '' });
 
 function matches(record, filter = {}) {
-  return Object.entries(filter).every(([key, expected]) => expected && typeof expected === 'object' && '$in' in expected ? expected.$in.includes(record[key]) : record[key] === expected);
+  return Object.entries(filter).every(([key, expected]) => {
+    if (key === '$expr') {
+      assert.equal(expected.$lt[0], '$$NOW');
+      return new Date(databaseTime || Date.now()).getTime() < new Date(expected.$lt[1]).getTime();
+    }
+    return expected && typeof expected === 'object' && '$in' in expected ? expected.$in.includes(record[key]) : record[key] === expected;
+  });
 }
 function document(value) {
   if (!value) return value;
@@ -71,16 +78,17 @@ after(() => { for (const [target, method, original] of originals.reverse()) targ
 beforeEach(() => {
   serial = 0;
   mutations = [];
+  databaseTime = null;
   records = Object.fromEntries(Object.keys(models).map(name => [name, []]));
   for (const [id, selected] of [['ownerA', 'A'], ['ownerB', 'B'], ['member', 'A'], ['outsider', '']]) records.User.push({ _id: id, name: id, email: `${id}@example.test`, password: 'PRIVATE', emailVerified: true, status: 'active', activeOrganisationId: selected });
   records.Organisation.push({ _id: 'A', name: 'A', adminId: 'ownerA' }, { _id: 'B', name: 'B', adminId: 'ownerB' });
   records.OrganisationMembership.push({ _id: 'member-A', organisationId: 'A', userId: 'member', role: 'member', status: 'active', tierId: 'A-low', tierName: 'Basic', expirationDate: '2099-01-01T00:00:00Z' });
   for (const organisationId of ['A', 'B']) {
     records.Tier.push(
-      { _id: `${organisationId}-low`, organisationId, name: 'Basic', accessLevel: 1, price: 0, interval: 'monthly', isActive: true },
-      { _id: `${organisationId}-mid`, organisationId, name: 'Supporter', accessLevel: 1, price: 120, interval: 'yearly', isActive: true },
-      { _id: `${organisationId}-tie`, organisationId, name: 'Partner', accessLevel: 1, price: 10, interval: 'monthly', isActive: true },
-      { _id: `${organisationId}-high`, organisationId, name: 'Patron', accessLevel: 2, price: 5, interval: 'monthly', isActive: true },
+      { _id: `${organisationId}-low`, organisationId, name: 'Basic', price: 0, interval: 'monthly', isActive: true },
+      { _id: `${organisationId}-mid`, organisationId, name: 'Supporter', price: 120, interval: 'yearly', isActive: true },
+      { _id: `${organisationId}-tie`, organisationId, name: 'Partner', price: 10, interval: 'monthly', isActive: true },
+      { _id: `${organisationId}-high`, organisationId, name: 'Patron', price: 20, interval: 'monthly', isActive: true },
     );
     records.Event.push({ _id: `event-${organisationId}`, organisationId, ...validEvent(), allowedTiers: [], rsvps: [] });
   }
@@ -111,6 +119,74 @@ test('Only verified owners can create events for their selected organisation', a
   records.User.find(user => user._id === 'ownerA').emailVerified = false;
   assert.equal((await request('POST', '/', { userId: 'ownerA', body: validEvent() })).status, 403);
   assert.equal(records.Event.length, 2);
+});
+
+test('New events must start after today in their selected time zone, including multi-day events', () => {
+  const now = new Date('2026-10-28T16:30:00Z');
+  const input = (date, timeZone = 'Asia/Kuala_Lumpur') => ({ ...validEvent(), startDate: date, endDate: date, timeZone,
+    schedule: [{ date, startTime: '09:00', endTime: '17:00' }] });
+  for (const date of ['2026-10-28', '2026-10-29']) assert.throws(() => normaliseEventInput(input(date), { now }), /tomorrow or later/);
+  assert.equal(normaliseEventInput(input('2026-10-30'), { now }).startDate, '2026-10-30');
+  assert.equal(normaliseEventInput(input('2026-10-29', 'America/New_York'), { now }).startDate, '2026-10-29');
+  assert.throws(() => normaliseEventInput({ ...input('2026-10-29'), endDate: '2026-10-30', schedule: [
+    { date: '2026-10-29', startTime: '09:00', endTime: '17:00' }, { date: '2026-10-30', startTime: '09:00', endTime: '17:00' }
+  ] }, { now }), /tomorrow or later/);
+});
+
+test('The create endpoint rejects today and past events without persisting anything', async () => {
+  const today = eventLocalDate();
+  for (const date of [today, '2020-01-01']) {
+    const result = await request('POST', '/', { userId: 'ownerA', body: { ...validEvent(), startDate: date, endDate: date, schedule: [{ date, startTime: '09:00', endTime: '17:00' }], eventStatus: 'upcoming' } });
+    assert.equal(result.status, 400);
+    assert.match(result.body.message, /tomorrow or later/);
+  }
+  assert.equal(records.Event.length, 2);
+  assert.equal(mutations.length, 0);
+});
+
+test('Past event metadata can be corrected but a new start date cannot be moved into today', () => {
+  const now = new Date('2026-10-28T16:30:00Z');
+  const existing = { ...validEvent(), startDate: '2026-10-20', endDate: '2026-10-20', date: '2026-10-20', schedule: [{ date: '2026-10-20', startTime: '09:00', endTime: '17:00' }] };
+  assert.equal(normaliseEventInput({ title: 'Corrected title' }, { existing, now }).title, 'Corrected title');
+  assert.throws(() => normaliseEventInput({ startDate: '2026-10-29', endDate: '2026-10-29', schedule: [{ date: '2026-10-29', startTime: '10:00', endTime: '17:00' }] }, { existing, now }), /tomorrow or later/);
+  assert.throws(() => normaliseEventInput({ ...validEvent(), startDate: '2026-03-08', endDate: '2026-03-08', timeZone: 'America/New_York', schedule: [{ date: '2026-03-08', startTime: '02:30', endTime: '04:00' }] }, { now: new Date('2026-01-01T00:00:00Z') }), /does not exist/);
+});
+
+test('API event status reflects in-progress and ended schedules and blocks late RSVP without emails', async t => {
+  let emails = 0;
+  t.mock.method(emailService, 'sendEventRsvpConfirmation', async () => { emails++; return { status: 'sent' }; });
+  const selected = records.Event[0];
+  const dateAt = offset => new Date(Date.now() + offset * 86_400_000).toISOString().slice(0, 10);
+  selected.startDate = selected.date = dateAt(-1);
+  selected.endDate = dateAt(1);
+  selected.timeZone = 'UTC';
+  selected.schedule = [-1, 0, 1].map(offset => ({ date: dateAt(offset), startTime: '00:00', endTime: '23:59' }));
+  let listed = await request('GET');
+  assert.equal(listed.body.events[0].eventStatus, 'in_progress');
+  assert.equal(listed.body.events[0].rsvpOpen, false);
+  const started = await request('POST', '/:id/rsvp', { params: { id: 'event-A' }, body: { rsvpOpen: true, eventStatus: 'upcoming' } });
+  assert.equal(started.status, 409);
+  assert.match(started.body.message, /started/);
+  selected.endDate = selected.startDate;
+  selected.schedule = [selected.schedule[0]];
+  listed = await request('GET', '/', { userId: 'ownerA' });
+  assert.equal(listed.body.events[0].eventStatus, 'ended');
+  const ended = await request('POST', '/:id/rsvp', { params: { id: 'event-A' } });
+  assert.equal(ended.status, 409);
+  assert.match(ended.body.message, /ended/);
+  assert.equal(selected.rsvps.length, 0);
+  assert.equal(emails, 0);
+});
+
+test('The database clock closes registration if the request reaches the write at the exact start', async t => {
+  const selected = records.Event[0];
+  databaseTime = getEventTiming(selected).startsAt;
+  let emails = 0;
+  t.mock.method(emailService, 'sendEventRsvpConfirmation', async () => { emails++; return { status: 'sent' }; });
+  const result = await request('POST', '/:id/rsvp', { params: { id: 'event-A' } });
+  assert.equal(result.status, 409);
+  assert.equal(selected.rsvps.length, 0);
+  assert.equal(emails, 0);
 });
 
 test('Owners publish uploaded images, date schedules, and server-derived organisation and tier names', async () => {
@@ -199,11 +275,25 @@ test('Tier thresholds reject foreign, missing, and inactive tiers and ignore sup
   assert.deepEqual(all.body.event.allowedTiers, []);
 });
 
-test('Higher-tier access uses access levels then equivalent monthly prices, including ties', () => {
+test('Higher-tier access uses equivalent monthly prices, including monthly and yearly ties', () => {
   const tiers = records.Tier.filter(tier => tier.organisationId === 'A');
   assert.deepEqual(sortEventTiers(tiers).map(tier => tier._id), ['A-low', 'A-tie', 'A-mid', 'A-high']);
   assert.deepEqual(new Set(getEligibleEventTiers(tiers, 'A-mid').map(tier => tier._id)), new Set(['A-mid', 'A-tie', 'A-high']));
   for (const [tierId, allowed] of [['A-low', false], ['A-mid', true], ['A-tie', true], ['A-high', true], ['B-high', false]]) assert.equal(isEventTierAllowed({ tierAccess: 'minimum', minimumTierId: 'A-mid' }, { tierId }, tiers), allowed);
+});
+
+test('Legacy access levels cannot change tier order or bypass minimum event prices', async () => {
+  const tiers = records.Tier.filter(tier => tier.organisationId === 'A');
+  for (const tier of tiers) tier.accessLevel = tier._id === 'A-low' ? 999 : 1;
+  tiers.find(tier => tier._id === 'A-tie').accessLevel = 0;
+  assert.deepEqual(sortEventTiers(tiers).map(tier => tier._id), ['A-low', 'A-tie', 'A-mid', 'A-high']);
+  assert.deepEqual(new Set(getEligibleEventTiers(tiers, 'A-mid').map(tier => tier._id)), new Set(['A-mid', 'A-tie', 'A-high']));
+  Object.assign(records.Event[0], { tierAccess: 'minimum', minimumTierId: 'A-mid' });
+  assert.equal((await request()).body.events[0].isAllowedTier, false);
+  assert.equal((await request('POST', '/:id/rsvp', { params: { id: 'event-A' } })).status, 403);
+  records.OrganisationMembership[0].tierId = 'A-tie';
+  assert.equal((await request()).body.events[0].isAllowedTier, true);
+  assert.equal((await request('POST', '/:id/rsvp', { params: { id: 'event-A' } })).status, 200);
 });
 
 test('Member views and RSVP enforce stable minimum tier IDs, even after tier names change', async () => {

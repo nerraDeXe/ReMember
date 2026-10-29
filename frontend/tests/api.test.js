@@ -106,6 +106,44 @@ test('Direct member and post reads encode IDs and retain post organisation scope
   assert.equal(browser.requests[2].url, '/api/posts/post-2');
 });
 
+test('Demo gateway requests preserve the checkout and captured organisation without accepting payment amounts', async (t) => {
+  const browser = mockBrowser(t);
+  await api.createPaymentCheckout('tier-1', 'org/a & b');
+  await api.getPaymentCheckout('checkout/a & b', 'org/a & b');
+  await api.confirmPayment('checkout/a & b', 'org/a & b', { paymentMethod: 'card', scenario: 'approved', verificationCode: '123456' });
+  await api.cancelPayment('checkout/a & b', 'org/a & b');
+  assert.deepEqual(JSON.parse(browser.requests[0].body), { tierId: 'tier-1', organisationId: 'org/a & b' });
+  const statusUrl = new URL(browser.requests[1].url, 'https://remember.example');
+  assert.equal(statusUrl.pathname, '/api/payments/checkout/checkout%2Fa%20%26%20b');
+  assert.equal(statusUrl.searchParams.get('organisationId'), 'org/a & b');
+  assert.equal(browser.requests[2].url, '/api/payments/checkout/checkout%2Fa%20%26%20b/confirm');
+  assert.deepEqual(JSON.parse(browser.requests[2].body), { paymentMethod: 'card', scenario: 'approved', verificationCode: '123456', organisationId: 'org/a & b' });
+  assert.deepEqual(JSON.parse(browser.requests[3].body), { organisationId: 'org/a & b' });
+});
+
+test('Membership lifecycle and upgrade requests capture organisation and never submit a client price or credit', async (t) => {
+  const browser = mockBrowser(t);
+  const organisationId = 'org/a & b';
+  await api.getMembership(organisationId);
+  await api.cancelMembership(organisationId);
+  await api.resumeMembership(organisationId);
+  await api.scheduleMembershipDowngrade(organisationId, 'cheaper-tier');
+  await api.cancelMembershipDowngrade(organisationId);
+  await api.getPaymentQuote('premium-tier', organisationId, 'upgrade');
+  await api.createPaymentCheckout('premium-tier', organisationId, 'upgrade');
+  const membershipUrl = new URL(browser.requests[0].url, 'https://remember.example');
+  assert.equal(membershipUrl.pathname, '/api/members/membership');
+  assert.equal(membershipUrl.searchParams.get('organisationId'), organisationId);
+  assert.deepEqual(browser.requests.slice(1).map(({ url, method, body }) => ({ url, method, payload: JSON.parse(body) })), [
+    { url: '/api/members/membership/cancel', method: 'POST', payload: { organisationId } },
+    { url: '/api/members/membership/resume', method: 'POST', payload: { organisationId } },
+    { url: '/api/members/membership/downgrade', method: 'POST', payload: { organisationId, tierId: 'cheaper-tier' } },
+    { url: '/api/members/membership/downgrade/cancel', method: 'POST', payload: { organisationId } },
+    { url: '/api/payments/quote', method: 'POST', payload: { tierId: 'premium-tier', organisationId, intent: 'upgrade' } },
+    { url: '/api/payments/checkout', method: 'POST', payload: { tierId: 'premium-tier', organisationId, intent: 'upgrade' } },
+  ]);
+});
+
 test('CSV exports return a Blob through shared authentication even with a generic MIME type', async (t) => {
   const csv = 'Name,Email\r\nMember,member@example.com';
   const browser = mockBrowser(t, (state) => new Response(csv, {

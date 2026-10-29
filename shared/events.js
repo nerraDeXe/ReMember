@@ -57,15 +57,12 @@ export function getEventMapsUrl(event = {}) {
 }
 
 function tierRank(tier) {
-  const accessLevel = Number(tier.accessLevel);
   const price = Number(tier.price);
-  return [Number.isFinite(accessLevel) ? accessLevel : 1, (Number.isFinite(price) ? price : 0) / (tier.interval === 'yearly' ? 12 : 1)];
+  return (Number.isFinite(price) ? price : 0) / (tier.interval === 'yearly' ? 12 : 1);
 }
 
 function compareTierRank(a, b) {
-  const first = tierRank(a);
-  const second = tierRank(b);
-  return first[0] - second[0] || first[1] - second[1];
+  return tierRank(a) - tierRank(b);
 }
 
 export function sortEventTiers(tiers = []) {

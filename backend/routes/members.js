@@ -2,20 +2,54 @@ import express from 'express';
 import { countryChoice, normaliseAccountPhone } from '../services/accountValidation.js';
 import { User, Tier, Invoice, Event, ActivityLog } from '../models/index.js';
 import { authenticateToken, requireVerifiedEmail } from '../middleware/auth.js';
-import { withSelectedMembership, requireActiveMembership } from '../services/membershipContext.js';
+import { withSelectedMembership, requireActiveMembership, requireActivatedMembership } from '../services/membershipContext.js';
 import { eventView } from '../services/eventView.js';
 import { walletService } from '../services/walletService.js';
+import { MembershipError, membershipDetails, changeMembershipCancellation, scheduleMembershipDowngrade, cancelMembershipDowngrade } from '../services/membershipManagement.js';
 
 const router = express.Router();
 router.use(authenticateToken, requireVerifiedEmail);
 const MAX_AVATAR_SIZE = 2 * 1024 * 1024;
 const AVATAR_DATA_URL = /^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+/]+={0,2})$/;
 
+function checkMembershipContext(req, res, next) {
+  const expected = req.method === 'GET' ? req.query.organisationId : req.body?.organisationId;
+  if (expected !== req.organisationId) return res.status(409).json({ success: false, message: 'Your selected organisation has changed. Reload your membership before continuing.' });
+  if (req.membershipRole !== 'member') return res.status(403).json({ success: false, message: 'Organisation owners do not need a member subscription.' });
+  next();
+}
+
+router.get('/membership', withSelectedMembership, checkMembershipContext, async (req, res, next) => {
+  try { res.json({ success: true, membership: await membershipDetails(req.user, req.membership, req.organisation) }); }
+  catch (error) { next(error); }
+});
+
+for (const action of ['cancel', 'resume']) router.post(`/membership/${action}`, withSelectedMembership, checkMembershipContext, async (req, res, next) => {
+  try {
+    const membership = await changeMembershipCancellation({ user: req.user, membership: req.membership, organisation: req.organisation, resume: action === 'resume' });
+    res.json({ success: true, membership: await membershipDetails(req.user, membership, req.organisation) });
+  } catch (error) {
+    if (error instanceof MembershipError) return res.status(error.status).json({ success: false, message: error.message });
+    next(error);
+  }
+});
+
+for (const action of ['schedule', 'cancel']) router.post(`/membership/downgrade${action === 'cancel' ? '/cancel' : ''}`, withSelectedMembership, checkMembershipContext, async (req, res, next) => {
+  try {
+    const operation = action === 'cancel' ? cancelMembershipDowngrade : scheduleMembershipDowngrade;
+    const membership = await operation({ user: req.user, membership: req.membership, organisation: req.organisation, tierId: req.body?.tierId });
+    res.json({ success: true, membership: await membershipDetails(req.user, membership, req.organisation) });
+  } catch (error) {
+    if (error instanceof MembershipError) return res.status(error.status).json({ success: false, message: error.message });
+    next(error);
+  }
+});
+
 /**
  * GET /api/members/dashboard
  * Member dashboard summary: status, tier, expiration, wallet pass, upcoming RSVPs, recent invoices
  */
-router.get('/dashboard', withSelectedMembership, async (req, res) => {
+router.get('/dashboard', withSelectedMembership, requireActivatedMembership, async (req, res) => {
   try {
     const user = req.membershipUser;
     const [tier, myEvents, invoices] = await Promise.all([
@@ -35,6 +69,7 @@ router.get('/dashboard', withSelectedMembership, async (req, res) => {
         _id: user._id,
         organisationId: req.organisationId,
         organisationName: req.organisation.name,
+        organisation: user.organisation,
         name: user.name,
         email: user.email,
         membershipNumber: user.membershipNumber,
@@ -56,7 +91,7 @@ router.get('/dashboard', withSelectedMembership, async (req, res) => {
           syncStatus: user.googleWallet?.syncStatus || 'synced'
         } : null
       },
-      upcomingRsvps: myEvents.map(event => eventView(event, user._id, req.membershipRole === 'owner')),
+      upcomingRsvps: myEvents.map(event => eventView(event, user._id, req.membershipRole === 'owner')).filter(event => event.eventStatus !== 'ended'),
       recentInvoices: invoices
     });
   } catch (err) {

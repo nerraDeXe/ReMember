@@ -28,7 +28,7 @@ export default function MemberOrganisationsPage({ onNavigate, onJoined }) {
   const memberships = useMemo(() => {
     const ownedIds = new Set((user?.ownedOrganisations || []).map(org => String(org._id)));
     return (user?.memberships || []).filter(membership =>
-      !ownedIds.has(String(membership.organisationId)) && ['active', 'pending', 'expired'].includes(membership.status)
+      !ownedIds.has(String(membership.organisationId)) && ['active', 'pending', 'expired', 'cancelled'].includes(membership.status)
     );
   }, [user]);
   useEffect(() => {
@@ -112,8 +112,8 @@ export default function MemberOrganisationsPage({ onNavigate, onJoined }) {
                 <div className="min-w-0 flex-1"><h3 className="font-bold text-sm text-slate-900 break-words">{membership.organisationName || membership.organisation?.name || 'Organisation'}</h3><p className="text-xs text-slate-600 mt-1 break-words">{membership.tierName || 'Membership'}</p></div>
               </div>
               <div className="flex flex-wrap items-center gap-2 text-xs"><span className={`px-2 py-1 rounded-md font-semibold capitalize ${membership.status === 'active' ? 'bg-emerald-50 text-emerald-800' : membership.status === 'pending' ? 'bg-amber-50 text-amber-800' : 'bg-slate-100 text-slate-700'}`}>{membership.status === 'pending' ? 'Awaiting payment' : membership.status}</span>{expiryLabel && <span className="text-slate-500">{membership.status === 'expired' ? 'Expired' : 'Expires'} {expiryLabel}</span>}</div>
-              <button disabled={!!openingId || busy} onClick={() => openMemberPortal(membership.organisationId)} aria-label={`Open member portal for ${membership.organisationName || membership.organisation?.name || 'organisation'}`} className="mt-auto flex items-center justify-center gap-2 px-4 py-2.5 border border-slate-300 rounded-lg text-xs font-bold hover:bg-slate-100 disabled:opacity-60">
-                {openingId === membership.organisationId ? <RefreshCw className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}Open Member Portal
+              <button disabled={!!openingId || busy} onClick={() => openMemberPortal(membership.organisationId)} aria-label={`${membership.status === 'pending' ? 'Complete payment' : 'Open member portal'} for ${membership.organisationName || membership.organisation?.name || 'organisation'}`} className="mt-auto flex items-center justify-center gap-2 px-4 py-2.5 border border-slate-300 rounded-lg text-xs font-bold hover:bg-slate-100 disabled:opacity-60">
+                {openingId === membership.organisationId ? <RefreshCw className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}{membership.status === 'pending' ? 'Complete Payment' : 'Open Member Portal'}
               </button>
             </article>;
           })}

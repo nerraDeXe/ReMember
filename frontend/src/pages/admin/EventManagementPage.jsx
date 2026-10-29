@@ -5,6 +5,10 @@ import { useToast } from '../../context/ToastContext.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import EventModal from '../../components/EventModal.jsx';
 import EventSchedule, { EventLocation } from '../../components/EventSchedule.jsx';
+import EventAnalytics from '../../components/EventAnalytics.jsx';
+import EventStatusBadge from '../../components/EventStatusBadge.jsx';
+import { getEventTiming } from '../../../../shared/eventTiming.js';
+import { useEventNow } from '../../useEventNow.js';
 import { getEventAccessLabel, getEligibleEventTiers } from '../../../../shared/events.js';
 import { useNavigation } from '../../routing.jsx';
 
@@ -12,9 +16,12 @@ export default function EventManagementPage() {
   const { showToast } = useToast();
   const { user } = useAuth();
   const organisationId = user?.activeOrganisationId;
+  const now = useEventNow();
   const [events, setEvents] = useState([]);
   const [tiers, setTiers] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [requestLoading, setLoading] = useState(true);
+  const [loadedOrganisationId, setLoadedOrganisationId] = useState(null);
+  const loading = requestLoading || loadedOrganisationId !== organisationId;
   const [loadError, setLoadError] = useState('');
   const [tiersError, setTiersError] = useState('');
   const [reload, setReload] = useState(0);
@@ -23,19 +30,22 @@ export default function EventManagementPage() {
   const query = route.query;
   const eventRoute = query.get('event');
   const rosterId = query.get('roster');
-  const inspectEvent = events.find(event => event._id === rosterId) || null;
+  const inspectEvent = !loading ? events.find(event => event._id === rosterId) || null : null;
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     setLoadError('');
     setTiersError('');
+    setEvents([]);
+    setTiers([]);
     Promise.allSettled([api.getEvents(organisationId), api.getTiers(organisationId)]).then(([eventResult, tierResult]) => {
       if (cancelled) return;
       if (eventResult.status === 'fulfilled' && eventResult.value.success) setEvents(eventResult.value.events || []);
       else setLoadError(eventResult.reason?.message || eventResult.value?.message || 'Could not load events.');
       if (tierResult.status === 'fulfilled' && tierResult.value.success) setTiers(tierResult.value.tiers || []);
       else setTiersError(tierResult.reason?.message || tierResult.value?.message || 'Could not load membership tiers.');
+      setLoadedOrganisationId(organisationId);
       setLoading(false);
     });
     return () => { cancelled = true; };
@@ -74,6 +84,8 @@ export default function EventManagementPage() {
           </p>
         </div>
 
+        <div className="flex flex-wrap items-center gap-3 self-start sm:self-auto">
+        <button type="button" onClick={loadEvents} disabled={loading} className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"><RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} aria-hidden="true" />Refresh events</button>
         <button
           onClick={() => updateQuery({ event: 'new', roster: null })}
           disabled={loading || Boolean(tiersError)}
@@ -82,12 +94,15 @@ export default function EventManagementPage() {
           <Plus className="w-4 h-4" />
           <span>Create New Event</span>
         </button>
+        </div>
       </div>
 
       {tiersError && <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-300 bg-white p-4 text-sm text-slate-700">
         <p>Membership access options could not be loaded. {tiersError}</p>
         <button onClick={loadEvents} className="font-semibold underline">Retry</button>
       </div>}
+
+      {!loading && !loadError && <EventAnalytics key={organisationId} events={events} now={now} onInspectEvent={id => updateQuery({ roster: id, event: null })} />}
 
       {/* Events List */}
       <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
@@ -129,6 +144,7 @@ export default function EventManagementPage() {
                         <div className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">
                           {evt.description}
                         </div>
+                        <div className="mt-2"><EventStatusBadge status={getEventTiming(evt, now).status} /></div>
                       </td>
 
                       <td className="p-4 min-w-[215px] text-slate-600">

@@ -22,22 +22,22 @@ const paymentSeries = [
 ];
 const revenueSeries = [{ key: 'revenue', label: 'Revenue (MYR)', color: '#a16207' }];
 
-function ChartLoading() {
+function ChartLoading({ financialOnly = false }) {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5" role="status" aria-label="Loading dashboard analytics">
-      {[0, 1, 2, 3].map((item) => (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5" role="status" aria-label={financialOnly ? 'Loading financial analytics' : 'Loading dashboard analytics'}>
+      {(financialOnly ? [0, 1] : [0, 1, 2, 3]).map((item) => (
         <div key={item} className={chartCard} aria-hidden="true">
           <div className="h-4 w-36 rounded bg-slate-100 motion-safe:animate-pulse" />
           <div className="mt-3 h-7 w-24 rounded bg-slate-100 motion-safe:animate-pulse" />
           <div className="mt-6 h-60 rounded-lg bg-slate-50 motion-safe:animate-pulse" />
         </div>
       ))}
-      <span className="sr-only">Loading dashboard analytics.</span>
+      <span className="sr-only">Loading {financialOnly ? 'financial' : 'dashboard'} analytics.</span>
     </div>
   );
 }
 
-export default function DashboardAnalytics({ organisationId, onNavigate }) {
+export default function DashboardAnalytics({ organisationId, onNavigate, financialOnly = false }) {
   const { query, updateQuery } = useUrlQuery();
   const requestedStart = query.get('startMonth');
   const requestedEnd = query.get('endMonth');
@@ -94,12 +94,12 @@ export default function DashboardAnalytics({ organisationId, onNavigate }) {
   const periodLabel = `${dateFormat.format(new Date(`${startMonth}-01T00:00:00Z`))} – ${dateFormat.format(new Date(`${endMonth}-01T00:00:00Z`))}`;
 
   return (
-    <section className="space-y-5" aria-labelledby="dashboard-analytics-title" aria-busy={loading}>
+    <section className="space-y-5" aria-labelledby={financialOnly ? 'financial-analytics-title' : 'dashboard-analytics-title'} aria-busy={loading}>
       <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-3">
         <div>
-          <h2 id="dashboard-analytics-title" className="text-lg font-bold text-slate-900 flex items-center gap-2">
+          <h2 id={financialOnly ? 'financial-analytics-title' : 'dashboard-analytics-title'} className="text-lg font-bold text-slate-900 flex items-center gap-2">
             <BarChart3 className="h-5 w-5 text-brand-ink" aria-hidden="true" />
-            Analytics overview
+            {financialOnly ? 'Revenue & payment trends' : 'Analytics overview'}
           </h2>
           <p className="mt-1 text-xs text-slate-500">{periodLabel} · Monthly totals in UTC{endMonth === currentMonth ? ' · Current month to date' : ''}</p>
         </div>
@@ -129,7 +129,7 @@ export default function DashboardAnalytics({ organisationId, onNavigate }) {
         </div>
       </div>
 
-      {loading ? <ChartLoading /> : error ? (
+      {loading ? <ChartLoading financialOnly={financialOnly} /> : error ? (
         <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-5 text-sm text-rose-900">
           <p className="flex items-center gap-2 font-semibold"><AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />Analytics could not be loaded</p>
           <p className="mt-1 text-xs">{error}</p>
@@ -137,6 +137,7 @@ export default function DashboardAnalytics({ organisationId, onNavigate }) {
         </div>
       ) : data && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          {!financialOnly && <>
           <article className={chartCard}>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
@@ -172,6 +173,8 @@ export default function DashboardAnalytics({ organisationId, onNavigate }) {
             <p className="mt-3 text-[11px] leading-relaxed text-slate-500">Includes all current members, regardless of the selected time range. Missing profile information appears as “Not provided”.</p>
           </article>
 
+          </>}
+
           <article className={chartCard}>
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -179,7 +182,7 @@ export default function DashboardAnalytics({ organisationId, onNavigate }) {
                 <p className="mt-2 text-2xl font-extrabold text-slate-900 tabular-nums">{money(summary.revenue)}</p>
                 <p className="mt-0.5 text-xs text-slate-500">MYR collected in this period</p>
               </div>
-              <button type="button" onClick={() => onNavigate('admin-finances')} className="flex items-center gap-1 py-1 text-xs font-semibold text-slate-600 hover:text-slate-900">Details<ArrowRight className="h-3.5 w-3.5" aria-hidden="true" /></button>
+              {!financialOnly && <button type="button" onClick={() => onNavigate('admin-finances')} className="flex items-center gap-1 py-1 text-xs font-semibold text-slate-600 hover:text-slate-900">Details<ArrowRight className="h-3.5 w-3.5" aria-hidden="true" /></button>}
             </div>
             <div className="mt-5"><TrendChart title="Revenue received in MYR" data={data.paymentTrend} series={revenueSeries} valueFormatter={money} axisFormatter={compactMoney} allowDecimals emptyMessage="No MYR revenue received in this period." /></div>
             <p className="mt-3 text-[11px] leading-relaxed text-slate-500">Paid MYR invoices only, grouped by payment date (invoice date when unavailable). Pending and failed invoices are excluded.{data.excludedCurrencyPayments > 0 && ` ${number(data.excludedCurrencyPayments)} payments in other currencies appear in payment counts only.`}</p>

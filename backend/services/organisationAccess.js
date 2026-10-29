@@ -1,6 +1,9 @@
 import { Organisation, OrganisationMembership, User } from '../models/index.js';
+import { getOrganisationBadgeColor } from '../../shared/membershipBadges.js';
+import { effectiveMembershipStatus } from './membershipState.js';
+import { resolveDueFreeDowngrade } from './scheduledDowngrade.js';
 
-export const accessibleMembershipStatuses = ['active', 'pending', 'expired'];
+export const accessibleMembershipStatuses = ['active', 'pending', 'expired', 'cancelled'];
 
 export function organisationIsPublic(organisation) {
   return organisation.isPublic === true && organisation.visibility !== 'private';
@@ -23,6 +26,7 @@ export function organisationSummary(organisation) {
     _id: organisation._id,
     name: organisation.name,
     logoUrl: organisation.logoUrl || '',
+    badgeColor: getOrganisationBadgeColor(organisation),
     visibility: organisation.visibility,
     isPublic: organisationIsPublic(organisation)
   };
@@ -31,13 +35,14 @@ export function organisationSummary(organisation) {
 /** Account roles belong to organisations; a person can own one and join another. */
 export async function getAccountContext(user) {
   const result = sanitiseUser(user);
-  const [owned, memberships] = await Promise.all([
+  const [owned, storedMemberships] = await Promise.all([
     Organisation.find({ adminId: String(user._id) }).lean(),
     OrganisationMembership.find({ userId: String(user._id) }).lean()
   ]);
-  const organisationIds = [...new Set([...owned.map(org => org._id), ...memberships.map(member => member.organisationId)])];
+  const organisationIds = [...new Set([...owned.map(org => org._id), ...storedMemberships.map(member => member.organisationId)])];
   const organisations = organisationIds.length ? await Organisation.find({ _id: { $in: organisationIds } }).lean() : [];
   const organisationsById = new Map(organisations.map(org => [String(org._id), org]));
+  const memberships = (await Promise.all(storedMemberships.map(member => resolveDueFreeDowngrade(member, organisationsById.get(String(member.organisationId)))))).filter(Boolean);
   const ownedIds = new Set(owned.map(org => String(org._id)));
   const accessible = memberships.filter(member => organisationsById.has(String(member.organisationId)) && accessibleMembershipStatuses.includes(member.status));
   const selectedId = String(user.activeOrganisationId || '');
@@ -49,25 +54,32 @@ export async function getAccountContext(user) {
   result.ownedOrganisations = owned.map(organisationSummary);
   result.memberships = memberships.filter(member => organisationsById.has(String(member.organisationId))).map(member => ({
     ...member,
+    status: effectiveMembershipStatus(member),
     organisationName: organisationsById.get(String(member.organisationId)).name,
     organisation: organisationSummary(organisationsById.get(String(member.organisationId)))
   }));
   result.activeOrganisationId = activeOrganisationId;
   result.activeOrganisation = activeOrganisation ? organisationSummary(activeOrganisation) : null;
   result.organisationRole = activeOrganisation ? (isOrganisationOwner(activeOrganisation, user) ? 'owner' : 'member') : null;
-  result.membershipStatus = result.organisationRole === 'owner' ? 'active' : (selectedMembership?.status || null);
+  result.membershipStatus = result.organisationRole === 'owner' ? 'active' : (selectedMembership ? effectiveMembershipStatus(selectedMembership) : null);
   result.tierId = result.organisationRole === 'owner' ? '' : (selectedMembership?.tierId || '');
   result.tierName = result.organisationRole === 'owner' ? '' : (selectedMembership?.tierName || '');
   result.membershipJoinedDate = selectedMembership?.joinedDate || null;
   result.joinedDate = selectedMembership?.joinedDate || user.joinedDate;
   result.expirationDate = selectedMembership?.expirationDate || null;
+  result.cancelAtPeriodEnd = selectedMembership?.cancelAtPeriodEnd === true;
+  result.cancelledAt = selectedMembership?.cancelledAt || null;
+  result.scheduledTierId = selectedMembership?.scheduledTierId || null;
+  result.scheduledTierEffectiveAt = selectedMembership?.scheduledTierEffectiveAt || null;
+  result.scheduledTierRequestedAt = selectedMembership?.scheduledTierRequestedAt || null;
+  result.paymentMode = 'simulated';
   return result;
 }
 
 export async function canReadOrganisation(organisation, user) {
   if (organisationIsPublic(organisation) || isOrganisationOwner(organisation, user)) return true;
   if (!user) return false;
-  return Boolean(await OrganisationMembership.findOne({ organisationId: String(organisation._id), userId: String(user._id), status: 'active' }));
+  return Boolean(await OrganisationMembership.findOne({ organisationId: String(organisation._id), userId: String(user._id), status: { $in: accessibleMembershipStatuses } }));
 }
 
 export async function resolveSelectedOrganisation(user) {
@@ -106,21 +118,16 @@ export function normaliseTierInput(input = {}) {
   if (!Array.isArray(perks) || perks.length > 30 || perks.some(perk => typeof perk !== 'string' || perk.length > 500)) throw new Error('Tier benefits must be a list of up to 30 short descriptions.');
   const maxMembers = input.maxMembers === undefined || input.maxMembers === null || input.maxMembers === '' ? null : Number(input.maxMembers);
   if (maxMembers !== null && (!Number.isSafeInteger(maxMembers) || maxMembers < 1)) throw new Error('Member limits must be positive whole numbers.');
-  const accessLevel = input.accessLevel === undefined ? 1 : Number(input.accessLevel);
-  if (!Number.isSafeInteger(accessLevel) || accessLevel < 1) throw new Error('Access levels must be positive whole numbers.');
   if (input.isActive !== undefined && typeof input.isActive !== 'boolean') throw new Error('Tier activity must be true or false.');
-  if (input.badgeColor && (typeof input.badgeColor !== 'string' || !/^#[0-9a-f]{6}$/i.test(input.badgeColor))) throw new Error('Choose a valid tier badge colour.');
   const name = input.name.trim();
   return {
     name,
     slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'membership',
     price: Math.round(price * 100) / 100,
     interval,
-    badgeColor: input.badgeColor || '#FFD700',
     description: input.description || '',
     perks: perks.map(perk => perk.trim()).filter(Boolean),
     isActive: input.isActive === undefined ? true : input.isActive,
-    accessLevel,
     maxMembers
   };
 }

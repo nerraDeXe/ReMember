@@ -1,70 +1,48 @@
 import express from 'express';
-import mongoose from 'mongoose';
-import { randomUUID } from 'node:crypto';
-import { Tier, Invoice, ActivityLog, OrganisationMembership } from '../models/index.js';
+import { Tier } from '../models/index.js';
 import { authenticateToken, requireVerifiedEmail } from '../middleware/auth.js';
-import { withSelectedMembership, membershipView } from '../services/membershipContext.js';
-import { getAccountContext, updateOrgMemberCount } from '../services/organisationAccess.js';
-import { emailService } from '../services/emailService.js';
-import { walletService } from '../services/walletService.js';
-import { sendWelcomeForMembership } from '../services/organisationEmailSettings.js';
+import { withSelectedMembership } from '../services/membershipContext.js';
+import { paymentGateway, paymentErrorResponse } from '../services/paymentGateway.js';
 
 const router = express.Router();
-router.post('/renew', authenticateToken, requireVerifiedEmail, withSelectedMembership, async (req, res, next) => {
+router.use(authenticateToken, requireVerifiedEmail, withSelectedMembership);
+router.use((req, res, next) => {
+  const expected = req.method === 'GET' ? req.query.organisationId : req.body?.organisationId;
+  if (expected !== undefined && expected !== req.organisationId) return res.status(409).json({ success: false, message: 'Your selected organisation has changed. Reload checkout before continuing.' });
+  if (req.membershipRole !== 'member') return res.status(400).json({ success: false, message: 'Organisation owners do not need to purchase their own membership.' });
+  next();
+});
+
+async function checkout(req, res, quoteOnly = false) {
   try {
-    if (req.membershipRole !== 'member') return res.status(400).json({ success: false, message: 'Organisation owners do not need to purchase their own membership.' });
-    const tier = await Tier.findOne({ _id: req.body.tierId || req.membership.tierId, organisationId: req.organisationId, isActive: true });
+    if (typeof req.body.tierId !== 'string') return res.status(400).json({ success: false, message: 'Choose a membership tier.' });
+    const tier = await Tier.findOne({ _id: req.body.tierId, organisationId: req.organisationId, isActive: true });
     if (!tier) return res.status(400).json({ success: false, message: 'Choose an active tier in this organisation.' });
-    if (tier.maxMembers) {
-      const reserved = await OrganisationMembership.countDocuments({ organisationId: req.organisationId, tierId: tier._id, role: 'member', userId: { $ne: String(req.user._id) }, status: { $in: ['active', 'pending'] } });
-      if (reserved >= tier.maxMembers) return res.status(409).json({ success: false, message: 'This membership tier has reached its capacity.' });
-    }
-    const now = new Date();
-    const previousExpiry = req.membership.expirationDate && new Date(req.membership.expirationDate);
-    const expiry = new Date(previousExpiry > now ? previousExpiry : now);
-    if (tier.interval === 'monthly') expiry.setMonth(expiry.getMonth() + 1);
-    else expiry.setFullYear(expiry.getFullYear() + 1);
-    const failed = req.body.simulateFailure === true;
-    const invoiceData = {
-      organisationId: req.organisationId,
-      invoiceNumber: `INV-${randomUUID()}`,
-      userId: String(req.user._id), userName: req.user.name, userEmail: req.user.email,
-      tierId: tier._id, tierName: tier.name, amount: tier.price, currency: 'USD',
-      billingInterval: tier.interval,
-      paymentMethod: req.body.paymentMethod || 'Test payment',
-      paymentStatus: failed ? 'failed' : 'paid',
-      transactionId: `txn_test_${randomUUID()}`,
-      periodStart: now.toISOString(), periodEnd: failed ? undefined : expiry.toISOString(), paidAt: failed ? undefined : now.toISOString(),
-    };
-    if (failed) {
-      const invoice = await Invoice.create(invoiceData);
-      await ActivityLog.create({ organisationId: req.organisationId, action: 'PAYMENT_FAILED', userId: String(req.user._id), userName: req.user.name, userEmail: req.user.email, actorRole: 'member', details: { invoiceNumber: invoice.invoiceNumber, amount: tier.price } });
-      return res.status(402).json({ success: false, message: 'The test payment was declined.', invoice });
-    }
-    let invoice;
-    const session = await mongoose.startSession();
-    try {
-      await session.withTransaction(async () => {
-        [invoice] = await Invoice.create([invoiceData], { session });
-        req.membership.status = 'active';
-        req.membership.tierId = tier._id;
-        req.membership.tierName = tier.name;
-        req.membership.expirationDate = expiry.toISOString();
-        req.membership.renewalEmailRetryAt = undefined;
-        req.membership.renewalEmailClaimedAt = undefined;
-        req.membership.renewalEmailClaimToken = undefined;
-        await req.membership.save({ session });
-      });
-    } finally { await session.endSession(); }
-    await updateOrgMemberCount(req.organisationId);
-    const member = membershipView(req.user, req.membership);
-    await walletService.updateWalletObject(member, 'MembershipPayment');
-    const confirmation = await emailService.sendPaymentConfirmation(member, invoice).catch(() => console.error('Could not send or record payment confirmation.'));
-    await sendWelcomeForMembership(req.user, req.membership, req.organisation).catch(() => console.error('Could not send or record organisation welcome email.'));
-    const emailDelivery = confirmation?.status || 'failed';
-    await ActivityLog.create({ organisationId: req.organisationId, action: 'PAYMENT_SUCCESS', userId: member._id, userName: member.name, userEmail: member.email, actorRole: 'member', details: { invoiceNumber: invoice.invoiceNumber, amount: tier.price, tierName: tier.name } });
-    res.json({ success: true, message: `Test payment completed. Your organisation membership is active. ${emailDelivery === 'sent' ? 'A confirmation email has been sent to your email provider.' : 'The confirmation email could not be sent.'}`, emailDelivery, invoice, user: await getAccountContext(req.user) });
-  } catch (err) { next(err); }
+    const result = await paymentGateway[quoteOnly ? 'quoteCheckout' : 'createCheckout']({ user: req.user, organisation: req.organisation,
+      membership: req.membership, tier, intent: req.body.intent });
+    res.json({ success: true, ...result });
+  } catch (error) { paymentErrorResponse(error, res); }
+}
+router.post('/quote', (req, res) => checkout(req, res, true));
+router.post('/checkout', (req, res) => checkout(req, res));
+// A legacy renewal request opens a checkout; it cannot bypass authorization.
+router.post('/renew', (req, res) => {
+  req.body.intent = 'renew';
+  return checkout(req, res);
+});
+router.get('/checkout/:sessionId', async (req, res) => {
+  try { res.json({ success: true, ...await paymentGateway.checkoutStatus(req.params.sessionId, req.user._id, req.organisationId) }); }
+  catch (error) { paymentErrorResponse(error, res); }
+});
+router.post('/checkout/:sessionId/confirm', async (req, res) => {
+  try {
+    const { paymentMethod, scenario, verificationCode } = req.body;
+    res.json({ success: true, ...await paymentGateway.confirmCheckout({ sessionId: req.params.sessionId, userId: req.user._id, organisationId: req.organisationId, paymentMethod, scenario, verificationCode }) });
+  } catch (error) { paymentErrorResponse(error, res); }
+});
+router.post('/checkout/:sessionId/cancel', async (req, res) => {
+  try { res.json({ success: true, ...await paymentGateway.cancelCheckout(req.params.sessionId, req.user._id, req.organisationId) }); }
+  catch (error) { paymentErrorResponse(error, res); }
 });
 
 export default router;

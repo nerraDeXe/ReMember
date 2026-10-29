@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import { POST_LIMITS } from '../../shared/posts.js';
+import { DEFAULT_MEMBERSHIP_BADGE_COLOR, isBadgeColor } from '../../shared/membershipBadges.js';
 
 // Define Mongoose schemas for live Mongo connections
 const userSchema = new mongoose.Schema({
@@ -69,11 +70,9 @@ const tierSchema = new mongoose.Schema({
   slug: { type: String, required: true },
   price: { type: Number, required: true, min: 0 },
   interval: { type: String, default: 'yearly' }, // monthly or yearly
-  badgeColor: { type: String, default: '#FFD700' },
   description: { type: String },
   perks: [{ type: String }],
   isActive: { type: Boolean, default: true },
-  accessLevel: { type: Number, default: 1 },
   maxMembers: { type: Number, default: null }
 }, { timestamps: true });
 
@@ -130,15 +129,33 @@ const invoiceSchema = new mongoose.Schema({
   tierId: { type: String, required: true },
   tierName: { type: String, required: true },
   amount: { type: Number, required: true },
-  currency: { type: String, default: 'USD' },
+  currency: { type: String, default: 'MYR' },
   billingInterval: { type: String, default: 'yearly' },
-  paymentMethod: { type: String, default: 'Credit Card (•••• 4242)' },
+  paymentMethod: { type: String, default: 'Payment gateway (demo)' },
   paymentStatus: { type: String, enum: ['paid', 'pending', 'failed'], default: 'paid' },
   transactionId: { type: String },
   periodStart: { type: String },
   periodEnd: { type: String },
-  paidAt: { type: String }
+  paidAt: { type: String },
+  paymentCheckoutId: { type: String },
+  intent: { type: String, enum: ['join', 'renew', 'upgrade'] },
+  subtotalCents: { type: Number },
+  creditCents: { type: Number },
+  unusedCreditCents: { type: Number },
+  creditBalanceCents: { type: Number },
+  creditUnavailable: { type: Boolean },
+  carryForwardCents: { type: Number },
+  coverageValueCents: { type: Number },
+  sourceTierId: { type: String },
+  sourceTierName: { type: String },
+  scheduledDowngrade: { type: Boolean },
+  previousPeriodStart: { type: String },
+  previousPeriodEnd: { type: String },
+  remainingDays: { type: Number },
+  totalDays: { type: Number },
+  simulated: { type: Boolean }
 }, { timestamps: true });
+invoiceSchema.index({ paymentCheckoutId: 1 }, { unique: true, partialFilterExpression: { paymentCheckoutId: { $type: 'string' } } });
 
 const activityLogSchema = new mongoose.Schema({
   _id: { type: String, default: () => new mongoose.Types.ObjectId().toString() },
@@ -177,6 +194,7 @@ const organisationSchema = new mongoose.Schema({
   isPublic: { type: Boolean, default: true },
   logoUrl: { type: String },
   bannerUrl: { type: String },
+  badgeColor: { type: String, default: DEFAULT_MEMBERSHIP_BADGE_COLOR, validate: { validator: isBadgeColor, message: 'Choose a valid organisation badge colour.' } },
   location: { type: String, default: 'Global Network' },
   website: { type: String },
   contactEmail: { type: String },
@@ -206,11 +224,21 @@ const organisationMembershipSchema = new mongoose.Schema({
   organisationId: { type: String, required: true, index: true },
   userId: { type: String, required: true, index: true },
   role: { type: String, enum: ['owner', 'member'], default: 'member' },
-  status: { type: String, enum: ['active', 'pending', 'suspended', 'revoked', 'expired'], default: 'active' },
+  status: { type: String, enum: ['active', 'pending', 'suspended', 'revoked', 'expired', 'cancelled'], default: 'active' },
   tierId: { type: String },
   tierName: { type: String },
   joinedDate: { type: String, default: () => new Date().toISOString() },
   expirationDate: { type: String },
+  firstSubscribedAt: { type: String },
+  cancelAtPeriodEnd: { type: Boolean, default: false },
+  cancelledAt: { type: String },
+  scheduledTierId: { type: String },
+  scheduledTierEffectiveAt: { type: String },
+  scheduledTierRequestedAt: { type: String },
+  billingRevision: { type: Number, default: 0 },
+  creditBalanceCents: { type: Number, min: 0, default: 0 },
+  billingPeriods: [{ _id: false, tierId: String, periodStart: String, periodEnd: String,
+    valueCents: { type: Number, min: 0 }, billingInterval: String }],
   welcomeEmailEligible: { type: Boolean, default: false },
   welcomeEmailSentAt: { type: String },
   welcomeEmailClaimedAt: { type: String },
@@ -223,6 +251,50 @@ const organisationMembershipSchema = new mongoose.Schema({
 }, { timestamps: true });
 organisationMembershipSchema.index({ organisationId: 1, userId: 1 }, { unique: true });
 
+// A checkout fixes the server's price for a short-lived demonstration payment.
+// No card numbers, verification codes, or bank credentials are stored.
+const paymentCheckoutSchema = new mongoose.Schema({
+  _id: { type: String, required: true },
+  reference: { type: String, required: true, unique: true },
+  membershipId: { type: String, required: true },
+  organisationId: { type: String, required: true },
+  organisationName: { type: String, required: true },
+  userId: { type: String, required: true },
+  userName: { type: String, required: true },
+  userEmail: { type: String, required: true },
+  tierId: { type: String, required: true },
+  tierName: { type: String, required: true },
+  amountCents: { type: Number, required: true },
+  intent: { type: String, enum: ['join', 'renew', 'upgrade'] },
+  subtotalCents: { type: Number },
+  creditCents: { type: Number },
+  unusedCreditCents: { type: Number },
+  creditBalanceCents: { type: Number },
+  creditUnavailable: { type: Boolean },
+  carryForwardCents: { type: Number },
+  periodStart: { type: String },
+  periodEnd: { type: String },
+  previousPeriodStart: { type: String },
+  previousPeriodEnd: { type: String },
+  remainingDays: { type: Number },
+  totalDays: { type: Number },
+  sourceTierId: { type: String },
+  sourceTierName: { type: String },
+  sourceExpirationDate: { type: String },
+  sourceMembershipStatus: { type: String },
+  sourceScheduledTierId: { type: String },
+  sourceScheduledTierEffectiveAt: { type: String },
+  scheduledDowngrade: { type: Boolean },
+  sourceBillingRevision: { type: Number },
+  sourcePeriods: [{ _id: false, tierId: String, periodStart: String, periodEnd: String,
+    valueCents: { type: Number, min: 0 }, billingInterval: String }],
+  billingInterval: { type: String, enum: ['monthly', 'yearly'], required: true },
+  expiresAt: { type: String, required: true },
+  state: { type: String, enum: ['pending', 'paid', 'failed', 'cancelled', 'expired'], default: 'pending' },
+  paymentMethod: { type: String, enum: ['card', 'online_banking', 'ewallet'] },
+  completedAt: { type: String }
+}, { timestamps: true });
+
 export const User = mongoose.models.User || mongoose.model('User', userSchema);
 export const Tier = mongoose.models.Tier || mongoose.model('Tier', tierSchema);
 export const Event = mongoose.models.Event || mongoose.model('Event', eventSchema);
@@ -233,3 +305,4 @@ export const EmailNotification = mongoose.models.EmailNotification || mongoose.m
 export const Organisation = mongoose.models.Organisation || mongoose.model('Organisation', organisationSchema);
 export const Organization = Organisation;
 export const OrganisationMembership = mongoose.models.OrganisationMembership || mongoose.model('OrganisationMembership', organisationMembershipSchema);
+export const PaymentCheckout = mongoose.models.PaymentCheckout || mongoose.model('PaymentCheckout', paymentCheckoutSchema);

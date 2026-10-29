@@ -3,7 +3,7 @@ import { after, before, beforeEach, test } from 'node:test';
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import { config } from '../config/config.js';
-import { User, Organisation, OrganisationMembership, OrganisationPost, Tier, ActivityLog } from '../models/index.js';
+import { User, Organisation, OrganisationMembership, OrganisationPost, Tier, ActivityLog, Invoice } from '../models/index.js';
 import organisationRouter from '../routes/organisations.js';
 import tierRouter from '../routes/tiers.js';
 import { getAccountContext, normaliseTierInput, resolveSelectedOrganisation } from '../services/organisationAccess.js';
@@ -17,7 +17,7 @@ const pngImage = `data:image/png;base64,${pngBytes.toString('base64')}`;
 
 // These tests replace only Mongo operations. They exercise real auth middleware,
 // organisation routes, account context, and the transaction boundary without Atlas.
-const models = { User, Organisation, OrganisationMembership, OrganisationPost, Tier, ActivityLog };
+const models = { User, Organisation, OrganisationMembership, OrganisationPost, Tier, ActivityLog, Invoice };
 let records, serial, failTierCreation, welcomeCalls;
 const originals = [];
 const clone = value => structuredClone(value);
@@ -39,6 +39,7 @@ function matches(record, filter = {}) {
   return Object.entries(filter).every(([key, expected]) => {
     if (key === '$or') return expected.some(branch => matches(record, branch));
     if (expected && typeof expected === 'object') {
+      if ('$exists' in expected) return Object.hasOwn(record, key) === expected.$exists;
       if ('$in' in expected) return expected.$in.includes(record[key]);
       if ('$ne' in expected) return record[key] !== expected.$ne;
     }
@@ -47,6 +48,7 @@ function matches(record, filter = {}) {
 }
 function applyUpdate(record, update) {
   Object.assign(record, update.$set || (!Object.keys(update).some(key => key.startsWith('$')) ? update : {}));
+  for (const [key, amount] of Object.entries(update.$inc || {})) record[key] = (record[key] || 0) + amount;
   for (const key of Object.keys(update.$unset || {})) delete record[key];
 }
 function patch(target, name, replacement) {
@@ -214,6 +216,7 @@ test('Verified member creates an organisation and its chosen tiers atomically', 
   const result = await request(organisationRouter, 'POST', '/', { userId: 'alice', body: { name: 'Art Club', description: 'A community for artists.', adminId: 'attacker', tiers: [{ name: 'Free', price: 0, interval: 'monthly' }, { name: 'Supporter', price: '25.50', interval: 'yearly' }] } });
   assert.equal(result.status, 201);
   assert.equal(result.body.organisation.adminId, 'alice');
+  assert.equal(result.body.organisation.badgeColor, '#FFD700');
   assert.equal(result.body.tiers.length, 2);
   assert.equal(result.body.tiers[1].price, 25.50);
   assert.ok(result.body.tiers.every(tier => tier.organisationId === result.body.organisation._id));
@@ -227,6 +230,81 @@ test('Verified member creates an organisation and its chosen tiers atomically', 
   assert.equal(result.body.user.password, undefined);
 });
 
+test('Tier schema and normalisation discard retired access levels and individual badge colours', () => {
+  const input = { name: 'Membership', price: 12, interval: 'monthly', accessLevel: -999, badgeColor: 'invalid legacy colour' };
+  const result = normaliseTierInput(input);
+  assert.equal(Object.hasOwn(result, 'accessLevel'), false);
+  assert.equal(Object.hasOwn(result, 'badgeColor'), false);
+  assert.equal(Tier.schema.path('accessLevel'), undefined);
+  assert.equal(Tier.schema.path('badgeColor'), undefined);
+  const document = new Tier(input).toObject();
+  assert.equal(Object.hasOwn(document, 'accessLevel'), false);
+  assert.equal(Object.hasOwn(document, 'badgeColor'), false);
+  assert.equal(new Organisation().badgeColor, '#FFD700');
+});
+
+test('Organisation setup saves one shared badge colour and drops individual tier settings', async () => {
+  const result = await request(organisationRouter, 'POST', '/', { userId: 'alice', body: {
+    name: 'Colour Club', description: 'Shared badge branding.', badgeColor: '#3467ab',
+    tiers: [{ name: 'Basic', price: 0, accessLevel: 1, badgeColor: '#FF0000' }, { name: 'Patron', price: 25, accessLevel: 4, badgeColor: '#0000FF' }]
+  } });
+  assert.equal(result.status, 201);
+  assert.equal(result.body.organisation.badgeColor, '#3467AB');
+  assert.equal(result.body.user.activeOrganisation.badgeColor, '#3467AB');
+  assert.equal(result.body.user.ownedOrganisations[0].badgeColor, '#3467AB');
+  assert.ok(result.body.tiers.every(tier => !Object.hasOwn(tier, 'accessLevel') && !Object.hasOwn(tier, 'badgeColor')));
+});
+
+test('Only the organisation owner can change its shared colour and account contexts expose the selected colour', async () => {
+  seedOrganisation('owned', 'alice');
+  seedOrganisation('other', 'bob');
+  records.User[0].activeOrganisationId = 'owned';
+  records.User.push({ _id: 'bob', name: 'Bob Member', email: 'bob@example.test', emailVerified: true, role: 'admin', activeOrganisationId: 'owned' });
+  records.OrganisationMembership.push({ _id: 'bob-member', organisationId: 'owned', userId: 'bob', role: 'member', status: 'active', tierId: 'owned-free' });
+  records.Organisation[1].badgeColor = '#654321';
+
+  const denied = await request(organisationRouter, 'PUT', '/:id', { userId: 'bob', params: { id: 'owned' }, body: { badgeColor: '#FF0000' } });
+  assert.equal(denied.status, 403);
+  const saved = await request(organisationRouter, 'PUT', '/:id', { userId: 'alice', params: { id: 'owned' }, body: { badgeColor: '#abcdef' } });
+  assert.equal(saved.status, 200);
+  assert.equal(saved.body.organisation.badgeColor, '#ABCDEF');
+  assert.equal(records.Organisation[1].badgeColor, '#654321');
+  const context = await getAccountContext(records.User[1]);
+  assert.equal(context.activeOrganisation.badgeColor, '#ABCDEF');
+  assert.equal(context.memberships[0].organisation.badgeColor, '#ABCDEF');
+  assert.equal(context.ownedOrganisations[0].badgeColor, '#654321');
+  assert.equal((await getAccountContext(records.User[0])).activeOrganisation.badgeColor, '#ABCDEF');
+});
+
+test('Organisation colour validation rejects invalid values before writing and unrelated updates preserve colour', async () => {
+  seedOrganisation('owned', 'alice');
+  records.Organisation[0].badgeColor = '#123ABC';
+  for (const badgeColor of ['', '#abc', '#12345678', 'red', '#GGGGGG', null, 123456, {}, '#123456 ']) {
+    const rejected = await request(organisationRouter, 'PUT', '/:id', { userId: 'alice', params: { id: 'owned' }, body: { badgeColor } });
+    assert.equal(rejected.status, 400, JSON.stringify(badgeColor));
+    assert.equal(records.Organisation[0].badgeColor, '#123ABC');
+  }
+  const updated = await request(organisationRouter, 'PUT', '/:id', { userId: 'alice', params: { id: 'owned' }, body: { name: 'New name' } });
+  assert.equal(updated.status, 200);
+  assert.equal(updated.body.organisation.badgeColor, '#123ABC');
+  const invalidSetup = await request(organisationRouter, 'POST', '/', { userId: 'alice', body: { name: 'Invalid', description: 'Invalid colour', badgeColor: '#abc', tiers: [{ name: 'Member', price: 0 }] } });
+  assert.equal(invalidSetup.status, 400);
+  assert.equal(records.Organisation.length, 1);
+});
+
+test('Creating and editing tiers ignores retired fields without changing the organisation colour', async () => {
+  seedOrganisation('owned', 'alice');
+  records.Organisation[0].badgeColor = '#654321';
+  records.User[0].activeOrganisationId = 'owned';
+  const created = await request(tierRouter, 'POST', '/', { userId: 'alice', body: { name: 'New tier', price: 15, accessLevel: 7, badgeColor: '#FF0000' } });
+  assert.equal(created.status, 201);
+  const updated = await request(tierRouter, 'PUT', '/:id', { userId: 'alice', params: { id: created.body.tier._id }, body: { name: 'Renamed tier', accessLevel: false, badgeColor: { unexpected: true } } });
+  assert.equal(updated.status, 200);
+  assert.equal(updated.body.tier.name, 'Renamed tier');
+  assert.ok(records.Tier.every(tier => !Object.hasOwn(tier, 'accessLevel') && !Object.hasOwn(tier, 'badgeColor')));
+  assert.equal(records.Organisation[0].badgeColor, '#654321');
+});
+
 test('Tier write failure rolls back organisation creation and account promotion', async () => {
   failTierCreation = true;
   const result = await request(organisationRouter, 'POST', '/', { userId: 'alice', body: { name: 'Club', description: 'Club description', tiers: [{ name: 'Members', price: 0 }] } });
@@ -236,6 +314,55 @@ test('Tier write failure rolls back organisation creation and account promotion'
   assert.equal(records.OrganisationMembership.length, 0);
   assert.equal(records.User[0].role, 'member');
   assert.equal(records.User[0].onboardingCompleted, false);
+});
+
+test('Rejoining cannot overwrite a paid renewal confirmed after the old membership was read', async t => {
+  seedOrganisation('joined');
+  const association = { _id: 'association', organisationId: 'joined', userId: 'alice', role: 'member', status: 'active',
+    tierId: 'joined-paid', tierName: 'Supporter', cancelAtPeriodEnd: true, expirationDate: '2000-01-01T00:00:00Z', billingRevision: 0 };
+  records.OrganisationMembership.push(association);
+  const update = OrganisationMembership.findOneAndUpdate;
+  let raced = false;
+  t.mock.method(OrganisationMembership, 'findOneAndUpdate', (filter, operation, options) => {
+    if (operation.$unset?.expirationDate !== undefined && !raced) {
+      raced = true;
+      association.billingRevision = 1;
+      association.expirationDate = '2099-01-01T00:00:00Z';
+      association.cancelAtPeriodEnd = false;
+    }
+    return update(filter, operation, options);
+  });
+  const result = await request(organisationRouter, 'POST', '/:id/join', { userId: 'alice', params: { id: 'joined' }, body: { tierId: 'joined-free' } });
+  assert.equal(result.status, 200);
+  assert.equal(raced, true);
+  assert.equal(association.tierId, 'joined-paid');
+  assert.equal(association.expirationDate, '2099-01-01T00:00:00Z');
+  assert.equal(association.billingRevision, 1);
+});
+
+test('A cancelled unpaid application starts its first subscription when it later joins a free tier', async () => {
+  seedOrganisation('joined');
+  records.OrganisationMembership.push({ _id: 'association', organisationId: 'joined', userId: 'alice', role: 'member', status: 'cancelled',
+    tierId: 'joined-paid', tierName: 'Supporter', joinedDate: '2020-01-01T00:00:00Z' });
+  const startedAt = Date.now();
+  const result = await request(organisationRouter, 'POST', '/:id/join', { userId: 'alice', params: { id: 'joined' }, body: { tierId: 'joined-free' } });
+  assert.equal(result.status, 200);
+  assert.equal(result.body.membership.status, 'active');
+  assert.equal(result.body.membership.joinedDate, '2020-01-01T00:00:00Z');
+  assert.ok(Date.parse(result.body.membership.firstSubscribedAt) >= startedAt);
+});
+
+test('Free rejoining preserves the first recorded paid subscription date without counting event purchases', async () => {
+  seedOrganisation('joined');
+  records.OrganisationMembership.push({ _id: 'association', organisationId: 'joined', userId: 'alice', role: 'member', status: 'cancelled',
+    tierId: 'joined-paid', tierName: 'Supporter', joinedDate: '2020-01-01T00:00:00Z' });
+  records.Invoice.push(
+    { _id: 'event', organisationId: 'joined', userId: 'alice', tierId: 'joined-paid', paymentStatus: 'paid', category: 'event_ticket', paidAt: '2020-02-01T00:00:00Z' },
+    { _id: 'membership', organisationId: 'joined', userId: 'alice', tierId: 'joined-paid', paymentStatus: 'paid', paidAt: '2020-03-01T00:00:00Z' }
+  );
+  const result = await request(organisationRouter, 'POST', '/:id/join', { userId: 'alice', params: { id: 'joined' }, body: { tierId: 'joined-free' } });
+  assert.equal(result.status, 200);
+  assert.equal(result.body.membership.firstSubscribedAt, '2020-03-01T00:00:00Z');
 });
 
 test('Deleting an organisation removes its posts and keeps another organisation posts', async () => {

@@ -8,7 +8,7 @@ import adminRouter from '../routes/admin.js';
 
 const now = new Date('2026-01-15T12:00:00Z');
 const member = (joinedDate, fields = {}) => ({ role: 'member', userId: 'member', status: 'active', tierName: 'Community', joinedDate, ...fields });
-const paid = (createdAt, amount, fields = {}) => ({ paymentStatus: 'paid', currency: 'USD', createdAt, amount, ...fields });
+const paid = (createdAt, amount, fields = {}) => ({ paymentStatus: 'paid', currency: 'MYR', createdAt, amount, ...fields });
 
 test('Analytics periods validate exact supported month values and default to six', () => {
   assert.equal(dashboardMonths(), 6);
@@ -167,13 +167,25 @@ test('Malformed calendar dates and non-ISO strings do not create phantom trend e
 
 test('Revenue ignores malformed amounts and foreign currencies while counts retain paid invoices', () => {
   const invoices = [NaN, Infinity, -5, 'invalid', null, '', {}, true, Number.MAX_VALUE].map(amount => paid('2025-12-10', amount));
-  invoices.push(paid('2025-12-10', 999, { currency: 'MYR' }), paid('2025-12-10', 2.5, { currency: 'usd' }), paid('2025-12-10', 1.25, { currency: undefined }));
+  invoices.push(paid('2025-12-10', 999, { currency: 'USD' }), paid('2025-12-10', 2.5, { currency: 'myr' }), paid('2025-12-10', 1.25, { currency: undefined }));
   const result = buildDashboardAnalytics({ invoices, months: 3, now });
-  assert.equal(result.summary.revenue, 3.75);
+  assert.equal(result.summary.revenue, 2.5);
   assert.equal(result.summary.paidPayments, invoices.length);
-  assert.equal(result.currency, 'USD');
-  assert.equal(result.excludedCurrencyPayments, 1);
+  assert.equal(result.currency, 'MYR');
+  assert.equal(result.excludedCurrencyPayments, 2);
   assert.ok(!JSON.stringify(result).includes('null'));
+});
+
+test('Admin status analytics count cancellation decisions without changing remaining member access', () => {
+  const memberships = [
+    member('2026-01-01', { status: 'active', cancelAtPeriodEnd: true, expirationDate: '2099-01-01T00:00:00Z' }),
+    member('2026-01-01', { status: 'active', cancelAtPeriodEnd: true, expirationDate: '2020-01-01T00:00:00Z' }),
+    member('2026-01-01', { status: 'cancelled' }), member('2026-01-01'),
+    member('2026-01-01', { status: 'suspended', cancelAtPeriodEnd: true })
+  ];
+  const result = buildDashboardAnalytics({ memberships, now: new Date('2026-10-28T00:00:00Z') });
+  assert.deepEqual(result.demographics.statuses, [{ name: 'cancelled', value: 3 }, { name: 'active', value: 1 }, { name: 'suspended', value: 1 }]);
+  assert.equal(memberships[0].status, 'active');
 });
 
 test('Demographics use current organisation tier and status, country fallback, and explicit unknown values', () => {

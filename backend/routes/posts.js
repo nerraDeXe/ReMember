@@ -2,12 +2,12 @@ import express from 'express';
 import { OrganisationPost, ActivityLog } from '../models/index.js';
 import { authenticateToken, requireVerifiedEmail } from '../middleware/auth.js';
 import { requireOrganisationOwner } from '../middleware/organisationAccess.js';
-import { withSelectedMembership } from '../services/membershipContext.js';
+import { withSelectedMembership, requireActivatedMembership } from '../services/membershipContext.js';
 import { normaliseOrganisationImage } from '../services/organisationImages.js';
 import { normalisePostInput } from '../../shared/posts.js';
 
 const router = express.Router();
-router.use(authenticateToken, requireVerifiedEmail, withSelectedMembership);
+router.use(authenticateToken, requireVerifiedEmail, withSelectedMembership, requireActivatedMembership);
 router.use((req, res, next) => {
   // A page can remain open while another tab changes the account's selection.
   // This is a consistency guard; the server still determines the actual scope.

@@ -1,5 +1,6 @@
 import { getEventDates, getEligibleEventTiers, DEFAULT_EVENT_TIME_ZONE, formatEventTimeRange, hasEventCoordinates } from '../../shared/events.js';
 import { normaliseOrganisationImage } from './organisationImages.js';
+import { eventLocalDate, eventTimeInstant } from '../../shared/eventTiming.js';
 
 const has = (body, key) => Object.hasOwn(body, key);
 
@@ -8,7 +9,7 @@ function text(value, label, maximum) {
   return value.trim();
 }
 
-export function normaliseEventInput(body, { existing = null, tiers = [] } = {}) {
+export function normaliseEventInput(body, { existing = null, tiers = [], now = new Date() } = {}) {
   if (!body || typeof body !== 'object' || Array.isArray(body)) throw new Error('Provide valid event details.');
   const creating = !existing;
   const fields = {};
@@ -56,6 +57,13 @@ export function normaliseEventInput(body, { existing = null, tiers = [] } = {}) 
     if (typeof timeZone !== 'string' || !timeZone || timeZone.length > 100) throw new Error('Choose a valid event time zone.');
     try { new Intl.DateTimeFormat('en', { timeZone }).format(); }
     catch { throw new Error('Choose a valid event time zone.'); }
+    if ((creating || startDate !== (existing.startDate || existing.date) || timeZone !== (existing.timeZone || DEFAULT_EVENT_TIME_ZONE))
+      && startDate <= eventLocalDate(now, timeZone)) throw new Error('Events must start tomorrow or later in the event time zone. Today and past dates are not allowed.');
+    for (const day of days.values()) {
+      if (!eventTimeInstant(day.date, day.startTime, timeZone) || !eventTimeInstant(day.date, day.endTime, timeZone, true)) {
+        throw new Error('An event time does not exist in the selected time zone. Choose another time.');
+      }
+    }
     fields.startDate = startDate;
     fields.endDate = endDate;
     fields.schedule = dates.map(date => days.get(date));

@@ -10,35 +10,43 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { api } from '../../api.js';
+import { useAuth } from '../../context/AuthContext.jsx';
+import DashboardAnalytics from '../../components/DashboardAnalytics.jsx';
 
 export default function FinancialAnalyticsPage() {
-  const [data, setData] = useState(null);
+  const { user } = useAuth();
+  const organisationId = user?.activeOrganisationId;
+  const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  const loadFinances = async () => {
-    try {
-      const res = await api.getFinancialSummary();
-      if (res.success) {
-        setData(res);
-      }
-    } catch (err) {
-      console.error('Failed to load financial analytics:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [error, setError] = useState('');
+  const [revision, setRevision] = useState(0);
 
   useEffect(() => {
-    loadFinances();
-  }, []);
+    let cancelled = false;
+    setLoading(true);
+    setError('');
+    api.getFinancialSummary().then(response => {
+      if (!response.success) throw new Error(response.message || 'Could not load financial analytics.');
+      if (!cancelled) setResult({ organisationId, response });
+    }).catch(err => { if (!cancelled) setError(err.message || 'Could not load financial analytics.'); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [organisationId, revision]);
 
-  if (loading) {
+  const data = result?.organisationId === organisationId ? result.response : null;
+
+  if (loading || (!data && !error)) {
     return (
       <div className="py-20 flex justify-center">
         <RefreshCw className="w-8 h-8 text-brand-ink animate-spin" />
       </div>
     );
   }
+
+  if (error) return <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-800">
+    <p>{error}</p>
+    <button type="button" onClick={() => setRevision(value => value + 1)} className="mt-3 text-xs font-semibold underline">Try again</button>
+  </div>;
 
   const metrics = data?.metrics || {};
   const revenueByTier = data?.revenueByTier || {};
@@ -56,10 +64,10 @@ export default function FinancialAnalyticsPage() {
       <div>
         <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
           <BarChart3 className="w-6 h-6 text-brand-ink" />
-          Financial Intelligence & Revenue Summary
+          Payment Activity & Revenue Summary
         </h1>
         <p className="text-xs text-slate-500 mt-1">
-          High-level revenue analytics summarizing membership subscriptions, event ticketing, and recurring billing.
+          Demo membership payments and payment attempts. Monthly equivalents describe membership value, with manual renewals.
         </p>
       </div>
 
@@ -67,7 +75,7 @@ export default function FinancialAnalyticsPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="p-6 rounded-xl bg-white border border-slate-200 shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">Total System Revenue</span>
+            <span className="text-xs font-semibold text-slate-500">Recorded Revenue</span>
             <div className="p-2 rounded-lg bg-brand-50 text-brand-ink">
               <DollarSign className="w-4 h-4" />
             </div>
@@ -82,7 +90,7 @@ export default function FinancialAnalyticsPage() {
 
         <div className="p-6 rounded-xl bg-white border border-slate-200 shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">Subscription Revenue</span>
+            <span className="text-xs font-semibold text-slate-500">Membership Revenue</span>
             <div className="p-2 rounded-lg bg-brand-50 text-brand-ink">
               <Layers className="w-4 h-4" />
             </div>
@@ -112,7 +120,7 @@ export default function FinancialAnalyticsPage() {
 
         <div className="p-6 rounded-xl bg-white border border-slate-200 shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">Monthly Run Rate (MRR)</span>
+            <span className="text-xs font-semibold text-slate-500">Monthly Membership Equivalent</span>
             <div className="p-2 rounded-lg bg-brand-50 text-brand-ink">
               <TrendingUp className="w-4 h-4" />
             </div>
@@ -121,10 +129,12 @@ export default function FinancialAnalyticsPage() {
             MYR {(metrics.monthlyRecurringRevenue || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
           </div>
           <div className="text-[11px] text-slate-600 mt-1">
-            Annual Run Rate: MYR {(metrics.annualRunRate || 0).toLocaleString()}
+            Annual equivalent: MYR {(metrics.annualRunRate || 0).toLocaleString()}
           </div>
         </div>
       </div>
+
+      <DashboardAnalytics organisationId={organisationId} financialOnly />
 
       {/* Revenue Source Visual Breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -137,7 +147,7 @@ export default function FinancialAnalyticsPage() {
               <div className="flex justify-between text-xs mb-1.5">
                 <span className="font-semibold text-slate-700 flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 rounded-full bg-brand-primary" />
-                  Membership Subscriptions
+                  Membership Payments
                 </span>
                 <span className="font-bold text-slate-900">
                   MYR {subRev.toFixed(2)} ({subPercent}%)
@@ -172,7 +182,7 @@ export default function FinancialAnalyticsPage() {
 
           <div className="p-4 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-600 space-y-2">
             <div className="flex justify-between">
-              <span>Paid Subscriptions Count:</span>
+              <span>Successful Payments:</span>
               <strong className="text-slate-900">{metrics.paidInvoicesCount || 0} invoices</strong>
             </div>
             <div className="flex justify-between">

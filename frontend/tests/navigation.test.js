@@ -75,6 +75,22 @@ test('Deep URLs retain encoded record IDs, filters and portal organisation conte
   assert.equal(isPortalPage('admin-members'), true);
 });
 
+test('The combined membership page keeps old pass and renewal links useful without opening checkout', () => {
+  assert.equal(getPageUrl('member-membership', { organisationId: 'joined' }), '/member/membership?organisation=joined');
+  for (const alias of ['member-pass', 'member-renew']) {
+    assert.equal(getPageUrl(alias, { organisationId: 'joined' }), '/member/membership?organisation=joined');
+  }
+  for (const pathname of ['/member/pass', '/member/renew']) {
+    const route = parseRoute({ pathname, search: '?organisation=joined&source=email' });
+    assert.equal(route.page, 'member-membership');
+    assert.equal(route.query.get('organisation'), 'joined');
+    assert.equal(route.query.get('source'), 'email');
+  }
+  const active = { ...member, emailVerified: true, onboardingCompleted: true, membershipStatus: 'active' };
+  assert.equal(resolvePageAccess('member-membership', active), 'member-membership');
+  assert.equal(resolvePageAccess('member-membership', { ...active, membershipStatus: 'cancelled' }), 'member-membership');
+});
+
 test('Existing emailed password reset links preserve their token during migration', () => {
   const route = parseRoute({ pathname: '/', search: '', hash: '#reset-password?token=once%2Bonly%2Ftoken%3D' });
   assert.equal(route.page, 'reset-password');
@@ -107,6 +123,21 @@ test('Direct visits enforce sign in, email verification, onboarding and portal p
   assert.equal(resolvePageAccess('login', signedOwner), 'account-organisations');
   assert.equal(resolvePageAccess('member-organisations', signedMember), 'account-memberships');
   assert.equal(resolvePageAccess('reset-password', { emailVerified: false }), 'reset-password');
+});
+
+test('Pending paid memberships open checkout and cannot reach member pages or bypass it through direct URLs', () => {
+  const pending = { ...member, emailVerified: true, onboardingCompleted: true, membershipStatus: 'pending' };
+  assert.equal(getAccountHomePage(pending), 'member-checkout');
+  assert.equal(getPageAfterContextChange('admin-dashboard', pending), 'member-checkout');
+  for (const page of ['member-dashboard', 'member-membership', 'member-pass', 'member-renew', 'member-events', 'member-invoices', 'member-communication']) {
+    assert.equal(resolvePageAccess(page, pending), 'member-checkout', page);
+  }
+  assert.equal(resolvePageAccess('member-checkout', pending), 'member-checkout');
+  assert.equal(resolvePageAccess('account-memberships', pending), 'account-memberships');
+  assert.equal(resolvePageAccess('member-profile', pending), 'member-profile');
+  assert.equal(resolvePageAccess('member-dashboard', { ...pending, membershipStatus: 'active' }), 'member-dashboard');
+  assert.equal(resolvePageAccess('member-dashboard', { ...pending, organisationRole: 'owner' }), 'member-dashboard');
+  assert.equal(resolvePageAccess('admin-payments', pending), 'member-checkout');
 });
 
 function fakeBrowser(initialUrl) {

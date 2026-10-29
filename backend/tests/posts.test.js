@@ -156,12 +156,12 @@ test('Direct post links load within the selected organisation without exposing i
   assert.equal((await request('GET', '/:id', { userId: 'outsider', params: { id: 'post-A' } })).status, 400);
 });
 
-test('Pending and expired members retain notices while suspended and revoked members lose access', async () => {
+test('Unpaid members cannot read community posts; expired paid members retain notices', async () => {
   const membership = records.OrganisationMembership[0];
-  for (const status of ['pending', 'expired']) {
-    membership.status = status;
-    assert.equal((await request('GET')).status, 200);
-  }
+  membership.status = 'pending';
+  assert.equal((await request('GET')).status, 403);
+  membership.status = 'expired';
+  assert.equal((await request('GET')).status, 200);
   for (const status of ['suspended', 'revoked']) {
     membership.status = status;
     assert.ok([400, 403].includes((await request('GET')).status));

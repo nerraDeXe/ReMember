@@ -166,6 +166,9 @@ test('All confirmation templates reach SMTP and record sent only after provider 
   await emailService.sendEventRsvpConfirmation(member, event);
 
   assert.equal(sent.length, 3);
+  assert.match(sent[1].subject, /^Payment Confirmed: Invoice #INV-TEST/);
+  assert.match(sent[1].html, />Payment Successful<\/h1>/);
+  assert.doesNotMatch(sent[1].html, /No money was charged\./);
   for (const [index, message] of sent.entries()) {
     assert.equal(message.to, member.email);
     assert.equal(message.subject, records[index].subject);
@@ -178,6 +181,27 @@ test('All confirmation templates reach SMTP and record sent only after provider 
     assert.equal(activities[index].organisationId, 'org');
   }
   assert.deepEqual(savedStatuses, ['sent', 'sent', 'sent']);
+});
+
+test('Simulated payment receipts clearly label the demo while preserving invoice details', async t => {
+  t.mock.method(mailDelivery, 'isConfigured', () => true);
+  const send = t.mock.method(mailDelivery, 'send', async () => ({ accepted: true }));
+  const record = await emailService.sendPaymentConfirmation(member, {
+    organisationId: 'org', invoiceNumber: 'INV-DEMO', tierName: 'Community',
+    amount: 25, paymentMethod: 'Demo online banking',
+    periodEnd: '2099-02-01T12:00:00.000Z', simulated: true,
+  });
+
+  assert.equal(record.subject, 'Demo payment receipt: Invoice #INV-DEMO');
+  assert.match(record.htmlContent, />Demo payment receipt<\/h1>/);
+  assert.match(record.htmlContent, /No money was charged\./);
+  assert.match(record.htmlContent, /MYR 25\.00/);
+  assert.match(record.htmlContent, /Demo online banking/);
+  assert.match(record.htmlContent, /2099-02-01/);
+  assert.equal(record.status, 'sent');
+  assert.ok(Number.isFinite(Date.parse(record.sentAt)));
+  assert.equal(send.mock.calls.length, 1);
+  assert.equal(send.mock.calls[0].arguments[0].html, record.htmlContent);
 });
 
 test('RSVP confirmations include every event day, time zone and an encoded Google Maps link', async t => {

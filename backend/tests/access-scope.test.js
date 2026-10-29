@@ -10,6 +10,7 @@ import eventRouter from '../routes/events.js';
 import paymentRouter from '../routes/payments.js';
 import walletRouter from '../routes/wallet.js';
 import emailRouter from '../routes/emails.js';
+import { paymentGateway } from '../services/paymentGateway.js';
 import { walletService } from '../services/walletService.js';
 import { emailService } from '../services/emailService.js';
 
@@ -19,12 +20,14 @@ let records, serial, walletCalls, mailCalls, findCalls;
 const clone = value => structuredClone(value);
 function matches(record, filter = {}) {
   return Object.entries(filter).every(([key, expected]) => {
+    if (key === '$expr') { assert.equal(expected.$lt[0], '$$NOW'); return Date.now() < new Date(expected.$lt[1]).getTime(); }
     if (key === '$or') return expected.some(branch => matches(record, branch));
     if (key.includes('.')) {
       const values = key.split('.').reduce((items, part) => items.flatMap(item => item?.[part] ?? []), [record]);
       return values.includes(expected);
     }
     if (expected && typeof expected === 'object') {
+      if ('$exists' in expected) return Object.hasOwn(record, key) === expected.$exists;
       if ('$in' in expected) return expected.$in.includes(record[key]);
       if ('$ne' in expected) return record[key] !== expected.$ne;
     }
@@ -33,6 +36,7 @@ function matches(record, filter = {}) {
 }
 function update(record, operation) {
   Object.assign(record, operation.$set || (!Object.keys(operation).some(key => key.startsWith('$')) ? operation : {}));
+  for (const [key, amount] of Object.entries(operation.$inc || {})) record[key] = (record[key] || 0) + amount;
   for (const key of Object.keys(operation.$unset || {})) delete record[key];
 }
 function document(value, modelName) {
@@ -157,8 +161,8 @@ beforeEach(() => {
   records.OrganisationMembership.push(membership('ownerA', 'A', 'owner'), membership('ownerA', 'B'), membership('ownerB', 'B', 'owner'), membership('ownerB', 'A'), membership('member', 'A'), membership('member', 'B'), membership('foreign', 'B'));
   for (const organisationId of ['A', 'B']) records.Tier.push({ _id: `${organisationId}-free`, organisationId, name: 'Community', price: 0, interval: 'monthly', isActive: true }, { _id: `${organisationId}-paid`, organisationId, name: 'Supporter', price: 50, interval: 'yearly', isActive: true });
   records.Invoice.push(
-    { _id: 'member-A-invoice', organisationId: 'A', userId: 'member', invoiceNumber: 'INV-A-MEMBER', tierName: 'Community', amount: 10, paymentStatus: 'paid' },
-    { _id: 'ownerB-A-invoice', organisationId: 'A', userId: 'ownerB', invoiceNumber: 'INV-A-OTHER', tierName: 'Supporter', amount: 15, paymentStatus: 'paid' },
+    { _id: 'member-A-invoice', organisationId: 'A', userId: 'member', invoiceNumber: 'INV-A-MEMBER', tierName: 'Community', amount: 10, currency: 'MYR', paymentStatus: 'paid' },
+    { _id: 'ownerB-A-invoice', organisationId: 'A', userId: 'ownerB', invoiceNumber: 'INV-A-OTHER', tierName: 'Supporter', amount: 15, currency: 'MYR', paymentStatus: 'paid' },
     { _id: 'member-B-invoice', organisationId: 'B', userId: 'member', invoiceNumber: 'INV-B-MEMBER', tierName: 'Supporter', amount: 99999, paymentStatus: 'paid' },
     { _id: 'foreign-B-invoice', organisationId: 'B', userId: 'foreign', invoiceNumber: 'INV-B-FOREIGN', tierName: 'Supporter', amount: 80000, paymentStatus: 'paid' }
   );
@@ -223,6 +227,53 @@ test('Status and tier administration affect only the selected organisation assoc
   assert.equal(records.OrganisationMembership.find(item => item._id === 'member-B').status, 'active');
   assert.equal(records.User.find(user => user._id === 'member').status, 'active');
   assert.equal(walletCalls[0].organisationId, 'A');
+});
+
+test('Administrative tier and status changes invalidate scheduled downgrades and old billing quotes', async () => {
+  const selected = records.OrganisationMembership.find(item => item._id === 'member-A');
+  Object.assign(selected, { scheduledTierId: 'A-free', scheduledTierEffectiveAt: selected.expirationDate, scheduledTierRequestedAt: '2026-01-01T00:00:00Z' });
+  const foreignBefore = clone(records.OrganisationMembership.find(item => item._id === 'member-B'));
+  const tier = await request(adminRouter, 'PUT', '/members/:id/tier', { userId: 'ownerA', params: { id: 'member' }, body: { tierId: 'A-paid' } });
+  assert.equal(tier.status, 200);
+  assert.equal(selected.scheduledTierId, undefined);
+  assert.equal(selected.scheduledTierEffectiveAt, undefined);
+  assert.equal(selected.billingRevision, 1);
+  selected.scheduledTierId = 'A-free';
+  selected.scheduledTierEffectiveAt = selected.expirationDate;
+  const status = await request(adminRouter, 'PUT', '/members/:id/status', { userId: 'ownerA', params: { id: 'member' }, body: { status: 'suspended' } });
+  assert.equal(status.status, 200);
+  assert.equal(selected.scheduledTierId, undefined);
+  assert.equal(selected.billingRevision, 2);
+  assert.deepEqual(records.OrganisationMembership.find(item => item._id === 'member-B'), foreignBefore);
+});
+
+test('Concurrent membership changes cannot bypass admin payment checks or revive an incompatible downgrade', async t => {
+  const selected = records.OrganisationMembership.find(item => item._id === 'member-A');
+  const original = OrganisationMembership.findOneAndUpdate;
+  let race = true;
+  t.mock.method(OrganisationMembership, 'findOneAndUpdate', (filter, operation, options) => {
+    if (filter._id === selected._id && race) {
+      race = false;
+      selected.billingRevision = (selected.billingRevision || 0) + 1;
+      selected.tierId = 'A-paid';
+      selected.status = 'pending';
+      selected.scheduledTierId = 'A-free';
+      selected.scheduledTierEffectiveAt = selected.expirationDate;
+    }
+    return original(filter, operation, options);
+  });
+  const status = await request(adminRouter, 'PUT', '/members/:id/status', { userId: 'ownerA', params: { id: 'member' }, body: { status: 'active' } });
+  assert.equal(status.status, 409);
+  assert.equal(selected.status, 'pending');
+  assert.equal(selected.tierId, 'A-paid');
+  // A request prepared against the free tier must also reject a later change.
+  selected.status = 'active';
+  selected.tierId = 'A-free';
+  race = true;
+  const tier = await request(adminRouter, 'PUT', '/members/:id/tier', { userId: 'ownerA', params: { id: 'member' }, body: { tierId: 'A-free' } });
+  assert.equal(tier.status, 409);
+  assert.equal(selected.tierId, 'A-paid');
+  assert.equal(selected.scheduledTierId, 'A-free');
 });
 
 test('Direct member links require ownership and return only a member of the selected organisation', async () => {
@@ -305,64 +356,219 @@ test('Wallet passes belong to the selected organisation and members can sync onl
   assert.equal(globalAdminAsMember.status, 403);
 });
 
-test('Payments reject foreign tiers and activate only the selected organisation membership', async () => {
-  const crossTier = await request(paymentRouter, 'POST', '/renew', { body: { tierId: 'B-paid' } });
-  assert.equal(crossTier.status, 400);
-  assert.equal(records.Invoice.length, 4);
-  records.OrganisationMembership.find(item => item._id === 'member-A').status = 'pending';
-  const paid = await request(paymentRouter, 'POST', '/renew', { body: { tierId: 'A-paid', organisationId: 'B', userId: 'foreign', amount: 0.01 } });
-  assert.equal(paid.status, 200);
-  assert.equal(paid.body.invoice.organisationId, 'A');
-  assert.equal(paid.body.invoice.userId, 'member');
-  assert.equal(paid.body.invoice.amount, 50);
-  assert.equal(records.OrganisationMembership.find(item => item._id === 'member-A').tierId, 'A-paid');
-  assert.equal(records.OrganisationMembership.find(item => item._id === 'member-B').tierId, 'B-free');
-  assert.equal(records.User.find(user => user._id === 'member').role, 'member');
-  assert.equal(walletCalls[0].organisationId, 'A');
-  assert.equal(mailCalls[0][0], 'payment');
+test('Member dashboard, wallet download and sync use the selected organisation badge accent', async () => {
+  records.Organisation.find(item => item._id === 'A').badgeColor = '#123456';
+  records.Organisation.find(item => item._id === 'B').badgeColor = '#ABCDEF';
+  for (const [organisationId, color] of [['A', '#123456'], ['B', '#ABCDEF']]) {
+    records.User.find(item => item._id === 'member').activeOrganisationId = organisationId;
+    const dashboard = await request(memberRouter, 'GET', '/dashboard');
+    assert.equal(dashboard.status, 200);
+    assert.equal(dashboard.body.membership.organisation.badgeColor, color);
+    assert.equal(dashboard.body.membership.googleWallet.passObject.hexBackgroundColor, color);
+    const download = await request(walletRouter, 'GET', '/pass');
+    assert.equal(download.body.passObject.hexBackgroundColor, color);
+    const sync = await request(walletRouter, 'PUT', '/update-object/:memberId', { params: { memberId: 'member' } });
+    assert.equal(sync.status, 200);
+    assert.equal(walletCalls.at(-1).organisation.badgeColor, color);
+  }
 });
 
-test('A new paid membership gets one welcome after successful activation and none on failed payments or later renewals', async () => {
+test('Membership overview shows recorded subscription dates and rejects stale organisation context', async () => {
+  const association = records.OrganisationMembership.find(item => item._id === 'member-A');
+  association.firstSubscribedAt = '2025-03-10T12:00:00Z';
+  association.billingPeriods = [{ tierId: 'A-free', periodStart: '2026-01-01T00:00:00Z', periodEnd: '2099-01-01T00:00:00Z', valueCents: 1000 }];
+  const result = await request(memberRouter, 'GET', '/membership', { query: { organisationId: 'A' } });
+  assert.equal(result.status, 200);
+  assert.equal(result.body.membership.firstSubscribedAt, association.firstSubscribedAt);
+  assert.equal(result.body.membership.currentPeriodEnd, association.expirationDate);
+  assert.equal(result.body.membership.currentPeriodStart, '2026-01-01T00:00:00Z');
+  assert.equal(result.body.membership.organisation._id, 'A');
+  assert.equal(result.body.membership.tier._id, 'A-free');
+  assert.equal((await request(memberRouter, 'GET', '/membership', { query: { organisationId: 'B' } })).status, 409);
+  assert.equal((await request(memberRouter, 'GET', '/membership', { userId: 'ownerA', query: { organisationId: 'A' } })).status, 403);
+});
+
+test('Legacy prepaid renewals do not show a future invoice as the current membership period', async () => {
+  records.Invoice.push(
+    { _id: 'current', organisationId: 'A', userId: 'member', tierId: 'A-free', paymentStatus: 'paid', periodStart: '2020-01-01T00:00:00Z', periodEnd: '2080-01-01T00:00:00Z' },
+    { _id: 'prepaid', organisationId: 'A', userId: 'member', tierId: 'A-free', paymentStatus: 'paid', periodStart: '2080-01-01T00:00:00Z', periodEnd: '2099-01-01T00:00:00Z' }
+  );
+  const result = await request(memberRouter, 'GET', '/membership', { query: { organisationId: 'A' } });
+  assert.equal(result.status, 200);
+  assert.equal(result.body.membership.currentPeriodStart, '2020-01-01T00:00:00Z');
+});
+
+test('Paid cancellation keeps access until expiry, can be undone, and cannot affect another membership', async () => {
+  const association = records.OrganisationMembership.find(item => item._id === 'member-A');
+  association.tierId = 'A-paid';
+  const foreignBefore = clone(records.OrganisationMembership.find(item => item._id === 'member-B'));
+  const originalExpiry = association.expirationDate;
+  const stale = await request(memberRouter, 'POST', '/membership/cancel', { body: { organisationId: 'B' } });
+  assert.equal(stale.status, 409);
+  const cancelled = await request(memberRouter, 'POST', '/membership/cancel', { body: { organisationId: 'A', userId: 'foreign' } });
+  assert.equal(cancelled.status, 200);
+  assert.equal(association.status, 'active');
+  assert.equal(association.cancelAtPeriodEnd, true);
+  assert.equal(association.expirationDate, originalExpiry);
+  assert.equal(association.billingRevision, 1);
+  assert.equal((await request(walletRouter, 'GET', '/pass')).status, 200);
+  const repeated = await request(memberRouter, 'POST', '/membership/cancel', { body: { organisationId: 'A' } });
+  assert.equal(repeated.status, 200);
+  assert.equal(association.billingRevision, 1);
+  const resumed = await request(memberRouter, 'POST', '/membership/resume', { body: { organisationId: 'A' } });
+  assert.equal(resumed.status, 200);
+  assert.equal(association.cancelAtPeriodEnd, false);
+  assert.equal(association.cancelledAt, undefined);
+  assert.equal(association.billingRevision, 2);
+  assert.deepEqual(records.OrganisationMembership.find(item => item._id === 'member-B'), foreignBefore);
+});
+
+test('Admin cancelled status, filters, member details and CSV follow a paid member cancellation and undo', async () => {
+  const selected = records.OrganisationMembership.find(item => item._id === 'member-A');
+  selected.tierId = 'A-paid';
+  const cancelled = await request(memberRouter, 'POST', '/membership/cancel', { body: { organisationId: 'A' } });
+  assert.equal(cancelled.status, 200);
+  const directory = await request(adminRouter, 'GET', '/members', { userId: 'ownerA', query: { status: 'cancelled' } });
+  assert.equal(directory.status, 200);
+  assert.deepEqual(directory.body.members.map(member => member._id), ['member']);
+  assert.equal(directory.body.members[0].status, 'cancelled');
+  assert.equal(directory.body.members[0].accessStatus, 'active');
+  assert.equal(directory.body.members[0].cancellationScheduled, true);
+  assert.equal((await request(walletRouter, 'GET', '/pass')).status, 200, 'Reporting cancellation does not remove paid access early');
+  const details = await request(adminRouter, 'GET', '/members/:id', { userId: 'ownerA', params: { id: 'member' } });
+  assert.equal(details.body.member.status, 'cancelled');
+  const active = await request(adminRouter, 'GET', '/members', { userId: 'ownerA', query: { status: 'active' } });
+  assert.ok(!active.body.members.some(member => member._id === 'member'));
+  const csv = await request(adminRouter, 'GET', '/export-csv', { userId: 'ownerA', query: { status: 'cancelled' } });
+  assert.ok(csv.body.includes('"cancelled"'));
+  assert.ok(!csv.body.includes('"ownerB"'));
+  const summary = await request(adminRouter, 'GET', '/financial-summary', { userId: 'ownerA' });
+  assert.equal(summary.body.metrics.activeMembersCount, 1);
+  const approve = await request(adminRouter, 'PUT', '/members/:id/status', { userId: 'ownerA', params: { id: 'member' }, body: { status: 'active' } });
+  assert.equal(approve.status, 409, 'Admin approval cannot silently undo a member cancellation');
+  const resumed = await request(memberRouter, 'POST', '/membership/resume', { body: { organisationId: 'A' } });
+  assert.equal(resumed.status, 200);
+  assert.equal((await request(adminRouter, 'GET', '/members', { userId: 'ownerA', query: { status: 'cancelled' } })).body.pagination.totalMembers, 0);
+  assert.equal((await request(adminRouter, 'GET', '/members/:id', { userId: 'ownerA', params: { id: 'member' } })).body.member.status, 'active');
+  await request(memberRouter, 'POST', '/membership/cancel', { body: { organisationId: 'A' } });
+  selected.expirationDate = '2020-01-01T00:00:00Z';
+  const ended = await request(adminRouter, 'GET', '/members/:id', { userId: 'ownerA', params: { id: 'member' } });
+  assert.equal(ended.body.member.status, 'cancelled');
+  assert.equal(ended.body.member.accessStatus, 'cancelled');
+  assert.equal(ended.body.member.cancellationScheduled, false);
+  assert.equal((await request(walletRouter, 'GET', '/pass')).status, 403);
+});
+
+test('Free member cancellations show as cancelled in only their organisation admin directory', async () => {
+  const selected = records.OrganisationMembership.find(item => item._id === 'member-A');
+  delete selected.expirationDate;
+  const result = await request(memberRouter, 'POST', '/membership/cancel', { body: { organisationId: 'A' } });
+  assert.equal(result.status, 200);
+  const own = await request(adminRouter, 'GET', '/members', { userId: 'ownerA', query: { status: 'cancelled' } });
+  assert.equal(own.body.members.length, 1);
+  assert.equal(own.body.members[0].status, 'cancelled');
+  assert.equal(own.body.members[0].cancellationScheduled, false);
+  const other = await request(adminRouter, 'GET', '/members', { userId: 'ownerB', query: { status: 'cancelled' } });
+  assert.equal(other.body.members.length, 0);
+});
+
+test('Free cancellation ends access immediately while leaving membership history available', async () => {
+  const association = records.OrganisationMembership.find(item => item._id === 'member-A');
+  // A past admin tier change can leave a future expiry on a free membership.
+  const cancelled = await request(memberRouter, 'POST', '/membership/cancel', { body: { organisationId: 'A' } });
+  assert.equal(cancelled.status, 200);
+  assert.equal(association.status, 'cancelled');
+  assert.equal(association.cancelAtPeriodEnd, false);
+  assert.equal((await request(walletRouter, 'GET', '/pass')).status, 403);
+  const overview = await request(memberRouter, 'GET', '/membership', { query: { organisationId: 'A' } });
+  assert.equal(overview.status, 200);
+  assert.equal(overview.body.membership.status, 'cancelled');
+  assert.equal((await request(memberRouter, 'POST', '/membership/resume', { body: { organisationId: 'A' } })).status, 409);
+});
+
+test('Cancelled paid memberships stop access at expiry and retain their overview', async () => {
+  const association = records.OrganisationMembership.find(item => item._id === 'member-A');
+  association.cancelAtPeriodEnd = true;
+  association.expirationDate = '2020-01-01T00:00:00Z';
+  const overview = await request(memberRouter, 'GET', '/membership', { query: { organisationId: 'A' } });
+  assert.equal(overview.status, 200);
+  assert.equal(overview.body.membership.status, 'cancelled');
+  assert.equal((await request(walletRouter, 'GET', '/pass')).status, 403);
+  assert.equal((await request(memberRouter, 'POST', '/membership/resume', { body: { organisationId: 'A' } })).status, 409);
+});
+
+test('Creating a payment session ignores client prices and cannot activate a membership', async t => {
   const selected = records.OrganisationMembership.find(item => item._id === 'member-A');
   selected.status = 'pending';
-  selected.welcomeEmailEligible = true;
-  selected.expirationDate = undefined;
-  const other = records.OrganisationMembership.find(item => item._id === 'member-B');
-  other.welcomeEmailEligible = true;
-  const failed = await request(paymentRouter, 'POST', '/renew', { body: { tierId: 'A-paid', simulateFailure: true } });
-  assert.equal(failed.status, 402);
+  selected.tierId = 'A-paid';
+  t.mock.method(paymentGateway, 'createCheckout', async ({ user, organisation, membership, tier }) => {
+    assert.equal(user._id, 'member');
+    assert.equal(organisation._id, 'A');
+    assert.equal(membership._id, 'member-A');
+    assert.equal(tier.price, 50);
+    return { paymentStatus: 'pending', checkout: { id: 'pay_fixture', amountCents: 5000 } };
+  });
+  const foreign = await request(paymentRouter, 'POST', '/renew', { body: { tierId: 'B-paid' } });
+  assert.equal(foreign.status, 400);
+  const stale = await request(paymentRouter, 'POST', '/renew', { body: { tierId: 'A-paid', organisationId: 'B' } });
+  assert.equal(stale.status, 409);
+  const result = await request(paymentRouter, 'POST', '/renew', { body: { tierId: 'A-paid', userId: 'foreign', amount: 0.01, simulateFailure: false, paymentMethod: 'Pretend paid' } });
+  assert.equal(result.status, 200);
+  assert.equal(result.body.paymentStatus, 'pending');
+  assert.equal(result.body.checkout.amountCents, 5000);
+  assert.equal(result.body.invoice, undefined);
   assert.equal(selected.status, 'pending');
-  assert.equal(selected.welcomeEmailEligible, true);
+  assert.equal(records.Invoice.length, 4);
+  assert.equal(walletCalls.length, 0);
   assert.equal(mailCalls.length, 0);
-
-  const paid = await request(paymentRouter, 'POST', '/renew', { body: { tierId: 'A-paid' } });
-  assert.equal(paid.status, 200);
-  assert.equal(selected.status, 'active');
-  assert.equal(selected.welcomeEmailEligible, false);
-  assert.ok(selected.welcomeEmailSentAt);
-  const welcomes = mailCalls.filter(call => call[0] === 'welcome');
-  assert.equal(welcomes.length, 1);
-  assert.equal(welcomes[0][1]._id, 'member');
-  assert.equal(welcomes[0][2].tierName, 'Supporter');
-  assert.equal(welcomes[0][3]._id, 'A');
-  assert.equal(other.welcomeEmailEligible, true);
-  assert.equal(other.welcomeEmailSentAt, undefined);
-
-  const renewal = await request(paymentRouter, 'POST', '/renew', { body: { tierId: 'A-paid' } });
-  assert.equal(renewal.status, 200);
-  assert.equal(mailCalls.filter(call => call[0] === 'welcome').length, 1);
 });
 
-test('Payment upgrades enforce tier capacity without counting the renewing member twice', async () => {
-  records.Tier.find(tier => tier._id === 'A-paid').maxMembers = 1;
-  records.OrganisationMembership.find(item => item._id === 'ownerB-A').tierId = 'A-paid';
-  const full = await request(paymentRouter, 'POST', '/renew', { body: { tierId: 'A-paid' } });
-  assert.equal(full.status, 409);
-  assert.equal(records.Invoice.length, 4);
-  records.OrganisationMembership.find(item => item._id === 'ownerB-A').tierId = 'A-free';
-  records.OrganisationMembership.find(item => item._id === 'member-A').tierId = 'A-paid';
-  const renewal = await request(paymentRouter, 'POST', '/renew', { body: { tierId: 'A-paid' } });
-  assert.equal(renewal.status, 200);
+test('Pending paid memberships cannot be activated through the administrative status shortcut', async () => {
+  const selected = records.OrganisationMembership.find(item => item._id === 'member-A');
+  selected.status = 'pending'; selected.tierId = 'A-paid';
+  const result = await request(adminRouter, 'PUT', '/members/:id/status', { userId: 'ownerA', params: { id: 'member' }, body: { status: 'active' } });
+  assert.equal(result.status, 409);
+  assert.equal(selected.status, 'pending');
+});
+
+test('Monthly membership revenue counts the latest paid period once and excludes legacy USD amounts', async () => {
+  const selected = records.OrganisationMembership.find(item => item._id === 'member-A');
+  selected.tierId = 'A-paid'; selected.tierName = 'Supporter';
+  records.OrganisationMembership.find(item => item._id === 'ownerB-A').expirationDate = '2000-01-01';
+  records.Invoice.push(
+    { _id: 'cycle1', organisationId: 'A', userId: 'member', paymentCheckoutId: 'pay_first', currency: 'MYR', amount: 49, billingInterval: 'monthly', paymentStatus: 'paid', periodEnd: '2098-01-01', createdAt: '2098-01-01' },
+    { _id: 'cycle2', organisationId: 'A', userId: 'member', paymentCheckoutId: 'pay_second', currency: 'MYR', amount: 49, billingInterval: 'monthly', paymentStatus: 'paid', periodEnd: '2099-01-01', createdAt: '2099-01-01' },
+    { _id: 'legacy-usd', organisationId: 'A', userId: 'member', currency: 'USD', amount: 99999, paymentStatus: 'paid' }
+  );
+  const summary = await request(adminRouter, 'GET', '/financial-summary', { userId: 'ownerA' });
+  assert.equal(summary.body.metrics.monthlyRecurringRevenue, 49);
+  assert.equal(summary.body.metrics.annualRunRate, 49 * 12);
+  assert.equal(summary.body.metrics.totalRevenue, 25 + 98);
+  selected.expirationDate = '2000-01-01';
+  assert.equal((await request(adminRouter, 'GET', '/financial-summary', { userId: 'ownerA' })).body.metrics.monthlyRecurringRevenue, 0);
+});
+
+test('Event ticket purchases cannot replace the latest membership period in monthly revenue', async () => {
+  const selected = records.OrganisationMembership.find(item => item._id === 'member-A');
+  selected.tierId = 'A-paid'; selected.tierName = 'Supporter';
+  records.OrganisationMembership.find(item => item._id === 'ownerB-A').expirationDate = '2000-01-01';
+  records.Invoice.push(
+    { _id: 'membership-period', organisationId: 'A', userId: 'member', currency: 'MYR', amount: 600, billingInterval: 'yearly', paymentStatus: 'paid', periodEnd: '2099-01-01' },
+    { _id: 'latest-ticket', organisationId: 'A', userId: 'member', currency: 'MYR', amount: 999, category: 'event_ticket', paymentStatus: 'paid', createdAt: '2100-01-01' },
+  );
+  const summary = await request(adminRouter, 'GET', '/financial-summary', { userId: 'ownerA' });
+  assert.equal(summary.body.metrics.monthlyRecurringRevenue, 50);
+  assert.equal(summary.body.metrics.totalEventTicketingRevenue, 999);
+  assert.equal(summary.body.metrics.totalRevenue, 25 + 600 + 999);
+});
+
+test('Prorated upgrade credit reduces received revenue while the new plan retains its full monthly value', async () => {
+  records.OrganisationMembership.find(item => item._id === 'ownerB-A').expirationDate = '2000-01-01';
+  records.Invoice.push({ _id: 'upgrade', organisationId: 'A', userId: 'member', currency: 'MYR',
+    tierName: 'Higher tier', amount: 150, coverageValueCents: 20000, billingInterval: 'monthly', paymentStatus: 'paid', periodEnd: '2099-01-01' });
+  const result = await request(adminRouter, 'GET', '/financial-summary', { userId: 'ownerA' });
+  assert.equal(result.body.metrics.monthlyRecurringRevenue, 200);
+  assert.equal(result.body.metrics.totalRevenue, 175);
 });
 
 test('Profile updates cannot edit another account, elevate roles, or assign organisation ownership', async () => {
@@ -380,6 +586,7 @@ test('Profile updates cannot edit another account, elevate roles, or assign orga
 test('Members with pending, suspended, expired or absent access cannot use active membership features', async () => {
   const selected = records.OrganisationMembership.find(item => item._id === 'member-A');
   selected.status = 'pending';
+  assert.equal((await request(memberRouter, 'GET', '/dashboard')).status, 403);
   assert.equal((await request(walletRouter, 'GET', '/pass')).status, 403);
   assert.equal((await request(eventRouter, 'GET', '/')).status, 403);
   selected.status = 'suspended';
@@ -399,6 +606,18 @@ test('Member dashboard hides other members’ RSVP details and other organisatio
   assert.deepEqual(dashboard.body.recentInvoices.map(invoice => invoice._id), ['member-A-invoice']);
   assert.deepEqual(dashboard.body.upcomingRsvps.map(event => event._id), ['event-A']);
   assert.ok(!JSON.stringify(dashboard.body.upcomingRsvps).includes('PRIVATE_OTHER_EMAIL'));
+});
+
+test('Ended events remain visible with their status but leave the dashboard upcoming list', async () => {
+  const selected = records.Event.find(event => event._id === 'event-A');
+  selected.date = '2020-01-01';
+  const dashboard = await request(memberRouter, 'GET', '/dashboard');
+  assert.equal(dashboard.status, 200);
+  assert.equal(dashboard.body.upcomingRsvps.length, 0);
+  const events = await request(eventRouter, 'GET', '/');
+  assert.equal(events.body.events.length, 1);
+  assert.equal(events.body.events[0].eventStatus, 'ended');
+  assert.equal(events.body.events[0].rsvpOpen, false);
 });
 
 test('Member dashboard returns personal RSVPs and five latest invoices while invoice history keeps all personal invoices', async () => {
@@ -460,17 +679,6 @@ test('RSVP reports SMTP acceptance and preserves the reservation on delivery fai
     if (delivery === 'sent') assert.match(response.body.message, /sent to your email provider/);
     else assert.match(response.body.message, /reservation is saved.*could not be sent/);
   }
-});
-
-test('SMTP failure does not undo a completed membership payment', async t => {
-  t.mock.method(emailService, 'sendPaymentConfirmation', async () => ({ status: 'failed' }));
-  const response = await request(paymentRouter, 'POST', '/renew', { body: { tierId: 'A-paid' } });
-  assert.equal(response.status, 200);
-  assert.equal(response.body.success, true);
-  assert.equal(response.body.emailDelivery, 'failed');
-  assert.match(response.body.message, /confirmation email could not be sent/);
-  assert.equal(records.OrganisationMembership.find(item => item._id === 'member-A').status, 'active');
-  assert.equal(response.body.invoice.paymentStatus, 'paid');
 });
 
 test('Email center reports historical records honestly and keeps unsent records in date order', async () => {

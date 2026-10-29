@@ -4,6 +4,8 @@ import { api } from '../api.js';
 import { useToast } from '../context/ToastContext.jsx';
 import ImageUploadField from './ImageUploadField.jsx';
 import EventLocationField from './EventLocationField.jsx';
+import { earliestEventDate, eventLocalDate } from '../../../shared/eventTiming.js';
+import { useEventNow } from '../useEventNow.js';
 import {
   DEFAULT_EVENT_TIME_ZONE, EVENT_MAX_DAYS, getEventDates, getEligibleEventTiers, sortEventTiers,
 } from '../../../shared/events.js';
@@ -17,14 +19,6 @@ const timeZones = [...new Set([
     'Australia/Sydney', 'Europe/London', 'America/New_York', 'America/Los_Angeles',
   ]),
 ])];
-
-function today() {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: DEFAULT_EVENT_TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit',
-  }).formatToParts(new Date());
-  const part = type => parts.find(item => item.type === type)?.value;
-  return `${part('year')}-${part('month')}-${part('day')}`;
-}
 
 function dateLabel(date) {
   return new Intl.DateTimeFormat('en-GB', {
@@ -43,10 +37,12 @@ function EventForm({ onClose, onCreated, tiers = [], organisationId }) {
   const dialogRef = useRef(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [startDate, setStartDate] = useState(today);
-  const [endDate, setEndDate] = useState(today);
+  const [startDate, setStartDate] = useState(() => earliestEventDate());
+  const [endDate, setEndDate] = useState(() => earliestEventDate());
   const [dayTimes, setDayTimes] = useState({});
   const [timeZone, setTimeZone] = useState(DEFAULT_EVENT_TIME_ZONE);
+  const now = useEventNow();
+  const minimumDate = earliestEventDate(timeZone, now);
   const [location, setLocation] = useState('');
   const [locationPlaceId, setLocationPlaceId] = useState('');
   const [locationCoordinates, setLocationCoordinates] = useState({ latitude: null, longitude: null });
@@ -64,7 +60,10 @@ function EventForm({ onClose, onCreated, tiers = [], organisationId }) {
   const eligibleTiers = tierAccess === 'all' ? rankedTiers : getEligibleEventTiers(rankedTiers, effectiveMinimumTierId);
   let dates = [];
   let dateError = '';
-  try { dates = getEventDates(startDate, endDate); }
+  try {
+    dates = getEventDates(startDate, endDate);
+    if (startDate < minimumDate) dateError = 'Choose tomorrow or a later date in the event time zone.';
+  }
   catch (err) { dateError = err.message; }
   const schedule = dates.map(date => ({ date, ...(dayTimes[date] || { startTime: '09:00', endTime: '17:00' }) }));
 
@@ -107,6 +106,7 @@ function EventForm({ onClose, onCreated, tiers = [], organisationId }) {
       return;
     }
     if (dateError || !schedule.length) { setError(dateError || 'Choose the event start and end dates.'); return; }
+    if (startDate <= eventLocalDate(new Date(), timeZone)) { setError('Events must start tomorrow or later. Today and past dates are not allowed.'); return; }
     const invalidDay = schedule.find(day => !day.startTime || !day.endTime || day.endTime <= day.startTime);
     if (invalidDay) { setError(`Choose an end time after the start time for ${dateLabel(invalidDay.date)}.`); return; }
     if (!Number.isInteger(Number(capacity)) || Number(capacity) < 1 || Number(capacity) > 100000) { setError('Capacity must be a whole number between 1 and 100,000.'); return; }
@@ -164,7 +164,7 @@ function EventForm({ onClose, onCreated, tiers = [], organisationId }) {
               <div className="grid grid-cols-1 gap-4 min-[360px]:grid-cols-2">
                 <div>
                   <label htmlFor="event-start-date" className={labelClass}>Start date</label>
-                  <input id="event-start-date" type="date" value={startDate} onChange={event => {
+                  <input id="event-start-date" type="date" value={startDate} min={minimumDate} onChange={event => {
                     const next = event.target.value;
                     if (endDate === startDate || (next && endDate < next)) setEndDate(next);
                     setStartDate(next); setError('');
@@ -172,10 +172,11 @@ function EventForm({ onClose, onCreated, tiers = [], organisationId }) {
                 </div>
                 <div>
                   <label htmlFor="event-end-date" className={labelClass}>End date</label>
-                  <input id="event-end-date" type="date" value={endDate} min={startDate || undefined} onChange={event => { setEndDate(event.target.value); setError(''); }} required className={inputClass} />
+                  <input id="event-end-date" type="date" value={endDate} min={startDate && startDate > minimumDate ? startDate : minimumDate} onChange={event => { setEndDate(event.target.value); setError(''); }} required className={inputClass} />
                 </div>
               </div>
               {dateError && <p role="alert" className="mt-2 text-xs text-red-700">{dateError}</p>}
+              <p className="mt-2 text-xs text-slate-500">New events must start tomorrow or later in the selected event time zone. RSVPs close when the event starts.</p>
               <div className="mt-4">
                 <label htmlFor="event-time-zone" className={labelClass}>Event time zone</label>
                 <select id="event-time-zone" value={timeZone} onChange={event => setTimeZone(event.target.value)} className={inputClass}>
@@ -234,9 +235,9 @@ function EventForm({ onClose, onCreated, tiers = [], organisationId }) {
               {tierAccess === 'minimum' && <div className="mt-4">
                 <label htmlFor="event-minimum-tier" className={labelClass}>Minimum membership tier</label>
                 <select id="event-minimum-tier" value={effectiveMinimumTierId} onChange={event => setMinimumTierId(event.target.value)} required className={inputClass}>
-                  {rankedTiers.map(tier => <option key={tier._id} value={tier._id}>{tier.name} · Level {tier.accessLevel || 1} · ${tier.price || 0}/{tier.interval || 'monthly'}</option>)}
+                  {rankedTiers.map(tier => <option key={tier._id} value={tier._id}>{tier.name} · MYR {tier.price || 0}/{tier.interval || 'monthly'}</option>)}
                 </select>
-                <p className="mt-2 text-[11px] leading-relaxed text-slate-500">Tiers are ordered by access level, then their equivalent monthly price. Tiers with the same level and price share access.</p>
+                <p className="mt-2 text-[11px] leading-relaxed text-slate-500">Tiers are ordered by their equivalent monthly price. Tiers with the same monthly price share access.</p>
               </div>}
               <div className="mt-4 border-t border-slate-200 pt-3">
                 <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">{tierAccess === 'all' ? 'Available to all tiers' : 'Eligible tiers'}</p>

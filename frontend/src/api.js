@@ -66,6 +66,11 @@ export const api = {
   updateProfile: (profileData) => put('/members/profile', profileData),
   getWalletPass: () => apiRequest('/members/wallet-pass'),
   getMemberInvoices: () => apiRequest('/members/invoices'),
+  getMembership: (organisationId) => get('/members/membership', { organisationId }),
+  cancelMembership: (organisationId) => post('/members/membership/cancel', { organisationId }),
+  resumeMembership: (organisationId) => post('/members/membership/resume', { organisationId }),
+  scheduleMembershipDowngrade: (organisationId, tierId) => post('/members/membership/downgrade', { organisationId, tierId }),
+  cancelMembershipDowngrade: (organisationId) => post('/members/membership/downgrade/cancel', { organisationId }),
   downloadInvoice: (id) => apiRequest(`/members/invoices/${id}/download`),
 
   // Tiers
@@ -84,7 +89,11 @@ export const api = {
   deleteEvent: (id, organisationId) => remove(`/events/${id}${organisationId ? `?${new URLSearchParams({ organisationId })}` : ''}`),
 
   // Payments
-  processRenewal: (paymentData) => post('/payments/renew', paymentData),
+  getPaymentQuote: (tierId, organisationId, intent) => post('/payments/quote', { tierId, organisationId, intent }),
+  createPaymentCheckout: (tierId, organisationId, intent) => post('/payments/checkout', { tierId, organisationId, intent }),
+  getPaymentCheckout: (sessionId, organisationId) => get(`/payments/checkout/${encodeURIComponent(sessionId)}`, { organisationId }),
+  confirmPayment: (sessionId, organisationId, details) => post(`/payments/checkout/${encodeURIComponent(sessionId)}/confirm`, { ...details, organisationId }),
+  cancelPayment: (sessionId, organisationId) => post(`/payments/checkout/${encodeURIComponent(sessionId)}/cancel`, { organisationId }),
 
   // Wallet
   syncWalletObject: (memberId) => put(`/wallet/update-object/${memberId}`),

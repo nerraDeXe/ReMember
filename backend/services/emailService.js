@@ -55,12 +55,15 @@ export const emailService = {
    * Send automated email upon payment completion / renewal
    */
   async sendPaymentConfirmation(user, invoice) {
-    const subject = `Payment Confirmed: Invoice #${invoice.invoiceNumber} 🧾`;
+    const simulated = invoice.simulated === true;
+    const subject = simulated
+      ? `Demo payment receipt: Invoice #${invoice.invoiceNumber}`
+      : `Payment Confirmed: Invoice #${invoice.invoiceNumber} 🧾`;
     const htmlContent = `
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; background: #FFFFFF; color: #333333; padding: 32px; border-radius: 12px; border: 1px solid #BEBEBE; border-top: 4px solid #FFD700;">
         <div style="text-align: center; margin-bottom: 24px;">
-          <h1 style="color: #333333; margin: 0; font-size: 28px;">Payment Successful</h1>
-          <p style="color: #555555; font-size: 14px; margin-top: 4px;">Thank you for renewing your membership</p>
+          <h1 style="color: #333333; margin: 0; font-size: 28px;">${simulated ? 'Demo payment receipt' : 'Payment Successful'}</h1>
+          <p style="color: #555555; font-size: 14px; margin-top: 4px;">${simulated ? 'No money was charged.' : 'Thank you for renewing your membership'}</p>
         </div>
         <div style="background: #FFFBE6; padding: 24px; border-radius: 8px; margin-bottom: 24px;">
           <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
@@ -73,7 +76,7 @@ export const emailService = {
               <td style="padding: 8px 0; text-align: right; color: #333333; font-weight: 600;">${invoice.tierName}</td>
             </tr>
             <tr>
-              <td style="padding: 8px 0; color: #555555;">Amount Paid</td>
+              <td style="padding: 8px 0; color: #555555;">${simulated ? 'Demo Amount' : 'Amount Paid'}</td>
               <td style="padding: 8px 0; text-align: right; color: #333333; font-size: 18px; font-weight: 700;">MYR ${invoice.amount.toFixed(2)}</td>
             </tr>
             <tr>

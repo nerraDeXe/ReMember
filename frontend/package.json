@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "test": "node --test tests/navigation.test.js tests/account.test.js tests/api.test.js tests/organisations.test.js tests/analytics-range.test.js tests/email-delivery.test.js tests/post-content-rendering.test.js tests/event-display.test.js",
+    "test": "node --test tests/navigation.test.js tests/account.test.js tests/api.test.js tests/organisations.test.js tests/analytics-range.test.js tests/email-delivery.test.js tests/post-content-rendering.test.js tests/event-display.test.js tests/event-analytics.test.js tests/event-timing.test.js",
     "lint": "oxlint",
     "preview": "vite preview"
   },

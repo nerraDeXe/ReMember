@@ -125,8 +125,11 @@ export function AuthProvider({ children }) {
 
   const refreshUser = async () => {
     const expectedToken = currentTokenRef.current;
+    const expectedRevision = sessionRevision.current;
+    const expectedOrganisationId = sessionUserRef.current?.activeOrganisationId;
     const data = await api.getMe();
     if (!expectedToken || expectedToken !== currentTokenRef.current) throw new Error('Your session has ended. Sign in again.');
+    if (expectedRevision !== sessionRevision.current || expectedOrganisationId !== sessionUserRef.current?.activeOrganisationId) return sessionUserRef.current;
     if (!data.success || !data.user) throw new Error('Could not refresh your account.');
     applySession(data);
     return data.user;
