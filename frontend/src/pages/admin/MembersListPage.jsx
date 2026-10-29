@@ -191,54 +191,54 @@ export default function MembersListPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="page-stack">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="members-list-header">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <Users className="w-6 h-6 text-brand-ink" />
+          <h1 className="page-title">
+            <Users className="members-list-users-icon" />
             Member Directory & Governance
           </h1>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="page-description">
             Dynamic paginated member list retrieved from backend API with Google Wallet sync triggers.
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-2 self-start sm:self-auto">
-        <button type="button" onClick={() => loadMembers()} disabled={loading} className="py-2 px-4 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-semibold text-xs flex items-center gap-2 disabled:opacity-50">
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} aria-hidden="true" />Refresh members
+        <div className="members-list-header-actions">
+        <button type="button" onClick={() => loadMembers()} disabled={loading} className="members-list-refresh-button">
+          <RefreshCw className={`icon-default ${loading ? "members-list-spinner" : ''}`} aria-hidden="true" />Refresh members
         </button>
         <button
           onClick={handleExportCsv}
-          className="py-2 px-4 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-semibold text-xs flex items-center gap-2 transition-colors self-start sm:self-auto shadow-sm"
+          className="members-list-export-button"
         >
-          <Download className="w-4 h-4 text-brand-ink" />
+          <Download className="members-list-download-icon" />
           <span>Export Segmented CSV</span>
         </button>
         </div>
       </div>
 
       {/* Search & Filters Bar */}
-      <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-sm flex flex-col md:flex-row gap-3">
+      <div className="members-list-filter-bar">
         {/* Search Input */}
-        <div className="relative flex-1">
+        <div className="members-list-search-field">
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => updateQuery({ search: e.target.value || null, page: null }, { replace: true })}
             placeholder="Search by name, email, or member number..."
-            className="w-full pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
+            className="members-list-search-input"
           />
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+          <Search className="members-list-search-icon" />
         </div>
 
         {/* Status Filter */}
-        <div className="flex items-center gap-2">
+        <div className="members-list-inline-controls">
           <select
             aria-label="Filter members by status"
             value={statusFilter}
             onChange={(e) => updateQuery({ status: e.target.value === 'all' ? null : e.target.value, page: null })}
-            className="px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
+            className="members-list-filter-select"
           >
             <option value="all">All Statuses</option>
             <option value="active">Active</option>
@@ -252,7 +252,7 @@ export default function MembersListPage() {
           <select
             value={tierFilter}
             onChange={(e) => updateQuery({ tier: e.target.value === 'all' ? null : e.target.value, page: null })}
-            className="px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
+            className="members-list-filter-select"
           >
             <option value="all">All Tiers</option>
             {tiers.map((t) => (
@@ -265,58 +265,58 @@ export default function MembersListPage() {
       </div>
 
       {/* Members Table */}
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+      <div className="table-frame">
         {loading ? (
-          <div className="py-20 flex justify-center">
-            <RefreshCw className="w-8 h-8 text-brand-ink animate-spin" />
+          <div className="loading-container">
+            <RefreshCw className="loading-spinner" />
           </div>
         ) : members.length === 0 ? (
-          <div className="p-12 text-center text-xs text-slate-500">
-            <Users className="w-8 h-8 mx-auto mb-2 text-slate-400" />
+          <div className="members-list-empty">
+            <Users className="members-list-empty-icon" />
             No members matched the search or filter criteria.
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 uppercase tracking-wider text-[10px]">
+          <div className="table-scroll">
+            <table className="table-base">
+              <thead className="table-heading">
                 <tr>
-                  <th className="p-4">Member</th>
-                  <th className="p-4">Member ID</th>
-                  <th className="p-4">Membership Tier</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4">Expiration Date</th>
-                  <th className="p-4">Google Wallet</th>
-                  <th className="p-4 text-right">Administrative Actions</th>
+                  <th className="data-table-cell">Member</th>
+                  <th className="data-table-cell">Member ID</th>
+                  <th className="data-table-cell">Membership Tier</th>
+                  <th className="data-table-cell">Status</th>
+                  <th className="data-table-cell">Expiration Date</th>
+                  <th className="data-table-cell">Google Wallet</th>
+                  <th className="members-list-actions-cell">Administrative Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="table-body">
                 {members.map((member) => (
-                  <tr key={member._id} className="hover:bg-slate-50/75 transition-colors">
+                  <tr key={member._id} className="data-table-row">
                     {/* Member Name & Email */}
-                    <td className="p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full border border-slate-200 bg-slate-50 flex items-center justify-center" role="img" aria-label={member.avatarUrl ? `${member.name} profile photo` : `${member.name || 'User'} profile icon`}>
-                          {member.avatarUrl ? <img src={member.avatarUrl} alt={`${member.name} profile`} className="w-full h-full rounded-full object-cover" /> : <User className="w-5 h-5 text-slate-500" aria-hidden="true" />}
+                    <td className="data-table-cell">
+                      <div className="members-list-member-identity">
+                        <div className="members-list-avatar" role="img" aria-label={member.avatarUrl ? `${member.name} profile photo` : `${member.name || 'User'} profile icon`}>
+                          {member.avatarUrl ? <img src={member.avatarUrl} alt={`${member.name} profile`} className="members-list-avatar-image" /> : <User className="members-list-avatar-placeholder" aria-hidden="true" />}
                         </div>
                         <div>
-                          <div className="font-bold text-slate-900 leading-tight">{member.name}</div>
-                          <div className="text-[11px] text-slate-500 mt-0.5">{member.email}</div>
+                          <div className="members-list-member-name">{member.name}</div>
+                          <div className="members-list-member-email">{member.email}</div>
                         </div>
                       </div>
                     </td>
 
                     {/* Member ID */}
-                    <td className="p-4 font-mono font-bold text-brand-ink">
+                    <td className="members-list-number-cell">
                       {member.membershipNumber}
                     </td>
 
                     {/* Tier */}
-                    <td className="p-4">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-slate-900">{member.tierName}</span>
+                    <td className="data-table-cell">
+                      <div className="members-list-inline-controls">
+                        <span className="members-list-current-tier">{member.tierName}</span>
                         <button
                           onClick={() => updateQuery({ memberTier: member._id })}
-                          className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-[10px] transition-colors"
+                          className="members-list-change-tier-button"
                           title="Change membership tier (auto-updates Google Wallet)"
                         >
                           Change
@@ -325,34 +325,34 @@ export default function MembersListPage() {
                     </td>
 
                     {/* Status */}
-                    <td className="p-4">
+                    <td className="data-table-cell">
                       <StatusBadge status={member.status} />
-                      {member.status === 'cancelled' && <p className="mt-1.5 text-[10px] text-slate-500">
+                      {member.status === 'cancelled' && <p className="members-list-cancellation-notice">
                         {member.cancellationScheduled && member.expirationDate ? `Access until ${member.expirationDate.split('T')[0]}` : 'Membership access ended'}
                       </p>}
-                      {member.cancelledAt && <p className="mt-1 text-[10px] text-slate-500">Cancelled on {member.cancelledAt.split('T')[0]}</p>}
+                      {member.cancelledAt && <p className="members-list-cancellation-date">Cancelled on {member.cancelledAt.split('T')[0]}</p>}
                     </td>
 
                     {/* Expiration */}
-                    <td className="p-4 text-slate-600">
+                    <td className="members-list-expiry-cell">
                       {member.expirationDate ? member.expirationDate.split('T')[0] : 'Perpetual'}
                     </td>
 
                     {/* Google Wallet Sync */}
-                    <td className="p-4">
-                      <span className="inline-flex items-center gap-1 text-[11px] text-brand-ink bg-brand-50 px-2 py-0.5 rounded border border-brand-primary/30">
-                        <Wallet className="w-3 h-3" />
+                    <td className="data-table-cell">
+                      <span className="members-list-wallet-badge">
+                        <Wallet className="icon-tiny" />
                         <span>Synced</span>
                       </span>
                     </td>
 
                     {/* Status Controls */}
-                    <td className="p-4 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
+                    <td className="members-list-actions-cell">
+                      <div className="members-list-member-actions">
                         {!['active', 'cancelled'].includes(member.status) && (
                           <button
                             onClick={() => handleStatusChange(member, 'active')}
-                            className="px-2 py-1 rounded bg-brand-50 hover:bg-brand-100 border border-brand-primary/30 text-brand-ink text-[10px] font-semibold transition-colors"
+                            className="members-list-approve-button"
                             title="Approve / Activate Membership"
                           >
                             Approve
@@ -362,7 +362,7 @@ export default function MembersListPage() {
                         {member.status !== 'suspended' && (
                           <button
                             onClick={() => handleStatusChange(member, 'suspended')}
-                            className="px-2 py-1 rounded bg-brand-50 hover:bg-brand-100 border border-brand-accent/50 text-brand-ink text-[10px] font-semibold transition-colors"
+                            className="members-list-suspend-button"
                             title="Suspend Membership Access"
                           >
                             Suspend
@@ -372,7 +372,7 @@ export default function MembersListPage() {
                         {member.status !== 'revoked' && (
                           <button
                             onClick={() => handleStatusChange(member, 'revoked')}
-                            className="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 border border-brand-silver text-brand-ink text-[10px] font-semibold transition-colors"
+                            className="members-list-revoke-button"
                             title="Revoke Membership"
                           >
                             Revoke
@@ -388,28 +388,28 @@ export default function MembersListPage() {
         )}
 
         {/* Pagination Footer */}
-        <div className="p-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between text-xs text-slate-600">
+        <div className="members-list-pagination">
           <div>
-            Showing <strong className="text-slate-900">{members.length}</strong> of{' '}
-            <strong className="text-slate-900">{pagination.totalMembers}</strong> registered members
+            Showing <strong className="members-list-result-count">{members.length}</strong> of{' '}
+            <strong className="members-list-result-count">{pagination.totalMembers}</strong> registered members
           </div>
-          <div className="flex items-center gap-2">
+          <div className="members-list-inline-controls">
             <button
               onClick={() => updateQuery({ page: pagination.page <= 2 ? null : String(pagination.page - 1) })}
               disabled={!pagination.hasPrevPage}
-              className="p-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-slate-700 shadow-sm"
+              className="members-list-page-button"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="icon-default" />
             </button>
-            <span className="font-semibold text-slate-900 px-2">
+            <span className="members-list-page-indicator">
               Page {pagination.page} of {pagination.totalPages}
             </span>
             <button
               onClick={() => updateQuery({ page: String(pagination.page + 1) })}
               disabled={!pagination.hasNextPage}
-              className="p-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-slate-700 shadow-sm"
+              className="members-list-page-button"
             >
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="icon-default" />
             </button>
           </div>
         </div>
@@ -417,76 +417,76 @@ export default function MembersListPage() {
 
       {/* Tier Change & Automatic Google Wallet Update Modal */}
       {tierMemberId && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-brand-muted/35 flex items-center justify-center p-4">
-          <div className="relative w-full max-w-md bg-white border border-slate-200 rounded-xl p-6 space-y-5 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-              <div className="flex items-center gap-2">
-                <Layers className="w-5 h-5 text-brand-ink" />
-                <h3 className="text-base font-bold text-slate-900">Adjust Membership Tier</h3>
+        <div className="members-list-tier-overlay">
+          <div className="members-list-tier-dialog">
+            <div className="members-list-tier-dialog-header">
+              <div className="members-list-inline-controls">
+                <Layers className="members-list-layers-icon" />
+                <h3 className="card-title">Adjust Membership Tier</h3>
               </div>
               <button
                 onClick={closeTierChange}
-                className="text-slate-400 hover:text-slate-700"
+                className="members-list-tier-close-button"
               >
-                <X className="w-5 h-5" />
+                <X className="icon-medium" />
               </button>
             </div>
 
             {!tierChangeMember ? (
-              <div className="text-xs text-slate-600">
+              <div className="members-list-tier-dialog-description">
                 <p role={detailPending ? 'status' : 'alert'}>{detailPending ? 'Loading member...' : currentMemberDetail?.error || 'This member could not be found in your organisation.'}</p>
-                <button onClick={closeTierChange} className="mt-4 font-semibold underline">Return to members</button>
+                <button onClick={closeTierChange} className="members-list-return-button">Return to members</button>
               </div>
             ) : <>
-            <div className="text-xs text-slate-600">
+            <div className="members-list-tier-dialog-description">
               Select new tier for <strong>{tierChangeMember.name}</strong> ({tierChangeMember.membershipNumber}).
             </div>
 
-            <div className="space-y-2">
+            <div className="detail-stack">
               {tiers.map((t) => (
                 <button
                   key={t._id}
                   onClick={() => { tierSelectionRoute.current = route; setSelectedNewTierId(t._id); }}
-                  className={`w-full p-3 rounded-lg border text-left transition-all flex items-center justify-between ${
+                  className={`members-list-tier-option ${
                     selectedNewTierId === t._id
-                      ? 'bg-brand-50 border-brand-primary shadow-sm'
-                      : 'bg-slate-50 border-slate-200 hover:border-slate-300'
+                      ? "members-list-tier-option-selected"
+                      : "members-list-tier-option-idle"
                   }`}
                 >
                   <div>
-                    <div className="text-xs font-bold text-slate-900">{t.name}</div>
-                    <div className="text-[11px] text-brand-ink font-semibold">MYR {t.price} / {t.interval}</div>
+                    <div className="members-list-tier-option-name">{t.name}</div>
+                    <div className="members-list-tier-option-price">MYR {t.price} / {t.interval}</div>
                   </div>
                   {selectedNewTierId === t._id && (
-                    <CheckCircle2 className="w-4 h-4 text-brand-ink" />
+                    <CheckCircle2 className="members-list-download-icon" />
                   )}
                 </button>
               ))}
             </div>
 
             {/* Requirement Notice */}
-            <div className="p-3 rounded-lg bg-brand-50 border border-brand-accent/50 text-[11px] text-slate-700 flex items-start gap-2">
-              <Sparkles className="w-4 h-4 text-brand-ink shrink-0 mt-0.5" />
+            <div className="members-list-wallet-sync-notice">
+              <Sparkles className="members-list-sparkles-icon" />
               <span>
                 <strong>Automatic Wallet Sync:</strong> Saving this change will automatically trigger a Google Wallet REST API call to update the member's pass object.
               </span>
             </div>
 
-            <div className="flex justify-end gap-2 pt-2">
+            <div className="members-list-tier-dialog-actions">
               <button
                 onClick={closeTierChange}
-                className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-xs font-semibold"
+                className="members-list-tier-cancel-button"
               >
                 Cancel
               </button>
               <button
                 onClick={handleApplyTierChange}
                 disabled={updatingTier}
-                className="px-5 py-2 rounded-lg bg-brand-primary hover:bg-brand-secondary text-brand-ink text-xs font-bold flex items-center gap-2 transition-colors shadow-sm active:scale-[0.99]"
+                className="members-list-tier-save-button"
               >
                 {updatingTier ? (
                   <>
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <RefreshCw className="members-list-tier-save-spinner" />
                     <span>Syncing Google Wallet...</span>
                   </>
                 ) : (

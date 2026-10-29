@@ -10,7 +10,7 @@ import { postContentText } from '../../../shared/postContent.js';
 import { useUrlState, useNavigation } from '../routing.jsx';
 
 const blankPost = () => ({ title: '', subtitle: '', imageUrl: '', description: '', descriptionContent: null });
-const inputClass = 'w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-primary disabled:bg-slate-50 disabled:text-slate-500';
+const inputClass = "posts-input";
 const PAGE_SIZE = 6;
 const PostDescriptionEditor = lazy(() => import('../components/PostDescriptionEditor.jsx'));
 
@@ -223,121 +223,121 @@ export default function PostsPage({ canManage = false }) {
   const isFeatured = index => !canManage && page === 1 && index === 0;
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="section-stack">
+      <div className="posts-header">
         <div>
-          <h2 className="text-lg font-bold text-slate-900">{canManage ? 'Posts for your members' : 'Your organisation, in the loop'}</h2>
-          <p className="mt-1 text-xs leading-relaxed text-slate-500">{canManage ? 'Share a quick update, an important notice, or something worth knowing.' : `News, notices, and updates from ${organisationName}.`}</p>
+          <h2 className="section-title">{canManage ? 'Posts for your members' : 'Your organisation, in the loop'}</h2>
+          <p className="posts-intro">{canManage ? 'Share a quick update, an important notice, or something worth knowing.' : `News, notices, and updates from ${organisationName}.`}</p>
         </div>
         {canManage ? (
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600"><Users className="h-3.5 w-3.5" aria-hidden="true" />Visible to this organisation's members</span>
-            {postRoute !== 'new' && <button type="button" onClick={focusComposer} disabled={busy} className="inline-flex items-center gap-2 rounded-lg bg-brand-primary px-4 py-2.5 text-xs font-bold text-brand-ink hover:bg-brand-secondary disabled:opacity-50"><Plus className="h-4 w-4" aria-hidden="true" />Create a post</button>}
+          <div className="posts-header-actions">
+            <span className="posts-audience-badge"><Users className="icon-small" aria-hidden="true" />Visible to this organisation's members</span>
+            {postRoute !== 'new' && <button type="button" onClick={focusComposer} disabled={busy} className="posts-create"><Plus className="icon-default" aria-hidden="true" />Create a post</button>}
           </div>
         ) : (
-          !loading && !loadError && <span className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600">{total} {total === 1 ? 'post' : 'posts'}</span>
+          !loading && !loadError && <span className="posts-total-badge">{total} {total === 1 ? 'post' : 'posts'}</span>
         )}
       </div>
 
-      <div className={canManage && postRoute ? 'grid items-start gap-6 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]' : ''}>
+      <div className={canManage && postRoute ? "posts-editor-layout" : ''}>
         {canManage && postRoute && !editorReady && (
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-600">
+          <section className="posts-missing-post">
             <p role={editorError ? 'alert' : 'status'}>{editorError || 'Loading post editor...'}</p>
-            <button type="button" onClick={() => closeQuery(['post'])} className="mt-4 font-semibold text-brand-ink underline">Return to posts</button>
+            <button type="button" onClick={() => closeQuery(['post'])} className="posts-return-to-feed">Return to posts</button>
           </section>
         )}
         {canManage && postRoute && editorReady && (
-          <section ref={composerRef} aria-labelledby="post-composer-heading" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div className="flex items-start gap-3 border-b border-slate-100 p-5">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-primary/20 text-brand-ink">{editingId ? <Pencil className="h-5 w-5" aria-hidden="true" /> : <Plus className="h-5 w-5" aria-hidden="true" />}</span>
+          <section ref={composerRef} aria-labelledby="post-composer-heading" className="posts-composer">
+            <div className="posts-composer-header">
+              <span className="posts-composer-icon">{editingId ? <Pencil className="icon-medium" aria-hidden="true" /> : <Plus className="icon-medium" aria-hidden="true" />}</span>
               <div>
-                <h3 id="post-composer-heading" className="text-base font-bold text-slate-900">{editingId ? 'Edit post' : 'Create a post'}</h3>
-                <p className="mt-1 text-xs leading-relaxed text-slate-500">{editingId ? 'Save your changes to update the published notice.' : 'Keep it simple. Your notice appears in the member portal as soon as you publish.'}</p>
+                <h3 id="post-composer-heading" className="card-title">{editingId ? 'Edit post' : 'Create a post'}</h3>
+                <p className="posts-intro">{editingId ? 'Save your changes to update the published notice.' : 'Keep it simple. Your notice appears in the member portal as soon as you publish.'}</p>
               </div>
             </div>
-            <form onSubmit={savePost} noValidate className="space-y-4 p-5">
-              <fieldset disabled={busy} className="min-w-0 space-y-4">
+            <form onSubmit={savePost} noValidate className="posts-composer-form">
+              <fieldset disabled={busy} className="posts-composer-fields">
                 <div>
-                  <div className="mb-2 flex items-center justify-between gap-2">
-                    <label htmlFor="post-title" className="text-xs font-semibold text-slate-700">Title <span className="text-slate-400">*</span></label>
-                    <span id="post-title-count" className="text-[10px] tabular-nums text-slate-400">{draft.title.length}/{POST_LIMITS.title}</span>
+                  <div className="posts-field-heading">
+                    <label htmlFor="post-title" className="posts-field-label">Title <span className="posts-required-mark">*</span></label>
+                    <span id="post-title-count" className="posts-field-count">{draft.title.length}/{POST_LIMITS.title}</span>
                   </div>
                   <input ref={titleRef} id="post-title" name="title" value={draft.title} onChange={event => updateDraft('title', event.target.value)} maxLength={POST_LIMITS.title} required aria-invalid={Boolean(fieldErrors.title)} aria-describedby={fieldErrors.title ? 'post-title-error post-title-count' : 'post-title-count'} placeholder="Give your notice a clear headline" className={inputClass} />
-                  {fieldErrors.title && <p id="post-title-error" role="alert" className="mt-1.5 text-xs text-red-700">{fieldErrors.title}</p>}
+                  {fieldErrors.title && <p id="post-title-error" role="alert" className="posts-field-error">{fieldErrors.title}</p>}
                 </div>
                 <div>
-                  <div className="mb-2 flex items-center justify-between gap-2">
-                    <label htmlFor="post-subtitle" className="text-xs font-semibold text-slate-700">Subtitle <span className="text-slate-400">*</span></label>
-                    <span id="post-subtitle-count" className="text-[10px] tabular-nums text-slate-400">{draft.subtitle.length}/{POST_LIMITS.subtitle}</span>
+                  <div className="posts-field-heading">
+                    <label htmlFor="post-subtitle" className="posts-field-label">Subtitle <span className="posts-required-mark">*</span></label>
+                    <span id="post-subtitle-count" className="posts-field-count">{draft.subtitle.length}/{POST_LIMITS.subtitle}</span>
                   </div>
                   <input id="post-subtitle" name="subtitle" value={draft.subtitle} onChange={event => updateDraft('subtitle', event.target.value)} maxLength={POST_LIMITS.subtitle} required aria-invalid={Boolean(fieldErrors.subtitle)} aria-describedby={fieldErrors.subtitle ? 'post-subtitle-error post-subtitle-count' : 'post-subtitle-count'} placeholder="A short summary for your members" className={inputClass} />
-                  {fieldErrors.subtitle && <p id="post-subtitle-error" role="alert" className="mt-1.5 text-xs text-red-700">{fieldErrors.subtitle}</p>}
+                  {fieldErrors.subtitle && <p id="post-subtitle-error" role="alert" className="posts-field-error">{fieldErrors.subtitle}</p>}
                 </div>
                 <div>
-                  <p id="post-description-label" className="mb-2 block text-xs font-semibold text-slate-700">Description <span className="text-slate-400">*</span></p>
-                  <Suspense fallback={<div role="status" className="rounded-lg border border-slate-200 bg-slate-50 p-5 text-xs text-slate-500">Loading description editor…</div>}>
+                  <p id="post-description-label" className="posts-description-label">Description <span className="posts-required-mark">*</span></p>
+                  <Suspense fallback={<div role="status" className="posts-editor-loading">Loading description editor…</div>}>
                     <PostDescriptionEditor key={editorRevision} initialContent={draft.descriptionContent} initialText={draft.description} onChange={({ text, content }) => { setDraft(previous => ({ ...previous, description: text, descriptionContent: content })); setFieldErrors(previous => ({ ...previous, description: '' })); setFormError(''); }} disabled={saving || Boolean(deletingId) || imageBusy} onBusyChange={setDescriptionImageBusy} invalid={Boolean(fieldErrors.description)} describedBy={fieldErrors.description ? 'post-description-error post-description-count' : 'post-description-count'} />
                   </Suspense>
-                  <div className="mt-1.5 flex flex-wrap items-start justify-between gap-2">
-                    {fieldErrors.description && <p id="post-description-error" role="alert" className="text-xs text-red-700">{fieldErrors.description}</p>}
-                    <p id="post-description-count" role="status" className={`ml-auto text-[11px] font-medium tabular-nums ${descriptionCount >= POST_LIMITS.description ? 'text-amber-700' : 'text-slate-500'}`}>{descriptionCount.toLocaleString()} / {POST_LIMITS.description.toLocaleString()} characters</p>
+                  <div className="posts-description-feedback">
+                    {fieldErrors.description && <p id="post-description-error" role="alert" className="posts-description-error">{fieldErrors.description}</p>}
+                    <p id="post-description-count" role="status" className={`posts-description-count ${descriptionCount >= POST_LIMITS.description ? "posts-count-limit" : "posts-count-normal"}`}>{descriptionCount.toLocaleString()} / {POST_LIMITS.description.toLocaleString()} characters</p>
                   </div>
                 </div>
               </fieldset>
               <ImageUploadField label="Post image (optional)" kind="banner" value={draft.imageUrl} onChange={value => updateDraft('imageUrl', value)} onBusyChange={setImageBusy} disabled={saving || Boolean(deletingId) || descriptionImageBusy} />
-              {formError && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-3 text-xs leading-relaxed text-red-700">{formError}</p>}
-              <div className="flex flex-wrap items-center gap-3 border-t border-slate-100 pt-4">
-                <button type="button" onClick={resetDraft} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg px-2 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-50"><X className="h-3.5 w-3.5" aria-hidden="true" />{editingId ? 'Cancel editing' : 'Cancel'}</button>
-                <button type="submit" disabled={busy} className="ml-auto inline-flex items-center justify-center gap-2 rounded-lg bg-brand-primary px-4 py-2.5 text-sm font-bold text-brand-ink shadow-sm hover:bg-brand-secondary disabled:cursor-not-allowed disabled:opacity-50">{saving ? <RefreshCw className="h-4 w-4 animate-spin" aria-hidden="true" /> : editingId ? <CheckCircle2 className="h-4 w-4" aria-hidden="true" /> : <Send className="h-4 w-4" aria-hidden="true" />}{saving ? 'Saving…' : imageBusy || descriptionImageBusy ? 'Reading image…' : editingId ? 'Save changes' : 'Publish post'}</button>
+              {formError && <p role="alert" className="posts-form-error">{formError}</p>}
+              <div className="posts-composer-footer">
+                <button type="button" onClick={resetDraft} disabled={busy} className="posts-cancel"><X className="icon-small" aria-hidden="true" />{editingId ? 'Cancel editing' : 'Cancel'}</button>
+                <button type="submit" disabled={busy} className="posts-publish">{saving ? <RefreshCw className="icon-spinner" aria-hidden="true" /> : editingId ? <CheckCircle2 className="icon-default" aria-hidden="true" /> : <Send className="icon-default" aria-hidden="true" />}{saving ? 'Saving…' : imageBusy || descriptionImageBusy ? 'Reading image…' : editingId ? 'Save changes' : 'Publish post'}</button>
               </div>
             </form>
           </section>
         )}
 
-        <section ref={feedRef} aria-labelledby="post-feed-heading" aria-busy={loading} className="min-w-0 scroll-mt-24 space-y-4">
+        <section ref={feedRef} aria-labelledby="post-feed-heading" aria-busy={loading} className="posts-feed">
           {canManage && (
-            <div className="flex items-center justify-between gap-3 px-1">
-              <h3 id="post-feed-heading" className="flex items-center gap-2 text-sm font-bold text-slate-800"><FileText className="h-4 w-4" aria-hidden="true" />Published posts <span className="rounded-full bg-slate-200/70 px-2 py-0.5 text-[10px] text-slate-600">{loading ? '…' : total}</span></h3>
-              <span className="text-[11px] text-slate-500">Newest first</span>
+            <div className="posts-feed-header">
+              <h3 id="post-feed-heading" className="posts-feed-heading"><FileText className="icon-default" aria-hidden="true" />Published posts <span className="posts-count-badge">{loading ? '…' : total}</span></h3>
+              <span className="posts-feed-caption">Newest first</span>
             </div>
           )}
           {!canManage && <h3 id="post-feed-heading" className="sr-only">Organisation posts, newest first</h3>}
 
           {loading ? (
-            <div role="status" className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
-              <div className="mb-6 flex items-center gap-2 text-xs text-slate-500"><RefreshCw className="h-4 w-4 animate-spin" aria-hidden="true" />Loading posts…</div>
-              <div aria-hidden="true" className="animate-pulse space-y-3"><div className="h-5 w-2/3 rounded bg-slate-100" /><div className="h-3 w-5/6 rounded bg-slate-100" /><div className="h-3 w-full rounded bg-slate-100" /><div className="h-3 w-4/5 rounded bg-slate-100" /></div>
+            <div role="status" className="posts-feed-status">
+              <div className="posts-loading-label"><RefreshCw className="icon-spinner" aria-hidden="true" />Loading posts…</div>
+              <div aria-hidden="true" className="posts-loading-skeleton"><div className="posts-skeleton-title" /><div className="posts-skeleton-summary" /><div className="posts-skeleton-line" /><div className="posts-skeleton-ending" /></div>
             </div>
           ) : loadError ? (
-            <div role="alert" className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
-              <AlertCircle className="mb-3 h-6 w-6 text-slate-500" aria-hidden="true" />
-              <h4 className="text-sm font-bold text-slate-800">We couldn't load the posts</h4>
-              <p className="mt-2 text-xs leading-relaxed text-slate-600">{loadError}</p>
-              <button type="button" onClick={() => setReload(value => value + 1)} className="mt-4 inline-flex items-center gap-2 rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-200"><RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />Try again</button>
+            <div role="alert" className="posts-feed-status">
+              <AlertCircle className="posts-error-icon" aria-hidden="true" />
+              <h4 className="posts-error-title">We couldn't load the posts</h4>
+              <p className="posts-error-description">{loadError}</p>
+              <button type="button" onClick={() => setReload(value => value + 1)} className="posts-retry"><RefreshCw className="icon-small" aria-hidden="true" />Try again</button>
             </div>
           ) : posts.length === 0 ? (
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
-              <span className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-primary/15"><Megaphone className="h-6 w-6 text-brand-ink" aria-hidden="true" /></span>
-              <h4 className="text-lg font-bold text-slate-900">{canManage ? 'Start the conversation' : 'Your updates will appear here'}</h4>
-              <p className="mt-2 max-w-md text-sm leading-relaxed text-slate-500">{canManage ? 'Welcome your members, share an announcement, or post a helpful reminder. Your first notice will appear here and in their member portal.' : `${organisationName} hasn't shared any posts yet. Check back here for announcements and notices for your community.`}</p>
-              {canManage ? <button type="button" onClick={focusComposer} className="mt-5 inline-flex items-center gap-2 rounded-lg bg-brand-primary px-4 py-2.5 text-xs font-bold text-brand-ink hover:bg-brand-secondary"><Plus className="h-4 w-4" aria-hidden="true" />Write your first post</button> : <p className="mt-5 flex items-center gap-2 border-t border-slate-100 pt-4 text-xs text-slate-500"><Users className="h-4 w-4 shrink-0" aria-hidden="true" />This feed is just for your organisation.</p>}
+            <div className="posts-empty">
+              <span className="posts-empty-icon"><Megaphone className="posts-announcement-icon" aria-hidden="true" /></span>
+              <h4 className="section-title">{canManage ? 'Start the conversation' : 'Your updates will appear here'}</h4>
+              <p className="posts-empty-description">{canManage ? 'Welcome your members, share an announcement, or post a helpful reminder. Your first notice will appear here and in their member portal.' : `${organisationName} hasn't shared any posts yet. Check back here for announcements and notices for your community.`}</p>
+              {canManage ? <button type="button" onClick={focusComposer} className="posts-create-first"><Plus className="icon-default" aria-hidden="true" />Write your first post</button> : <p className="posts-audience-note"><Users className="posts-audience-icon" aria-hidden="true" />This feed is just for your organisation.</p>}
             </div>
           ) : (
             <>
-              <div className={canManage ? 'space-y-4' : 'grid items-start gap-5 md:grid-cols-2'}>
+              <div className={canManage ? "form-stack" : "posts-member-feed"}>
                 {posts.map((post, index) => (
-                  <div key={post._id} className={`min-w-0 ${isFeatured(index) ? 'md:col-span-2' : ''}`}>
+                  <div key={post._id} className={`posts-feed-item ${isFeatured(index) ? "posts-featured" : ''}`}>
                     <PostCard post={post} featured={isFeatured(index)} canManage={canManage} onEdit={() => editPost(post)} onRequestDelete={() => { setConfirmDeleteId(post._id); setDeleteError(''); }} onCancelDelete={() => { setConfirmDeleteId(null); setDeleteError(''); }} onDelete={() => deletePost(post)} confirmingDelete={confirmDeleteId === post._id} deleting={deletingId === post._id} actionsDisabled={busy} deleteError={confirmDeleteId === post._id ? deleteError : ''} />
                   </div>
                 ))}
               </div>
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3">
-                <p className="text-[11px] text-slate-500">Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)} of {total} {total === 1 ? 'post' : 'posts'}</p>
+              <div className="posts-pagination">
+                <p className="posts-feed-caption">Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)} of {total} {total === 1 ? 'post' : 'posts'}</p>
                 {totalPages > 1 && (
-                  <nav aria-label="Post pages" className="flex items-center gap-2">
-                    <button type="button" disabled={page <= 1 || busy} onClick={() => changePage(page - 1)} aria-label="Previous page of posts" className="rounded-lg border border-slate-200 bg-white p-2 text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"><ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" /></button>
-                    <span className="text-[11px] font-medium tabular-nums text-slate-600">{page} / {totalPages}</span>
-                    <button type="button" disabled={page >= totalPages || busy} onClick={() => changePage(page + 1)} aria-label="Next page of posts" className="rounded-lg border border-slate-200 bg-white p-2 text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"><ArrowRight className="h-3.5 w-3.5" aria-hidden="true" /></button>
+                  <nav aria-label="Post pages" className="posts-page-controls">
+                    <button type="button" disabled={page <= 1 || busy} onClick={() => changePage(page - 1)} aria-label="Previous page of posts" className="posts-page-button"><ArrowLeft className="icon-small" aria-hidden="true" /></button>
+                    <span className="posts-page-number">{page} / {totalPages}</span>
+                    <button type="button" disabled={page >= totalPages || busy} onClick={() => changePage(page + 1)} aria-label="Next page of posts" className="posts-page-button"><ArrowRight className="icon-small" aria-hidden="true" /></button>
                   </nav>
                 )}
               </div>

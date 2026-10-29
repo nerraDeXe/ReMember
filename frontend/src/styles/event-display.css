@@ -1,0 +1,172 @@
+/* Event schedules, locations and status labels. */
+@layer components {
+  .event-schedule {
+    @apply space-y-2 text-xs;
+  }
+
+  .event-schedule-day {
+    @apply flex flex-wrap items-center justify-between gap-x-3 gap-y-1;
+  }
+
+  .event-schedule-date {
+    @apply font-medium text-slate-700;
+  }
+
+  .event-schedule-time {
+    @apply flex items-center gap-1.5 text-slate-600;
+  }
+
+  .event-schedule-time-icon {
+    @apply h-3.5 w-3.5 shrink-0;
+  }
+
+  .event-schedule-heading {
+    @apply flex items-start gap-2 text-slate-800;
+  }
+
+  .event-schedule-calendar-icon {
+    @apply h-4 w-4 shrink-0 text-brand-ink;
+  }
+
+  .event-schedule-heading-content {
+    @apply min-w-0;
+  }
+
+  .event-schedule-range {
+    @apply font-semibold;
+  }
+
+  .event-schedule-timezone {
+    @apply mt-0.5 text-[10px] font-normal text-slate-500;
+  }
+
+  .event-schedule-days {
+    @apply space-y-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5;
+  }
+
+  .event-schedule-more {
+    @apply rounded-lg border border-slate-200 px-3 py-2;
+  }
+
+  .event-schedule-more-toggle {
+    @apply cursor-pointer font-semibold text-brand-ink;
+  }
+
+  .event-schedule-additional-days {
+    @apply mt-3 space-y-2;
+  }
+
+  .event-schedule-fallback-time-icon {
+    @apply h-3.5 w-3.5;
+  }
+
+  .event-location {
+    @apply space-y-1;
+  }
+
+  .event-location-pending {
+    @apply flex items-center gap-2 text-xs text-slate-500;
+  }
+
+  .event-location-pending-icon {
+    @apply h-4 w-4 shrink-0;
+  }
+
+  .event-location-icon {
+    @apply h-4 w-4 shrink-0 text-brand-ink;
+  }
+
+  .event-location-name {
+    @apply min-w-0 break-words;
+  }
+
+  .event-location-link {
+    @apply flex items-start gap-2 text-xs text-brand-ink underline decoration-slate-300 underline-offset-2 hover:decoration-brand-ink;
+  }
+
+  .event-location-external-icon {
+    @apply mt-0.5 h-3 w-3 shrink-0;
+  }
+
+  .event-location-link-hint {
+    @apply sr-only;
+  }
+
+  .event-location-attribution {
+    @apply pl-6 text-[10px] text-slate-500;
+  }
+
+  .event-location-attribution-link {
+    @apply underline underline-offset-2;
+  }
+
+  .event-location-text {
+    @apply flex items-start gap-2 text-xs text-slate-700;
+  }
+
+  .event-status-badge {
+    @apply inline-flex rounded border px-2 py-1 text-[10px] font-semibold;
+  }
+
+  .event-status-badge--in-progress {
+    @apply border-amber-200 bg-amber-50 text-amber-900;
+  }
+
+  .event-status-badge--upcoming {
+    @apply border-brand-primary bg-brand-50 text-brand-ink;
+  }
+
+  .event-status-badge--ended {
+    @apply border-slate-300 bg-slate-100 text-slate-600;
+  }
+
+  .status-badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-medium border;
+  }
+
+  .status-badge--active {
+    @apply bg-brand-50 text-brand-ink border-brand-primary;
+  }
+
+  .status-badge--pending {
+    @apply bg-white text-brand-ink border-brand-accent;
+  }
+
+  .status-badge--suspended {
+    @apply bg-slate-100 text-brand-ink border-brand-muted;
+  }
+
+  .status-badge--revoked {
+    @apply bg-slate-200 text-brand-ink border-brand-muted;
+  }
+
+  .status-badge--cancelled,
+  .status-badge--expired {
+    @apply bg-slate-100 text-slate-600 border-slate-200;
+  }
+
+  .status-badge-dot {
+    @apply w-1.5 h-1.5 rounded-full;
+  }
+
+  .status-badge-dot--active {
+    @apply bg-brand-primary;
+  }
+
+  .status-badge-dot--pending {
+    @apply bg-brand-accent;
+  }
+
+  .status-badge-dot--suspended {
+    @apply bg-brand-muted;
+  }
+
+  .status-badge-dot--revoked {
+    @apply bg-brand-ink;
+  }
+
+  .status-badge-dot--cancelled,
+  .status-badge-dot--expired {
+    @apply bg-slate-400;
+  }
+}

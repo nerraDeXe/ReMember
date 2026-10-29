@@ -454,7 +454,7 @@ await scenario('direct member tier editor', { role: 'owner', authenticated: true
 });
 
 await scenario('sign in returns to protected deep destination', { role: 'owner', authenticated: false, organisation: 'A' }, '/admin/tiers?organisation=A&tier=new', async browser => {
-  await browser.waitFor(`location.pathname === '/login' && new URLSearchParams(location.search).has('next')`, 'sign-in redirect with return URL');
+  await browser.waitFor(`location.pathname === '/login' && new URLSearchParams(location.search).has('next') && !!document.querySelector('input[type=email]')`, 'sign-in form with return URL');
   await browser.fill('input[type=email]', 'qa@example.test');
   await browser.fill('input[type=password]', 'Navigation1!');
   await browser.clickText('Sign In Securely');
@@ -1087,7 +1087,7 @@ await scenario('scheduled downgrade to a free tier takes effect at expiry withou
   await browser.clickSelector('[aria-label="Downgrade to A Free"]');
   await browser.clickText('Confirm downgrade');
   await browser.waitFor(browser.bodyHas('Your free membership will begin'), 'free downgrade scheduled');
-  assert.equal(await browser.evaluate(`document.querySelector('[aria-label="Membership badge"]').textContent.includes('A Premium')`), true, 'paid pass stays available before expiry');
+  await browser.waitFor(`document.querySelector('[aria-label="Membership badge"]')?.textContent.includes('A Premium')`, 'paid pass stays available after membership refresh and before expiry');
   await browser.evaluate(`(() => { const saved = JSON.parse(sessionStorage.getItem('membership-A')); saved.expirationDate = new Date(Date.now() - 60000).toISOString(); saved.scheduledTierEffectiveAt = saved.expirationDate; sessionStorage.setItem('membership-A', JSON.stringify(saved)); })()`);
   await browser.call('Page.reload');
   await browser.waitFor(`document.querySelector('[aria-label="Membership badge"]')?.textContent.includes('A Free') && ${browser.bodyHas('No renewal required')}`, 'free tier applied after the paid period');
@@ -1100,7 +1100,7 @@ await scenario('subscription cancellation removes a scheduled downgrade and prev
   await browser.clickSelector('[aria-label="Downgrade to A Community"]');
   await browser.clickText('Confirm downgrade');
   await browser.waitFor(browser.bodyHas('Cancel scheduled downgrade'), 'pending downgrade');
-  assert.equal(await browser.evaluate(browser.bodyHas('Completing an upgrade will replace your scheduled downgrade.')), true);
+  await browser.waitFor(browser.bodyHas('Completing an upgrade will replace your scheduled downgrade.'), 'upgrade notice after membership refresh');
   await browser.clickText('Cancel subscription');
   await browser.waitFor(browser.bodyHas('Cancelling your subscription also removes the scheduled downgrade.'), 'cancellation explains its effect on downgrade');
   await browser.clickText('Confirm cancellation');
@@ -1150,7 +1150,7 @@ await scenario('event lifecycle admin creation requires a later date and shows e
 
 await scenario('event lifecycle member RSVP closes at start and ended status updates live', { role: 'member', authenticated: true, organisation: 'A', eventLifecycleFixture: true }, '/member/events?organisation=A', async browser => {
   await browser.waitFor(browser.bodyHas('A Boundary Briefing'), 'member events loaded');
-  const selector = `(() => { const title = [...document.querySelectorAll('h3')].find(node=>node.textContent.trim()==='A Boundary Briefing'); return title.closest('div.rounded-xl'); })()`;
+  const selector = `(() => { const title = [...document.querySelectorAll('h3')].find(node=>node.textContent.trim()==='A Boundary Briefing'); return title.closest('[data-event-card]'); })()`;
   assert.equal(await browser.evaluate(`(() => { const card = ${selector}; return [...card.querySelectorAll('button')].some(button=>button.textContent.includes('RSVP Directly')&&!button.disabled); })()`), true);
   assert.equal(await browser.evaluate(browser.bodyHas('Event ended · RSVPs closed')), true);
   assert.equal(await browser.evaluate(browser.bodyHas('Event started · RSVPs closed')), true);
@@ -1190,6 +1190,32 @@ await scenario('admin cancelled status follows member cancellation and refresh',
   assert.equal(await browser.evaluate(`(() => { const row = [...document.querySelectorAll('tbody tr')].find(item => item.textContent.includes('A Paid Cancellation')); return row.textContent.includes('Active') && !row.textContent.includes('Cancelled'); })()`), true);
   await browser.clickText('Refresh members');
   await browser.waitFor(browser.bodyHas('A Paid Cancellation'), 'manual refresh');
+});
+
+await scenario('membership tiers load when needed and retain the selected organisation', { role: 'member', authenticated: true, organisation: 'A', membershipPortalFixture: true }, '/member/invoices?organisation=B', async browser => {
+  await browser.waitFor(browser.bodyHas('QA-RECEIPT-001'), 'Beta invoices loaded');
+  assert.equal(await browser.evaluate(`window.__navigationQa.requests.some(request => request.path === '/tiers')`), false, 'invoices do not need membership tiers');
+  await browser.clickText('Manage Membership');
+  await browser.waitFor(`document.querySelector('[aria-label="Upgrade to B Premium"]')`, 'Beta membership tiers loaded on demand');
+  const reads = await browser.evaluate(`window.__navigationQa.requests.filter(request => request.path === '/tiers')`);
+  assert.ok(reads.length > 0);
+  assert.ok(reads.every(request => request.organisation === 'B' && new URL(request.requestUrl, appOrigin).searchParams.get('organisationId') === 'B'));
+});
+
+await scenario('password recovery changes forms and restores reset tokens through history', { role: 'member', authenticated: false, organisation: 'A' }, '/reset-password?token=fixture%2Btoken', async browser => {
+  await browser.waitFor(`!!document.querySelector('#new-password')`, 'reset form loaded');
+  await browser.fill('#new-password', 'DraftPassword1!');
+  await browser.clickText('Request a new link');
+  await browser.waitFor(`location.pathname === '/forgot-password' && !!document.querySelector('#reset-email')`, 'forgot password form');
+  assert.equal(await browser.evaluate(`!!document.querySelector('#new-password')`), false);
+  await browser.fill('#reset-email', 'draft@example.test');
+  await browser.evaluate('history.back()');
+  await browser.waitFor(`location.pathname === '/reset-password' && !!document.querySelector('#new-password')`, 'Back restores reset form');
+  assert.equal(await browser.evaluate(`new URLSearchParams(location.search).get('token')`), 'fixture+token');
+  assert.equal(await browser.evaluate(`document.querySelector('#new-password').value`), '', 'password drafts are discarded when leaving the form');
+  await browser.evaluate('history.forward()');
+  await browser.waitFor(`!!document.querySelector('#reset-email')`, 'Forward restores recovery form');
+  assert.equal(await browser.evaluate(`document.querySelector('#reset-email').value`), '');
 });
 
 console.log(JSON.stringify({ passed: results.filter(result => result.status === 'passed').length, total: results.length, results }, null, 2));

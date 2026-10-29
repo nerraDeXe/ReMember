@@ -53,19 +53,19 @@ export default function ImageUploadField({ label, kind, value, onChange, onBusyC
 
   const busy = disabled || reading;
   return (
-    <div className="rounded-xl border border-slate-200 p-4 space-y-3">
-      <p className="text-xs font-bold text-slate-700">{label}</p>
-      <OrganisationImage src={value} kind={kind} alt={`${label} preview`} className={`rounded-lg border border-slate-200 ${kind === 'banner' ? 'h-24 w-full' : 'h-24 w-24'}`} />
-      <div className="flex flex-wrap items-center gap-2">
-        <label htmlFor={inputId} className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-brand-primary text-brand-ink text-xs font-semibold focus-within:ring-2 focus-within:ring-brand-muted ${busy ? 'opacity-60' : 'cursor-pointer hover:bg-brand-secondary'}`}>
-          {reading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+    <div className="image-upload-field">
+      <p className="image-upload-label">{label}</p>
+      <OrganisationImage src={value} kind={kind} alt={`${label} preview`} className={`image-upload-preview ${kind === 'banner' ? "image-upload-banner-preview" : "image-upload-logo-preview"}`} />
+      <div className="image-upload-actions">
+        <label htmlFor={inputId} className={`image-upload-choose ${busy ? "image-upload-busy" : "image-upload-ready"}`}>
+          {reading ? <RefreshCw className="image-upload-reading" /> : <Upload className="icon-small" />}
           {reading ? 'Reading…' : value ? `Replace ${label.toLowerCase()}` : `Upload ${label.toLowerCase()}`}
           <input id={inputId} type="file" accept={IMAGE_MIME_TYPES.join(',')} onChange={handleUpload} disabled={busy} className="sr-only" />
         </label>
-        {value && <button type="button" disabled={busy} onClick={() => { onChange(''); setError(''); }} aria-label={`Remove ${label.toLowerCase()}`} className="inline-flex items-center gap-1 px-2 py-2 text-xs text-slate-600 hover:bg-slate-100 rounded-lg disabled:opacity-60"><Trash2 className="w-3.5 h-3.5" />Remove</button>}
+        {value && <button type="button" disabled={busy} onClick={() => { onChange(''); setError(''); }} aria-label={`Remove ${label.toLowerCase()}`} className="image-upload-remove"><Trash2 className="icon-small" />Remove</button>}
       </div>
-      <p className="text-[11px] text-slate-500">JPEG, PNG, or WebP. Up to 2 MB.</p>
-      {error && <p role="alert" className="text-xs text-slate-700">{error}</p>}
+      <p className="image-upload-file-help">JPEG, PNG, or WebP. Up to 2 MB.</p>
+      {error && <p role="alert" className="image-upload-error">{error}</p>}
     </div>
   );
 }

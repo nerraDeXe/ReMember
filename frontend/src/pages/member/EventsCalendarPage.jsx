@@ -3,11 +3,10 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import { useToast } from '../../context/ToastContext.jsx';
 import { Calendar, Users, CheckCircle, XCircle, RefreshCw, Filter } from 'lucide-react';
 import { api } from '../../api.js';
-import EventSchedule, { EventLocation } from '../../components/EventSchedule.jsx';
+import EventSchedule, { EventLocation, EventStatusBadge } from '../../components/EventSchedule.jsx';
 import { getEventAccessLabel } from '../../../../shared/events.js';
 import { useUrlState } from '../../routing.jsx';
 import { getEventTiming } from '../../../../shared/eventTiming.js';
-import EventStatusBadge from '../../components/EventStatusBadge.jsx';
 import { useEventNow } from '../../useEventNow.js';
 
 export default function EventsCalendarPage() {
@@ -91,30 +90,30 @@ export default function EventsCalendarPage() {
     : events.filter(e => e.category === categoryFilter);
 
   return (
-    <div className="space-y-6">
+    <div className="page-stack">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="events-calendar-header">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <Calendar className="w-6 h-6 text-brand-ink" />
+          <h1 className="page-title">
+            <Calendar className="events-calendar-calendar-icon" />
             Community Events Calendar & RSVP
           </h1>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="page-description">
             Reserve your seat at exclusive community gatherings, workshops, and symposiums.
           </p>
         </div>
 
         {/* Category Filters */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-2 sm:pb-0">
-          <Filter className="w-3.5 h-3.5 text-slate-400 mr-1 shrink-0" />
+        <div className="events-calendar-filters">
+          <Filter className="events-calendar-filter-icon" />
           {categories.map((cat) => (
             <button
               key={cat}
               onClick={() => setCategoryFilter(cat)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
+              className={`events-calendar-filter-button ${
                 categoryFilter === cat
-                  ? 'bg-brand-primary text-brand-ink shadow-sm'
-                  : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200'
+                  ? "events-calendar-filter-selected"
+                  : "events-calendar-filter-idle"
               }`}
             >
               {cat === 'all' ? 'All Events' : cat}
@@ -124,16 +123,16 @@ export default function EventsCalendarPage() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <RefreshCw className="w-8 h-8 text-brand-ink animate-spin" />
+        <div className="events-calendar-loading">
+          <RefreshCw className="loading-spinner" />
         </div>
       ) : filteredEvents.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-xl border border-slate-200 p-8 text-slate-500 text-xs shadow-sm">
-          <Calendar className="w-8 h-8 mx-auto mb-2 text-slate-400" />
+        <div className="events-calendar-empty">
+          <Calendar className="events-calendar-empty-icon" />
           No events found for this filter.
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="events-calendar-cards">
           {filteredEvents.map((event) => {
             const timing = getEventTiming(event, now);
             const isRsvped = event.isRsvped;
@@ -143,68 +142,69 @@ export default function EventsCalendarPage() {
 
             return (
               <div
-                key={event._id}
-                className={`rounded-xl border bg-white shadow-sm overflow-hidden flex flex-col justify-between transition-all ${
+                  key={event._id}
+                  data-event-card
+                className={`events-calendar-event-card ${
                   isRsvped
-                    ? 'border-brand-primary ring-1 ring-brand-primary/50'
-                    : 'border-slate-200 hover:border-slate-300'
+                    ? "events-calendar-event-attending"
+                    : "events-calendar-event-available"
                 }`}
               >
                 <div>
                   {/* Event Thumbnail */}
-                  <div className="h-44 relative overflow-hidden bg-slate-100">
+                  <div className="events-calendar-thumbnail">
                     {event.imageUrl ? <img
                       src={event.imageUrl}
                       alt={event.title}
-                      className="w-full h-full object-cover opacity-90"
+                      className="events-calendar-thumbnail-image"
                       loading="lazy"
-                    /> : <div className="flex h-full items-center justify-center bg-gradient-to-br from-brand-50 to-slate-100"><Calendar aria-hidden="true" className="h-16 w-16 text-slate-300" /><span className="sr-only">Community event</span></div>}
+                    /> : <div className="events-calendar-thumbnail-placeholder"><Calendar aria-hidden="true" className="events-calendar-thumbnail-icon" /><span className="sr-only">Community event</span></div>}
 
-                    <div className="absolute top-3 left-3 flex gap-2">
-                      <span className="px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider bg-white text-brand-ink border border-brand-silver">
+                    <div className="events-calendar-category-position">
+                      <span className="events-calendar-category-badge">
                         {event.category}
                       </span>
                     </div>
 
                     {isRsvped && (
-                      <div className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1 rounded bg-brand-accent text-brand-ink font-bold text-xs shadow-sm">
-                        <CheckCircle className="w-3.5 h-3.5" />
+                      <div className="events-calendar-attending-badge">
+                        <CheckCircle className="icon-small" />
                         <span>{timing.status === 'ended' ? 'RSVP recorded' : "You're Attending"}</span>
                       </div>
                     )}
                   </div>
 
                   {/* Body Content */}
-                  <div className="p-6 space-y-4">
+                  <div className="events-calendar-event-content">
                     <div>
-                      <h3 className="text-lg font-bold text-slate-900 leading-snug">
+                      <h3 className="events-calendar-card-title">
                         {event.title}
                       </h3>
-                      <div className="mt-2"><EventStatusBadge status={timing.status} /></div>
-                      <p className="text-xs text-slate-600 mt-1 line-clamp-2 leading-relaxed">
+                      <div className="events-calendar-event-status"><EventStatusBadge status={timing.status} /></div>
+                      <p className="events-calendar-event-description">
                         {event.description}
                       </p>
                     </div>
 
-                    <div className="space-y-2 text-xs text-slate-700">
+                    <div className="events-calendar-event-details">
                       <EventSchedule event={event} compact />
                       <EventLocation event={event} />
                     </div>
 
                     {/* Capacity Meter */}
-                    <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 space-y-1.5">
-                      <div className="flex items-center justify-between text-[11px]">
-                        <span className="text-slate-500 flex items-center gap-1">
-                          <Users className="w-3.5 h-3.5" /> RSVPs
+                    <div className="events-calendar-capacity">
+                      <div className="events-calendar-capacity-summary">
+                        <span className="events-calendar-capacity-label">
+                          <Users className="icon-small" /> RSVPs
                         </span>
-                        <span className="font-semibold text-slate-900">
+                        <span className="events-calendar-capacity-count">
                           {event.rsvpCount || 0} / {event.capacity} seats reserved ({event.spotsLeft} left)
                         </span>
                       </div>
-                      <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                      <div className="events-calendar-capacity-track">
                         <div
-                          className={`h-full rounded-full transition-all ${
-                            capacityRatio > 85 ? 'bg-brand-secondary' : 'bg-brand-primary'
+                          className={`events-calendar-capacity-bar ${
+                            capacityRatio > 85 ? "events-calendar-capacity-nearly-full" : "events-calendar-capacity-available"
                           }`}
                           style={{ width: `${capacityRatio}%` }}
                         />
@@ -212,19 +212,19 @@ export default function EventsCalendarPage() {
                     </div>
 
                     {/* Required Tiers */}
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-[10px] uppercase font-bold text-slate-500">
+                    <div className="events-calendar-tier-access">
+                      <span className="events-calendar-tier-label">
                         Eligible Tiers:
                       </span>
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">{accessLabel}</span>
+                      <span className="events-calendar-access-badge">{accessLabel}</span>
                       {event.allowedTiers?.length > 0 && (
                         event.allowedTiers.map((tName, i) => (
                           <span
                             key={i}
-                            className={`text-[10px] px-2 py-0.5 rounded border ${
+                            className={`events-calendar-tier-badge ${
                               tName === user?.tierName
-                                ? 'bg-brand-50 text-brand-ink border-brand-primary font-bold'
-                                : 'bg-slate-100 text-slate-600 border-slate-200'
+                                ? "events-calendar-tier-current"
+                                : "events-calendar-tier-other"
                             }`}
                           >
                             {tName}
@@ -236,31 +236,31 @@ export default function EventsCalendarPage() {
                 </div>
 
                 {/* RSVP Action Footer */}
-                <div className="p-6 pt-0">
-                  {timing.status === 'ended' ? <p className="rounded-lg border border-slate-200 bg-slate-100 px-4 py-3 text-center text-xs font-semibold text-slate-600">Event ended{isRsvped ? ' · Your RSVP is recorded' : ' · RSVPs closed'}</p> : isRsvped ? (
+                <div className="events-calendar-event-footer">
+                  {timing.status === 'ended' ? <p className="events-calendar-ended-notice">Event ended{isRsvped ? ' · Your RSVP is recorded' : ' · RSVPs closed'}</p> : isRsvped ? (
                     <button
                       onClick={() => handleCancelRsvp(event)}
                       disabled={actionPendingId === event._id}
-                      className="w-full py-2.5 rounded-lg border border-brand-silver bg-slate-100 hover:bg-slate-200 text-brand-ink font-semibold text-xs flex items-center justify-center gap-2 transition-colors"
+                      className="events-calendar-cancel-rsvp-button"
                     >
                       {actionPendingId === event._id ? (
-                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        <RefreshCw className="events-calendar-spinner" />
                       ) : (
-                        <XCircle className="w-3.5 h-3.5" />
+                        <XCircle className="icon-small" />
                       )}
                       <span>Cancel My RSVP</span>
                     </button>
-                  ) : !timing.rsvpOpen ? <button type="button" disabled className="w-full rounded-lg border border-slate-200 bg-slate-100 py-2.5 text-xs font-semibold text-slate-500">{timing.status === 'in_progress' ? 'Event started · RSVPs closed' : 'RSVP unavailable'}</button> : !isEligible ? (
+                  ) : !timing.rsvpOpen ? <button type="button" disabled className="events-calendar-rsvp-closed-button">{timing.status === 'in_progress' ? 'Event started · RSVPs closed' : 'RSVP unavailable'}</button> : !isEligible ? (
                     <button
                       disabled
-                      className="w-full py-2.5 rounded-lg bg-slate-100 border border-slate-200 text-slate-400 font-medium text-xs cursor-not-allowed"
+                      className="events-calendar-rsvp-unavailable-button"
                     >
                       Requires Tier Upgrade · {accessLabel}
                     </button>
                   ) : event.spotsLeft === 0 ? (
                     <button
                       disabled
-                      className="w-full py-2.5 rounded-lg bg-slate-100 border border-slate-200 text-slate-400 font-medium text-xs cursor-not-allowed"
+                      className="events-calendar-rsvp-unavailable-button"
                     >
                       Event at Full Capacity
                     </button>
@@ -268,16 +268,16 @@ export default function EventsCalendarPage() {
                     <button
                       onClick={() => handleRsvp(event)}
                       disabled={actionPendingId === event._id}
-                      className="w-full py-2.5 rounded-lg bg-brand-primary hover:bg-brand-secondary text-brand-ink font-bold text-xs flex items-center justify-center gap-2 transition-colors shadow-sm active:scale-[0.99]"
+                      className="events-calendar-rsvp-button"
                     >
                       {actionPendingId === event._id ? (
                         <>
-                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                          <RefreshCw className="events-calendar-spinner" />
                           <span>Dispatching RSVP & Confirmation Email...</span>
                         </>
                       ) : (
                         <>
-                          <CheckCircle className="w-3.5 h-3.5" />
+                          <CheckCircle className="icon-small" />
                           <span>RSVP Directly (Instant Confirmation)</span>
                         </>
                       )}

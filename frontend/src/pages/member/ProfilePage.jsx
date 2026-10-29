@@ -109,30 +109,30 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="profile-page">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-          <User className="w-6 h-6 text-brand-ink" />
+        <h1 className="page-title">
+          <User className="profile-user-icon" />
           Personal Member Profile
         </h1>
-        <p className="text-xs text-slate-500 mt-1">
+        <p className="page-description">
           Manage your personal details stored in the MongoDB database and update notification settings.
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="page-stack">
         {/* Profile Details Card */}
-        <div className="p-6 rounded-xl bg-white border border-slate-200 shadow-sm space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-5 pb-6 border-b border-slate-200">
-            <div role="img" className="w-20 h-20 shrink-0 rounded-full border-2 border-brand-primary bg-slate-50 flex items-center justify-center" aria-label={avatarUrl ? `${name} profile photo` : 'Default profile icon'}>
-              {avatarUrl ? <img src={avatarUrl} alt={`${name} profile`} className="w-full h-full rounded-full object-cover" /> : <User className="w-10 h-10 text-slate-400" aria-hidden="true" />}
+        <div className="profile-personal-details">
+          <div className="profile-avatar-section">
+            <div role="img" className="profile-avatar" aria-label={avatarUrl ? `${name} profile photo` : 'Default profile icon'}>
+              {avatarUrl ? <img src={avatarUrl} alt={`${name} profile`} className="profile-avatar-image" /> : <User className="profile-avatar-placeholder" aria-hidden="true" />}
             </div>
-            <div className="flex-1">
-              <p className="text-xs font-semibold text-slate-700 mb-1">Profile Photo</p>
-              <p className="text-[11px] text-slate-500 mb-3">JPEG, PNG, or WebP. Maximum file size: 2 MB.</p>
-              <div className="flex flex-wrap items-center gap-2">
-                <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-primary hover:bg-brand-secondary text-brand-ink text-xs font-bold cursor-pointer transition-colors">
-                  <Upload className="w-4 h-4" />
+            <div className="profile-avatar-controls">
+              <p className="profile-avatar-label">Profile Photo</p>
+              <p className="profile-avatar-requirements">JPEG, PNG, or WebP. Maximum file size: 2 MB.</p>
+              <div className="profile-avatar-actions">
+                <label className="profile-avatar-upload-button">
+                  <Upload className="icon-default" />
                   <span>{avatarUrl ? 'Change Photo' : 'Upload Photo'}</span>
                   <input
                     type="file"
@@ -145,176 +145,147 @@ export default function ProfilePage() {
                   <button
                     type="button"
                     onClick={handleAvatarRemove}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors"
+                    className="profile-avatar-remove-button"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="icon-default" />
                     <span>Remove Photo</span>
                   </button>
                 )}
               </div>
-              {avatarFileName && <p className="text-[11px] text-slate-500 mt-2 truncate">Selected: {avatarFileName}</p>}
+              {avatarFileName && <p className="profile-avatar-selected-file">Selected: {avatarFileName}</p>}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="profile-personal-fields">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">Full Name</label>
+              <label className="field-label">Full Name</label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
+                className="profile-name-input"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                Email Address <span className="text-[10px] text-slate-500">(Account Identifier)</span>
+              <label className="field-label">
+                Email Address <span className="profile-email-hint">(Account Identifier)</span>
               </label>
               <input
                 type="email"
                 value={user?.email || ''}
                 disabled
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-500 cursor-not-allowed"
+                className="profile-email-input"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="profile-personal-fields">
             <div>
-              <label htmlFor="profile-phone" className="block text-xs font-semibold text-slate-700 mb-1.5">Phone Number (optional)</label>
+              <label htmlFor="profile-phone" className="field-label">Phone Number (optional)</label>
               <PhoneInput id="profile-phone" country={country} value={phone} onChange={setPhone} disabled={saving} />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              <label className="field-label">
                 Membership Number
               </label>
               <input
                 type="text"
                 value={user?.membershipNumber || ''}
                 disabled
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-mono text-brand-ink cursor-not-allowed"
+                className="profile-member-number-input"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Personal Bio</label>
+            <label className="field-label">Personal Bio</label>
             <textarea
               rows={3}
               maxLength={500}
               value={bio}
               onChange={(e) => setBio(e.target.value)}
-              className="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
+              className="profile-detail-input"
             />
-            <p className="text-[11px] text-slate-500 text-right mt-1">{bio.length}/500 characters</p>
+            <p className="profile-bio-character-count">{bio.length}/500 characters</p>
           </div>
         </div>
 
         {/* Address Card */}
-        <div className="p-6 rounded-xl bg-white border border-slate-200 shadow-sm space-y-4">
-          <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-            <MapPin className="w-4 h-4 text-brand-ink" />
+        <div className="profile-address-panel">
+          <h3 className="profile-panel-title">
+            <MapPin className="profile-panel-icon" />
             Mailing & Residence Address
           </h3>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Street Address</label>
+            <label className="profile-address-label">Street Address</label>
             <input
               type="text"
               value={street}
               onChange={(e) => setStreet(e.target.value)}
               placeholder="123 Community Blvd"
-              className="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
+              className="profile-detail-input"
             />
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="profile-address-fields">
+            {[
+              { id: 'profile-city', label: 'City', value: city, update: setCity },
+              { id: 'profile-state', label: 'State / Province', value: state, update: setState },
+              { id: 'profile-postal-code', label: 'Postal Code', value: postalCode, update: setPostalCode },
+            ].map(({ id, label, value, update }) => (
+              <div key={id}>
+                <label htmlFor={id} className="profile-address-label">{label}</label>
+                <input id={id} type="text" value={value} onChange={event => update(event.target.value)}
+                  className="profile-detail-input" />
+              </div>
+            ))}
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">City</label>
-              <input
-                type="text"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                className="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">State / Province</label>
-              <input
-                type="text"
-                value={state}
-                onChange={(e) => setState(e.target.value)}
-                className="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Postal Code</label>
-              <input
-                type="text"
-                value={postalCode}
-                onChange={(e) => setPostalCode(e.target.value)}
-                className="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
-              />
-            </div>
-            <div>
-              <label htmlFor="profile-country" className="block text-xs font-semibold text-slate-700 mb-1">Country</label>
+              <label htmlFor="profile-country" className="profile-address-label">Country</label>
               <CountrySelect id="profile-country" value={country} onChange={value => { setPhone(previous => rebasePhone(previous, country, value)); setCountry(value); }} required disabled={saving} />
             </div>
           </div>
         </div>
 
         {/* Notifications Preferences */}
-        <div className="p-6 rounded-xl bg-white border border-slate-200 shadow-sm space-y-3">
-          <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-            <Bell className="w-4 h-4 text-brand-ink" />
+        <div className="profile-notifications-panel">
+          <h3 className="profile-panel-title">
+            <Bell className="profile-panel-icon" />
             Automated Notification Preferences
           </h3>
 
-          <div className="space-y-3 pt-2">
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={notifyEmail}
-                onChange={(e) => setNotifyEmail(e.target.checked)}
-                className="w-4 h-4 rounded text-brand-ink accent-brand-primary bg-white border-slate-300 cursor-pointer"
-              />
-              <span className="text-xs text-slate-700">
-                Receive welcome emails, renewal reminders and payment receipts
-              </span>
-            </label>
-
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={notifyEvents}
-                onChange={(e) => setNotifyEvents(e.target.checked)}
-                className="w-4 h-4 rounded text-brand-ink accent-brand-primary bg-white border-slate-300 cursor-pointer"
-              />
-              <span className="text-xs text-slate-700">
-                Receive instant RSVP confirmation emails with calendar invitations
-              </span>
-            </label>
+          <div className="profile-notification-options">
+            {[
+              { label: 'Receive welcome emails, renewal reminders and payment receipts', checked: notifyEmail, update: setNotifyEmail },
+              { label: 'Receive instant RSVP confirmation emails with calendar invitations', checked: notifyEvents, update: setNotifyEvents },
+            ].map(({ label, checked, update }) => (
+              <label key={label} className="profile-notification-option">
+                <input type="checkbox" checked={checked} onChange={event => update(event.target.checked)}
+                  className="profile-notification-checkbox" />
+                <span className="profile-notification-label">{label}</span>
+              </label>
+            ))}
           </div>
         </div>
 
         {/* Save Button */}
-        <div className="flex justify-end pt-2">
+        <div className="profile-form-actions">
           <button
             type="submit"
             disabled={saving}
-            className="py-2.5 px-6 rounded-lg bg-brand-primary hover:bg-brand-secondary text-brand-ink font-bold text-sm flex items-center gap-2 transition-colors shadow-sm active:scale-[0.99]"
+            className="profile-save-button"
           >
             {saving ? (
               <>
-                <RefreshCw className="w-4 h-4 animate-spin" />
+                <RefreshCw className="icon-spinner" />
                 <span>Saving to MongoDB...</span>
               </>
             ) : (
               <>
-                <Save className="w-4 h-4" />
+                <Save className="icon-default" />
                 <span>Save Profile Changes</span>
               </>
             )}

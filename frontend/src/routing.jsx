@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useState, useSyncExternalStore } from 'react';
 import { createBrowserNavigation } from './browserHistory.js';
-import { getPageUrl } from './navigation.js';
+import { getAccountHomePage, getPageUrl } from './navigation.js';
+import { useAuth } from './context/AuthContext.jsx';
 
 const NavigationContext = createContext(null);
 
@@ -33,4 +34,16 @@ export function useUrlState(key, defaultValue = '', { replace = false } = {}) {
     updateQuery({ [key]: resolved === defaultValue ? null : resolved }, { replace, ...options });
   }, [key, defaultValue, replace, getSnapshot, updateQuery]);
   return [value, setValue];
+}
+
+// Keep normal link behavior for copying URLs and opening pages in another tab.
+export function PageLink({ page, onNavigate, onClick, children, ...props }) {
+  const { user } = useAuth();
+  const destination = page === 'account-home' ? getAccountHomePage(user) : page;
+  return <a {...props} href={getPageUrl(destination, { organisationId: user?.activeOrganisationId })} onClick={event => {
+    onClick?.(event);
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    onNavigate(page);
+  }}>{children}</a>;
 }

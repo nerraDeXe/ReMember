@@ -64,34 +64,34 @@ export default function TierModal({ isOpen, onClose, tierToEdit, onSaved }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-brand-muted/35 flex items-center justify-center p-4 animate-fadeIn">
-      <div className="relative w-full max-w-lg bg-white border border-slate-200 rounded-xl overflow-hidden shadow-2xl">
+    <div className="tier-modal-overlay">
+      <div className="tier-modal-dialog">
         {/* Header */}
-        <div className="p-5 border-b border-slate-200 bg-white flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-brand-primary text-brand-ink">
-              <Layers className="w-5 h-5" />
+        <div className="tier-modal-header">
+          <div className="tier-modal-heading">
+            <div className="tier-modal-icon">
+              <Layers className="icon-medium" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-900">
+              <h2 className="card-title">
                 {tierToEdit ? 'Modify Membership Tier' : 'Create Custom Membership Tier'}
               </h2>
-              <p className="text-xs text-slate-500">Configure membership pricing, perks, and capacity</p>
+              <p className="text-caption">Configure membership pricing, perks, and capacity</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded transition-colors"
+            className="tier-modal-close"
           >
-            <X className="w-5 h-5" />
+            <X className="icon-medium" />
           </button>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="tier-modal-form">
+          <div className="tier-modal-pricing-fields">
             <div>
-              <label htmlFor="tier-name" className="block text-xs font-semibold text-slate-700 mb-1">Tier Name</label>
+              <label htmlFor="tier-name" className="tier-modal-field-label">Tier Name</label>
               <input
                 id="tier-name"
                 type="text"
@@ -99,11 +99,11 @@ export default function TierModal({ isOpen, onClose, tierToEdit, onSaved }) {
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. Diamond Patron"
                 required
-                className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-brand-primary"
+                className="tier-modal-input"
               />
             </div>
             <div>
-              <label htmlFor="tier-price" className="block text-xs font-semibold text-slate-700 mb-1">Price (MYR)</label>
+              <label htmlFor="tier-price" className="tier-modal-field-label">Price (MYR)</label>
               <input
                 id="tier-price"
                 type="number"
@@ -112,19 +112,19 @@ export default function TierModal({ isOpen, onClose, tierToEdit, onSaved }) {
                 min="0"
                 step="0.01"
                 required
-                className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-brand-primary"
+                className="tier-modal-input"
               />
             </div>
           </div>
 
           <div>
             <div>
-              <label htmlFor="tier-interval" className="block text-xs font-semibold text-slate-700 mb-1">Billing Interval</label>
+              <label htmlFor="tier-interval" className="tier-modal-field-label">Billing Interval</label>
               <select
                 id="tier-interval"
                 value={interval}
                 onChange={(e) => setInterval(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-brand-primary"
+                className="tier-modal-input"
               >
                 <option value="monthly">Monthly</option>
                 <option value="yearly">Yearly</option>
@@ -133,19 +133,19 @@ export default function TierModal({ isOpen, onClose, tierToEdit, onSaved }) {
           </div>
 
           <div>
-            <label htmlFor="tier-description" className="block text-xs font-semibold text-slate-700 mb-1">Short Description</label>
+            <label htmlFor="tier-description" className="tier-modal-field-label">Short Description</label>
             <input
               id="tier-description"
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Elevated perks for community patrons"
-              className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-brand-primary"
+              className="tier-modal-input"
             />
           </div>
 
           <div>
-            <label htmlFor="tier-perks" className="block text-xs font-semibold text-slate-700 mb-1">
+            <label htmlFor="tier-perks" className="tier-modal-field-label">
               Tier Perks (one benefit per line)
             </label>
             <textarea
@@ -154,38 +154,38 @@ export default function TierModal({ isOpen, onClose, tierToEdit, onSaved }) {
               value={perksText}
               onChange={(e) => setPerksText(e.target.value)}
               placeholder="Enter perk on each line..."
-              className="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-brand-primary font-mono text-xs"
+              className="tier-modal-perks-input"
             />
           </div>
 
           <div>
             <div>
-              <label htmlFor="tier-capacity" className="block text-xs font-semibold text-slate-700 mb-1">Max Member Capacity</label>
+              <label htmlFor="tier-capacity" className="tier-modal-field-label">Max Member Capacity</label>
               <input
                 id="tier-capacity"
                 type="number"
                 value={maxMembers}
                 onChange={(e) => setMaxMembers(e.target.value)}
                 placeholder="Unlimited"
-                className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-brand-primary"
+                className="tier-modal-input"
               />
             </div>
           </div>
 
-          <div className="pt-2">
+          <div className="tier-modal-footer">
             <button
               type="submit"
               disabled={saving}
-              className="w-full py-3 bg-brand-primary hover:bg-brand-secondary text-brand-ink font-bold rounded-lg flex items-center justify-center gap-2 transition-colors"
+              className="tier-modal-save"
             >
               {saving ? (
                 <>
-                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <RefreshCw className="icon-spinner" />
                   <span>Saving Tier Rules...</span>
                 </>
               ) : (
                 <>
-                  <Save className="w-4 h-4" />
+                  <Save className="icon-default" />
                   <span>{tierToEdit ? 'Save Changes' : 'Create Tier'}</span>
                 </>
               )}

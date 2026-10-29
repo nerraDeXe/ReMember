@@ -8,8 +8,8 @@ export default function PhoneInput({ country, value, onChange, id, disabled = fa
   const limit = 15 - prefix.length;
   return (
     <div>
-      <div className="flex rounded-lg border border-slate-300 bg-white overflow-hidden focus-within:border-brand-primary">
-        <span className="px-3 py-2.5 border-r border-slate-200 bg-slate-50 text-sm text-slate-700" aria-label="Country calling code">+{prefix}</span>
+      <div className="phone-field">
+        <span className="phone-calling-code" aria-label="Country calling code">+{prefix}</span>
         <input id={id} type="tel" inputMode="numeric" autoComplete="tel-national" value={national} maxLength={limit} disabled={disabled || !country} aria-describedby={`${id}-hint`} onChange={event => {
           let input = event.target.value;
           let next = input.replace(/\D/g, '');
@@ -19,9 +19,9 @@ export default function PhoneInput({ country, value, onChange, id, disabled = fa
           }
           next = next.slice(0, limit);
           onChange(next ? `+${prefix}${next}` : '');
-        }} className="w-full min-w-0 px-3 py-2.5 text-sm text-slate-900 bg-white disabled:bg-slate-50 focus:outline-none" />
+        }} className="phone-input" />
       </div>
-      <p id={`${id}-hint`} className="mt-1.5 text-xs text-slate-500">{country ? 'Digits only. Maximum 15 digits including the country code.' : 'Choose your country first.'}</p>
+      <p id={`${id}-hint`} className="phone-hint">{country ? 'Digits only. Maximum 15 digits including the country code.' : 'Choose your country first.'}</p>
     </div>
   );
 }

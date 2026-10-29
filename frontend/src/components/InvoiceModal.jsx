@@ -24,166 +24,166 @@ export default function InvoiceModal({ invoice, isOpen, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-brand-muted/35 flex items-center justify-center p-4 animate-fadeIn">
-      <div role="dialog" aria-modal="true" aria-label="Invoice receipt" className="relative w-full max-w-xl bg-white border border-slate-200 rounded-xl overflow-hidden shadow-2xl print:border-none print:shadow-none print:bg-white print:text-black">
+    <div className="invoice-overlay">
+      <div role="dialog" aria-modal="true" aria-label="Invoice receipt" className="invoice-dialog">
         {/* Header */}
-        <div className="p-5 border-b border-slate-200 bg-white flex items-center justify-between print:hidden">
-          <div className="flex items-center gap-2">
-            <span className="text-xs uppercase tracking-wider font-bold text-slate-500">
+        <div className="invoice-toolbar">
+          <div className="invoice-toolbar-group">
+            <span className="invoice-document-label">
               Invoice Document
             </span>
-            <span className="text-sm font-mono font-bold text-brand-ink">
+            <span className="invoice-document-number">
               {invoice.invoiceNumber}
             </span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="invoice-toolbar-group">
             <button
               onClick={handlePrint}
-              className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded text-xs flex items-center gap-1 transition-colors"
+              className="invoice-document-action"
               title="Print Invoice"
             >
-              <Printer className="w-4 h-4" />
+              <Printer className="icon-default" />
               <span>Print</span>
             </button>
             <button
               onClick={handleDownload}
-              className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded text-xs flex items-center gap-1 transition-colors"
+              className="invoice-document-action"
               title="Download JSON record"
             >
-              <Download className="w-4 h-4" />
+              <Download className="icon-default" />
               <span>Export</span>
             </button>
             <button
               onClick={onClose}
-              className="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded transition-colors"
+              className="invoice-close"
             >
-              <X className="w-5 h-5" />
+              <X className="icon-medium" />
             </button>
           </div>
         </div>
 
         {/* Invoice Printable View */}
-        <div className="p-8 space-y-6 bg-white text-slate-900 print:bg-white print:text-black">
+        <div className="invoice-document">
           {/* Logo & Status */}
-          <div className="flex items-start justify-between border-b border-slate-200 print:border-neutral-300 pb-6">
+          <div className="invoice-letterhead">
             <div>
-              <h1 className="text-2xl font-black text-slate-900 print:text-black tracking-tight">
-                Re<span className="text-brand-ink print:text-black">Member</span> Club
+              <h1 className="invoice-brand">
+                Re<span className="invoice-brand-accent">Member</span> Club
               </h1>
-              <p className="text-xs text-slate-500 print:text-neutral-600 mt-0.5">
+              <p className="invoice-organisation">
                 {invoice.organisationName || 'Membership payment receipt'}
               </p>
-              <p className="text-xs text-slate-400 print:text-neutral-500 mt-1">
+              <p className="invoice-billing-note">
                 {isDemo ? 'DEMO PAYMENT · NO MONEY CHARGED' : 'Membership billing record'}
               </p>
             </div>
-            <div className="text-right">
+            <div className="invoice-details-right">
               <span
-                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded text-xs font-bold border uppercase tracking-wide ${
+                className={`invoice-status ${
                   isPaid
-                    ? 'bg-brand-50 text-brand-ink border-brand-primary'
-                    : 'bg-slate-100 text-brand-ink border-brand-muted'
+                    ? "invoice-status-paid"
+                    : "invoice-status-unpaid"
                 }`}
               >
-                {isPaid ? <CheckCircle2 className="w-3.5 h-3.5" /> : <AlertCircle className="w-3.5 h-3.5" />}
+                {isPaid ? <CheckCircle2 className="icon-small" /> : <AlertCircle className="icon-small" />}
                 {invoice.paymentStatus}
               </span>
-              <p className="text-xs text-slate-500 print:text-neutral-600 mt-2 font-mono">
+              <p className="invoice-number">
                 {invoice.invoiceNumber}
               </p>
             </div>
           </div>
 
           {/* Member & Billing Dates */}
-          <div className="grid grid-cols-2 gap-6 text-xs">
+          <div className="invoice-billing-details">
             <div>
-              <span className="text-slate-500 print:text-neutral-500 uppercase font-semibold block mb-1">
+              <span className="invoice-section-label">
                 Billed To
               </span>
-              <p className="font-bold text-slate-900 print:text-black text-sm">{invoice.userName}</p>
-              <p className="text-slate-500 print:text-neutral-600">{invoice.userEmail}</p>
-              <p className="text-slate-400 print:text-neutral-500 mt-1 font-mono text-[11px]">
+              <p className="invoice-member-name">{invoice.userName}</p>
+              <p className="invoice-member-email">{invoice.userEmail}</p>
+              <p className="invoice-payment-method">
                 Payment Method: {invoice.paymentMethod}
               </p>
             </div>
-            <div className="text-right">
-              <span className="text-slate-500 print:text-neutral-500 uppercase font-semibold block mb-1">
+            <div className="invoice-details-right">
+              <span className="invoice-section-label">
                 Payment Details
               </span>
-              <p className="text-slate-700 print:text-neutral-700">
-                <strong className="text-slate-500">Date Paid:</strong>{' '}
+              <p className="invoice-payment-detail">
+                <strong className="invoice-detail-label">Date Paid:</strong>{' '}
                 {invoice.paidAt ? new Date(invoice.paidAt).toLocaleDateString() : 'N/A'}
               </p>
-              <p className="text-slate-700 print:text-neutral-700">
-                <strong className="text-slate-500">Coverage End:</strong>{' '}
+              <p className="invoice-payment-detail">
+                <strong className="invoice-detail-label">Coverage End:</strong>{' '}
                 {invoice.periodEnd ? invoice.periodEnd.split('T')[0] : 'N/A'}
               </p>
-              <p className="text-slate-400 print:text-neutral-500 font-mono text-[11px] truncate max-w-[200px] ml-auto">
+              <p className="invoice-transaction-id">
                 Txn: {invoice.transactionId || 'N/A'}
               </p>
             </div>
           </div>
 
           {/* Line Items */}
-          <div className="border border-slate-200 print:border-neutral-300 rounded-lg overflow-hidden">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 print:bg-neutral-100 text-slate-600 print:text-neutral-600 font-semibold border-b border-slate-200 print:border-neutral-300">
+          <div className="invoice-items-frame">
+            <table className="table-base">
+              <thead className="invoice-items-header">
                 <tr>
-                  <th className="p-3">Description</th>
-                  <th className="p-3 text-center">Interval</th>
-                  <th className="p-3 text-right">Amount</th>
+                  <th className="invoice-item-cell">Description</th>
+                  <th className="invoice-interval-heading">Interval</th>
+                  <th className="invoice-amount-heading">Amount</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 print:divide-neutral-200">
+              <tbody className="invoice-items-body">
                 <tr>
-                  <td className="p-3">
-                    <p className="font-semibold text-slate-900 print:text-black">
+                  <td className="invoice-item-cell">
+                    <p className="invoice-item-title">
                       {invoice.tierName} Membership
                     </p>
-                    <p className="text-[11px] text-slate-500 print:text-neutral-600">
+                    <p className="invoice-item-description">
                       Full digital wallet privileges & exclusive community events
                     </p>
                   </td>
-                  <td className="p-3 text-center text-slate-700 print:text-neutral-700 capitalize">
+                  <td className="invoice-item-interval">
                     {invoice.billingInterval || 'Yearly'}
                   </td>
-                  <td className="p-3 text-right font-bold text-slate-900 print:text-black">
+                  <td className="invoice-item-amount">
                     MYR {subtotal.toFixed(2)}
                   </td>
                 </tr>
                 {credit > 0 && <tr>
-                  <td className="p-3"><p className="font-semibold text-slate-900 print:text-black">Membership credit applied</p><p className="text-[11px] text-slate-500 print:text-neutral-600">Unused paid time and available membership credit</p></td>
-                  <td className="p-3 text-center text-slate-500">—</td>
-                  <td className="p-3 text-right font-bold text-slate-900 print:text-black">−MYR {credit.toFixed(2)}</td>
+                  <td className="invoice-item-cell"><p className="invoice-item-title">Membership credit applied</p><p className="invoice-item-description">Unused paid time and available membership credit</p></td>
+                  <td className="invoice-item-placeholder">—</td>
+                  <td className="invoice-item-amount">−MYR {credit.toFixed(2)}</td>
                 </tr>}
               </tbody>
             </table>
           </div>
 
           {/* Total */}
-          <div className="flex justify-end pt-2">
-            <div className="w-56 space-y-1.5 text-xs text-right">
-              <div className="flex justify-between text-slate-500 print:text-neutral-600">
+          <div className="invoice-totals-align">
+            <div className="invoice-totals">
+              <div className="invoice-subtotal-row">
                 <span>Subtotal:</span>
                 <span>MYR {subtotal.toFixed(2)}</span>
               </div>
-              {credit > 0 && <div className="flex justify-between text-slate-500 print:text-neutral-600"><span>Membership credit:</span><span>−MYR {credit.toFixed(2)}</span></div>}
-              <div className="flex justify-between text-slate-500 print:text-neutral-600">
+              {credit > 0 && <div className="invoice-subtotal-row"><span>Membership credit:</span><span>−MYR {credit.toFixed(2)}</span></div>}
+              <div className="invoice-subtotal-row">
                 <span>Tax (0%):</span>
                 <span>MYR 0.00</span>
               </div>
-              <div className="flex justify-between text-sm font-extrabold text-slate-900 print:text-black pt-2 border-t border-slate-200 print:border-neutral-300">
+              <div className="invoice-total-row">
                 <span>Total Paid:</span>
-                <span className="text-brand-ink font-black print:text-black">
+                <span className="invoice-total-amount">
                   MYR {Number(invoice.amount).toFixed(2)}
                 </span>
               </div>
             </div>
           </div>
 
-          {invoice.carryForwardCents > 0 && <p className="text-xs text-slate-500 print:text-neutral-600">MYR {(invoice.carryForwardCents / 100).toFixed(2)} membership credit remains available for a future membership payment.</p>}
+          {invoice.carryForwardCents > 0 && <p className="invoice-credit-note">MYR {(invoice.carryForwardCents / 100).toFixed(2)} membership credit remains available for a future membership payment.</p>}
 
-          <div className="pt-4 border-t border-slate-200 print:border-neutral-300 text-center text-[11px] text-slate-500 print:text-neutral-500">
+          <div className="invoice-footer">
             {isDemo ? 'This is a simulated payment receipt. No money was charged or transferred.' : 'Thank you for being a valued member. Keep this receipt for your records.'}
           </div>
         </div>

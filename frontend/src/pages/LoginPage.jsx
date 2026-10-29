@@ -31,46 +31,46 @@ export default function LoginPage({ onNavigate, initialEmail = '' }) {
 
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white border border-slate-200 rounded-xl p-8 shadow-xl">
-        <div className="text-center mb-8">
+    <div className="login-page">
+      <div className="login-card">
+        <div className="login-header">
           <div
             onClick={() => onNavigate('landing')}
-            className="inline-flex items-center gap-2 mb-3 cursor-pointer group"
+            className="group login-home-link"
           >
             <img
               src="/remember-logo.png"
               alt="ReMember"
-              className="h-15 w-auto object-contain"
+              className="login-logo"
             />
           </div>
-          <h2 className="text-xl font-bold text-slate-900">Sign In to Your Portal</h2>
-          <p className="text-xs text-slate-500 mt-1">
+          <h2 className="login-title">Sign In to Your Portal</h2>
+          <p className="page-description">
             Access your membership pass, upcoming events, and dashboard
           </p>
         </div>
 
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <fieldset disabled={loading || googleBusy} className="space-y-4 min-w-0">
+        <form onSubmit={handleSubmit} className="form-stack">
+          <fieldset disabled={loading || googleBusy} className="login-fields">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Email Address</label>
-            <div className="relative">
+            <label className="field-label">Email Address</label>
+            <div className="login-field">
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 placeholder="name@domain.com"
-                className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
+                className="login-email-input"
               />
-              <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+              <Mail className="login-field-icon" />
             </div>
           </div>
 
           <div>
-            <label htmlFor="login-password" className="block text-xs font-semibold text-slate-700 mb-1.5">Password</label>
-            <div className="relative">
+            <label htmlFor="login-password" className="field-label">Password</label>
+            <div className="login-field">
               <input
                 id="login-password"
                 name="password"
@@ -80,54 +80,54 @@ export default function LoginPage({ onNavigate, initialEmail = '' }) {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 placeholder="••••••••••••"
-                className="w-full pl-10 pr-12 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
+                className="login-password-input"
               />
-              <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+              <Lock className="login-field-icon" />
               <button
                 type="button"
                 onClick={() => setShowPassword((visible) => !visible)}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
                 aria-controls="login-password"
                 aria-pressed={showPassword}
-                className="absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-500 hover:text-slate-900 rounded-r-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-primary"
+                className="login-password-toggle"
               >
-                {showPassword ? <EyeOff className="w-4 h-4" aria-hidden="true" /> : <Eye className="w-4 h-4" aria-hidden="true" />}
+                {showPassword ? <EyeOff className="icon-default" aria-hidden="true" /> : <Eye className="icon-default" aria-hidden="true" />}
               </button>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-            <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={rememberMe} onChange={event => setRememberMe(event.target.checked)} className="accent-brand-primary" />Remember Me (30 days)</label>
-            <button type="button" onClick={() => onNavigate('forgot-password')} className="font-semibold hover:underline">Forgot password?</button>
+          <div className="login-options">
+            <label className="login-remember-label"><input type="checkbox" checked={rememberMe} onChange={event => setRememberMe(event.target.checked)} className="login-remember-checkbox" />Remember Me (30 days)</label>
+            <button type="button" onClick={() => onNavigate('forgot-password')} className="login-forgot-password">Forgot password?</button>
           </div>
-          <p className="text-xs text-slate-500">{rememberMe ? 'Stay signed in for 30 days.' : 'Your session lasts 24 hours.'} Applies to email and Google sign-in.</p>
+          <p className="text-caption">{rememberMe ? 'Stay signed in for 30 days.' : 'Your session lasts 24 hours.'} Applies to email and Google sign-in.</p>
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 px-4 rounded-lg font-bold text-sm bg-brand-primary hover:bg-brand-secondary text-brand-ink flex items-center justify-center gap-2 transition-colors shadow-sm"
+            className="login-submit"
           >
             {loading ? (
               <>
-                <RefreshCw className="w-4 h-4 animate-spin" />
+                <RefreshCw className="icon-spinner" />
                 <span>Authenticating...</span>
               </>
             ) : (
               <>
                 <span>Sign In Securely</span>
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="icon-default" />
               </>
             )}
           </button>
           </fieldset>
         </form>
 
-        <div className="mt-6 space-y-4"><p className="text-center text-xs text-slate-500">Or continue with Google</p><GoogleSignIn intent="login" rememberMe={rememberMe} disabled={loading} onBusyChange={setGoogleBusy} onNavigate={onNavigate} /></div>
+        <div className="login-google-section"><p className="login-google-label">Or continue with Google</p><GoogleSignIn intent="login" rememberMe={rememberMe} disabled={loading} onBusyChange={setGoogleBusy} onNavigate={onNavigate} /></div>
 
-        <div className="mt-6 text-center text-xs text-slate-500">
+        <div className="login-signup-prompt">
           Don't have a membership account yet?{' '}
           <button
             onClick={() => onNavigate('register')}
-            className="text-brand-ink hover:underline font-semibold"
+            className="login-signup-link"
           >
             Register Here
           </button>

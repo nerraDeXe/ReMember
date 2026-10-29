@@ -17,6 +17,22 @@ import { api } from '../../api.js';
 import { useToast } from '../../context/ToastContext.jsx';
 import { useUrlState } from '../../routing.jsx';
 
+const actionClass = "activity-log-action-default";
+const tierClass = "activity-log-action-membership";
+const actions = {
+  USER_REGISTERED: { icon: UserPlus, label: 'User Registered', filterLabel: 'User Registrations' },
+  PROFILE_UPDATED: { icon: UserCheck, label: 'Profile Updated', filterLabel: 'Profile Updates' },
+  PAYMENT_FAILED: { icon: AlertOctagon, label: 'Payment Failed', filterLabel: 'Payment Failures', bg: "activity-log-payment-failed" },
+  PAYMENT_SUCCESS: { icon: CheckCircle, label: 'Payment Success', filterLabel: 'Payment Successes' },
+  TIER_CHANGED: { icon: Layers, label: 'Tier Changed', filterLabel: 'Tier Changes', bg: tierClass },
+  STATUS_UPDATED: { icon: Shield, label: 'Status Updated', filterLabel: 'Status Updates', bg: tierClass },
+  GOOGLE_WALLET_SYNCED: { icon: Wallet, label: 'Wallet Synced', filterLabel: 'Google Wallet Syncs' },
+  EVENT_RSVP: { icon: Calendar, label: 'Event RSVP', filterLabel: 'Event RSVPs' },
+};
+const getActionBadge = action => actions[action] || {
+  icon: ScrollText, bg: "activity-log-action-unknown", label: action.replace('_', ' '),
+};
+
 export default function ActivityLogPage() {
   const { showToast } = useToast();
   const [logs, setLogs] = useState([]);
@@ -47,168 +63,102 @@ export default function ActivityLogPage() {
     loadLogs(1);
   }, [actionFilter]);
 
-  const getActionBadge = (action) => {
-    switch (action) {
-      case 'USER_REGISTERED':
-        return {
-          icon: UserPlus,
-          bg: 'bg-brand-50 text-brand-ink border-brand-primary/30',
-          label: 'User Registered'
-        };
-      case 'PROFILE_UPDATED':
-        return {
-          icon: UserCheck,
-          bg: 'bg-brand-50 text-brand-ink border-brand-primary/30',
-          label: 'Profile Updated'
-        };
-      case 'PAYMENT_FAILED':
-        return {
-          icon: AlertOctagon,
-          bg: 'bg-slate-100 text-brand-ink border-brand-silver font-bold',
-          label: 'Payment Failed'
-        };
-      case 'PAYMENT_SUCCESS':
-        return {
-          icon: CheckCircle,
-          bg: 'bg-brand-50 text-brand-ink border-brand-primary/30',
-          label: 'Payment Success'
-        };
-      case 'TIER_CHANGED':
-        return {
-          icon: Layers,
-          bg: 'bg-brand-50 text-brand-ink border-brand-accent/50',
-          label: 'Tier Changed'
-        };
-      case 'STATUS_UPDATED':
-        return {
-          icon: Shield,
-          bg: 'bg-brand-50 text-brand-ink border-brand-accent/50',
-          label: 'Status Updated'
-        };
-      case 'GOOGLE_WALLET_SYNCED':
-        return {
-          icon: Wallet,
-          bg: 'bg-brand-50 text-brand-ink border-brand-primary/30',
-          label: 'Wallet Synced'
-        };
-      case 'EVENT_RSVP':
-        return {
-          icon: Calendar,
-          bg: 'bg-brand-50 text-brand-ink border-brand-primary/30',
-          label: 'Event RSVP'
-        };
-      default:
-        return {
-          icon: ScrollText,
-          bg: 'bg-slate-100 text-slate-700 border-slate-200',
-          label: action.replace('_', ' ')
-        };
-    }
-  };
-
   return (
-    <div className="space-y-6">
+    <div className="page-stack">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="activity-log-header">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <ScrollText className="w-6 h-6 text-brand-ink" />
+          <h1 className="page-title">
+            <ScrollText className="activity-log-scroll-text-icon" />
             Administrative Activity & Audit Log
           </h1>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="page-description">
             Tracking recent user registrations, profile updates, payment failures, tier modifications, and wallet syncs.
           </p>
         </div>
 
         {/* Action Filter */}
-        <div className="flex items-center gap-2 self-start sm:self-auto">
-          <Filter className="w-4 h-4 text-slate-400" />
+        <div className="activity-log-filters">
+          <Filter className="activity-log-filter-icon" />
           <select
             value={actionFilter}
             onChange={(e) => setActionFilter(e.target.value)}
-            className="px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
+            className="activity-log-action-filter"
           >
             <option value="all">All Activities</option>
-            <option value="USER_REGISTERED">User Registrations</option>
-            <option value="PROFILE_UPDATED">Profile Updates</option>
-            <option value="PAYMENT_FAILED">Payment Failures</option>
-            <option value="PAYMENT_SUCCESS">Payment Successes</option>
-            <option value="TIER_CHANGED">Tier Changes</option>
-            <option value="STATUS_UPDATED">Status Updates</option>
-            <option value="GOOGLE_WALLET_SYNCED">Google Wallet Syncs</option>
-            <option value="EVENT_RSVP">Event RSVPs</option>
+            {Object.entries(actions).map(([value, action]) => <option key={value} value={value}>{action.filterLabel}</option>)}
           </select>
         </div>
       </div>
 
       {/* Log Feed Table */}
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+      <div className="table-frame">
         {loading ? (
-          <div className="py-20 flex justify-center">
-            <RefreshCw className="w-8 h-8 text-brand-ink animate-spin" />
+          <div className="loading-container">
+            <RefreshCw className="loading-spinner" />
           </div>
         ) : logs.length === 0 ? (
-          <div className="p-12 text-center text-xs text-slate-500">
-            <ScrollText className="w-8 h-8 mx-auto mb-2 text-slate-400" />
+          <div className="activity-log-empty">
+            <ScrollText className="activity-log-empty-icon" />
             No activity logs match the selected filter.
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 uppercase tracking-wider text-[10px]">
+          <div className="table-scroll">
+            <table className="table-base">
+              <thead className="table-heading">
                 <tr>
-                  <th className="p-4">Timestamp</th>
-                  <th className="p-4">Action Event</th>
-                  <th className="p-4">Member / Target</th>
-                  <th className="p-4">Role / Actor</th>
-                  <th className="p-4">Event Details & Metadata</th>
-                  <th className="p-4 text-right">IP Address</th>
+                  <th className="data-table-cell">Timestamp</th>
+                  <th className="data-table-cell">Action Event</th>
+                  <th className="data-table-cell">Member / Target</th>
+                  <th className="data-table-cell">Role / Actor</th>
+                  <th className="data-table-cell">Event Details & Metadata</th>
+                  <th className="activity-log-ip-heading">IP Address</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="table-body">
                 {logs.map((log) => {
                   const badge = getActionBadge(log.action);
                   const Icon = badge.icon;
                   return (
-                    <tr key={log._id} className="hover:bg-slate-50/75 transition-colors">
-                      <td className="p-4 text-slate-500 font-mono text-[11px] whitespace-nowrap">
-                        <div className="flex items-center gap-1.5">
-                          <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    <tr key={log._id} className="data-table-row">
+                      <td className="activity-log-timestamp-cell">
+                        <div className="activity-log-timestamp">
+                          <Clock className="activity-log-clock-icon" />
                           <span>{new Date(log.timestamp).toLocaleString()}</span>
                         </div>
                       </td>
 
-                      <td className="p-4">
+                      <td className="data-table-cell">
                         <span
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-semibold border ${badge.bg}`}
+                          className={`activity-log-action-badge ${badge.bg || actionClass}`}
                         >
-                          <Icon className="w-3.5 h-3.5" />
+                          <Icon className="icon-small" />
                           <span>{badge.label}</span>
                         </span>
                       </td>
 
-                      <td className="p-4">
-                        <div className="font-semibold text-slate-900">
+                      <td className="data-table-cell">
+                        <div className="activity-log-member-name">
                           {log.userName || log.userEmail || 'System'}
                         </div>
                         {log.userEmail && (
-                          <div className="text-[11px] text-slate-500">{log.userEmail}</div>
+                          <div className="activity-log-member-email">{log.userEmail}</div>
                         )}
                       </td>
 
-                      <td className="p-4">
-                        <span className="px-2 py-0.5 rounded bg-slate-100 border border-slate-200 text-[10px] font-mono uppercase text-slate-700">
+                      <td className="data-table-cell">
+                        <span className="activity-log-actor-badge">
                           {log.actorRole || 'system'}
                         </span>
                       </td>
 
-                      <td className="p-4 max-w-xs">
-                        <div className="text-[11px] text-slate-700 font-mono bg-slate-50 p-2 rounded-lg border border-slate-200 truncate">
+                      <td className="activity-log-metadata-cell">
+                        <div className="activity-log-metadata">
                           {log.details ? JSON.stringify(log.details) : 'N/A'}
                         </div>
                       </td>
 
-                      <td className="p-4 text-right font-mono text-slate-500 text-[11px]">
+                      <td className="activity-log-ip-cell">
                         {log.ipAddress || '127.0.0.1'}
                       </td>
                     </tr>

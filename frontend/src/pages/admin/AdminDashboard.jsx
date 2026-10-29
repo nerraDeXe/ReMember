@@ -35,37 +35,37 @@ export default function AdminDashboard({ onNavigate }) {
   const metrics = financials?.metrics || {};
 
   return (
-    <div className="space-y-6">
+    <div className="page-stack">
       {/* Header Banner */}
-      <div className="rounded-xl bg-white border border-slate-200 p-6 sm:p-8 shadow-sm">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="admin-dashboard-welcome">
+        <div className="admin-dashboard-welcome-content">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-brand-ink">
+            <div className="admin-dashboard-greeting">
+              <span className="admin-dashboard-greeting-label">
                 Administration Portal
               </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1">
+            <h1 className="admin-dashboard-title">
               {user?.activeOrganisation?.name} Dashboard
             </h1>
-            <p className="text-xs text-slate-600 mt-1">
+            <p className="admin-dashboard-welcome-description">
               Manage this organisation's members, membership tiers, events, and finances.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="admin-dashboard-actions">
             <button
               onClick={() => onNavigate('admin-members')}
-              className="py-2.5 px-4 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 font-semibold text-xs flex items-center gap-2 transition-colors"
+              className="admin-dashboard-manage-button"
             >
-              <Users className="w-4 h-4" />
+              <Users className="icon-default" />
               <span>Manage Members</span>
             </button>
             <button
               onClick={() => onNavigate('admin-tiers')}
-              className="py-2.5 px-4 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 font-semibold text-xs flex items-center gap-2 transition-colors"
+              className="admin-dashboard-manage-button"
             >
-              <Layers className="w-4 h-4" />
+              <Layers className="icon-default" />
               <span>Tiers & Pricing</span>
             </button>
           </div>
@@ -73,66 +73,66 @@ export default function AdminDashboard({ onNavigate }) {
       </div>
 
       {/* Top Metric KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-6 rounded-xl bg-white border border-slate-200 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">Organisation Revenue</span>
-            <div className="p-2 rounded-lg bg-brand-50 text-brand-ink">
-              <DollarSign className="w-4 h-4" />
+      <div className="admin-dashboard-metrics">
+        <div className="panel-card">
+          <div className="admin-dashboard-metric-heading">
+            <span className="admin-dashboard-metric-label">Organisation Revenue</span>
+            <div className="admin-dashboard-metric-icon">
+              <DollarSign className="icon-default" />
             </div>
           </div>
-          <div className="text-2xl font-black text-slate-900 mt-2">
+          <div className="admin-dashboard-metric-value">
             MYR {(metrics.totalRevenue || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
           </div>
-          <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1">
-            <span className="text-brand-ink font-semibold">Sub: MYR {metrics.totalSubscriptionRevenue || 0}</span>
+          <div className="admin-dashboard-revenue-breakdown">
+            <span className="admin-dashboard-subscription-revenue">Sub: MYR {metrics.totalSubscriptionRevenue || 0}</span>
             <span>•</span>
             <span>Events: MYR {metrics.totalEventTicketingRevenue || 0}</span>
           </div>
         </div>
 
-        <div className="p-6 rounded-xl bg-white border border-slate-200 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">Active Members</span>
-            <div className="p-2 rounded-lg bg-brand-50 text-brand-ink">
-              <Users className="w-4 h-4" />
+        <div className="panel-card">
+          <div className="admin-dashboard-metric-heading">
+            <span className="admin-dashboard-metric-label">Active Members</span>
+            <div className="admin-dashboard-metric-icon">
+              <Users className="icon-default" />
             </div>
           </div>
-          <div className="text-2xl font-black text-slate-900 mt-2">
+          <div className="admin-dashboard-metric-value">
             {metrics.activeMembersCount || 0}{' '}
-            <span className="text-xs font-normal text-slate-500">/ {metrics.membersCount || 0} registered</span>
+            <span className="admin-dashboard-registered-count">/ {metrics.membersCount || 0} registered</span>
           </div>
-          <div className="text-[11px] text-brand-ink font-medium mt-1">
+          <div className="admin-dashboard-metric-highlight">
             Across this organisation's membership tiers
           </div>
         </div>
 
-        <div className="p-6 rounded-xl bg-white border border-slate-200 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">Monthly Run Rate (MRR)</span>
-            <div className="p-2 rounded-lg bg-brand-50 text-brand-ink">
-              <TrendingUp className="w-4 h-4" />
+        <div className="panel-card">
+          <div className="admin-dashboard-metric-heading">
+            <span className="admin-dashboard-metric-label">Monthly Run Rate (MRR)</span>
+            <div className="admin-dashboard-metric-icon">
+              <TrendingUp className="icon-default" />
             </div>
           </div>
-          <div className="text-2xl font-black text-slate-900 mt-2">
+          <div className="admin-dashboard-metric-value">
             MYR {(metrics.monthlyRecurringRevenue || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
           </div>
-          <div className="text-[11px] text-slate-600 mt-1">
+          <div className="admin-dashboard-mrr-description">
             ARR Run-Rate: MYR {(metrics.annualRunRate || 0).toLocaleString()}
           </div>
         </div>
 
-        <div className="p-6 rounded-xl bg-white border border-slate-200 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">Paid Invoices</span>
-            <div className="p-2 rounded-lg bg-brand-50 text-brand-ink">
-              <CreditCard className="w-4 h-4" />
+        <div className="panel-card">
+          <div className="admin-dashboard-metric-heading">
+            <span className="admin-dashboard-metric-label">Paid Invoices</span>
+            <div className="admin-dashboard-metric-icon">
+              <CreditCard className="icon-default" />
             </div>
           </div>
-          <div className="text-2xl font-black text-slate-900 mt-2">
+          <div className="admin-dashboard-metric-value">
             {metrics.paidInvoicesCount || 0}
           </div>
-          <div className="text-[11px] text-brand-ink mt-1 font-medium">
+          <div className="admin-dashboard-metric-highlight">
             {metrics.failedInvoicesCount || 0} payment failures tracked in audit
           </div>
         </div>

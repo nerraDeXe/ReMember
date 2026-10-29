@@ -2,6 +2,69 @@
 
 These changes reduce duplication and unnecessary work while keeping the existing account, organisation and portal flows.
 
+## Styling follow-up — descriptive CSS classes
+
+The frontend now uses short semantic class names in JSX, with the former Tailwind configurations in `frontend/src/styles/*.css`. For example, an event day uses `className="event-schedule-day"`; its complete layout is defined with `@apply` in `styles/event-display.css`. Shared rules and page-specific rules are grouped by source file in `styles/interface.css`.
+
+See [the styling guide](docs/STYLING.md) for the stylesheet map, examples, state handling, cascade considerations and the generated-CSS size tradeoff. This follow-up prioritises readability and the location of styling; the source and bundle counts in the earlier review below describe that earlier pass.
+
+## Frontend structure and loading review — 29 October 2026
+
+This pass focuses on `frontend/src/components`, `context`, `pages` and routing. Separate admin and member screens retain their responsibilities and URLs. Related small components now share a module where that makes the code easier to find.
+
+### Measured changes in this pass
+
+| Measure | Before | After |
+| --- | ---: | ---: |
+| JSX source files | 57 | 53 |
+| JSX source lines | 8,889 | 8,767 |
+| Main production JavaScript bundle | 565.27 kB | 273.82 kB |
+| Main bundle with gzip | 150.53 kB | 83.94 kB |
+
+Source counts cover `frontend/src`, including blank lines, and exclude tests, documentation, dependencies and generated files. The 11 plain JavaScript source files retain their original 494 lines. This is a net reduction of 122 implementation lines; it includes the replacement module and shared tier-loading hook.
+
+The bundle comparison uses Vite's build output. The main bundle is about 52% smaller before compression and 44% smaller with gzip. This measures the entry bundle, not total JavaScript across every page or a measured page-load speed. Page chunks load on first visit and can then be reused by the browser. Splitting code produces more generated chunks even though there are fewer JSX source files.
+
+### Where to find the combined code
+
+| Previous file | Current location |
+| --- | --- |
+| `pages/ForgotPasswordPage.jsx` | `pages/PasswordRecoveryPage.jsx`, internal `ForgotPasswordPage` component |
+| `pages/ResetPasswordPage.jsx` | `pages/PasswordRecoveryPage.jsx`, internal `ResetPasswordPage` component |
+| `pages/member/CheckoutPage.jsx` | Named `CheckoutPage` export in `pages/member/MembershipPage.jsx` |
+| `components/EventStatusBadge.jsx` | Named `EventStatusBadge` export in `components/EventSchedule.jsx` |
+| `components/PageLink.jsx` | Named `PageLink` export in `routing.jsx` |
+
+Both password forms keep their own state and validation. Switching between them discards form drafts as before. Checkout remains a separate routed component with its existing pending-membership, upgrade, renewal and receipt handling; sharing its source file does not combine these screens into one UI.
+
+### What was simplified and optimised
+
+- **Page loading:** `App.jsx` uses React's existing `lazy` and `Suspense` facilities for all page modules. The navigation bar and sidebar stay visible while authenticated pages load. Features such as event editing and analytics no longer need to load with the first public page.
+- **Tier requests:** the internal `useMembershipTiers` hook lives beside membership management and checkout. It requests tiers only when one of those screens mounts, includes the captured organisation ID, and ignores completed requests after cleanup. Invoices and unrelated pages no longer trigger the app-wide tier request. Entering either membership screen fetches current tiers again; there is no long-lived cache that could retain another organisation's data.
+- **Membership actions:** `updateMembership` shares the busy state, error handling, account refresh and completion steps used by cancellation and downgrade actions. The action callbacks still specify their own API operation, message and dialog query keys. Existing organisation and mounted-component checks remain in that shared path.
+- **Status and audit labels:** small lookup tables replace the long activity switch and duplicate filter options. Status styles are defined once outside the component rather than rebuilt for each badge render. Labels, ordering, icons and styles are preserved.
+- **Profile controls:** the address fields and notification checkboxes render from short lists of values and setters. Their state and submitted payload stay the same. The repeated address labels now also identify their inputs explicitly.
+- **Contexts:** the toast provider keeps a stable context value so adding or removing a toast does not itself notify every toast-context consumer. Organisation selection reuses the existing authenticated-request helper, preserving its session-token checks.
+
+**How to explain it:** "I grouped closely related components, replaced repeated presentation rules with small data tables, and kept shared request and update logic in one place. I also load page code and membership tiers when the relevant screen needs them. The purpose is code that is easier to follow and less unnecessary work on the initial visit."
+
+### Verification for this pass
+
+- All 70 frontend tests and 381 backend tests pass. Backend application code is unchanged.
+- The browser suite covers 45 scenarios, including password history, organisation switching, invoice links, admin editing, demo payments, upgrades, cancellations, scheduled downgrades and event timing. Two added scenarios check tier requests on demand and password-form transitions. Its sign-in redirect check now waits for the loaded form as well as the URL.
+- The production frontend build completes. Lint completes with warnings in the existing React code and no errors.
+- Browser API calls use fixtures; backend tests mock database and delivery integrations. These checks do not constitute a production load test.
+
+Run `npm test` in `frontend` and `backend`, and `npm run lint` and `npm run build` in `frontend`. The browser runner's setup instructions are at the top of `frontend/tests/navigation-browser.mjs`.
+
+### Further refactoring boundaries
+
+Large pages such as organisation management and the member directory contain different forms, permissions and asynchronous operations. Keeping those screens separate makes their behaviour easier to trace. Future improvements can target repeated form sections or request lifecycles individually, with coverage for loading errors, delayed responses and organisation changes. A single generic page or request hook would need to represent those differences explicitly and could increase complexity.
+
+The rich-text editor also stays separate from its read-only renderer: members viewing posts do not need to download the editing tools. Fewer files and fewer lines are useful only while those boundaries remain clear.
+
+## Earlier refactoring passes
+
 ## 1. One place for API request setup
 
 File: `frontend/src/api.js`

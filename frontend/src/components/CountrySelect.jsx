@@ -51,14 +51,14 @@ export default function CountrySelect({ id, value, onChange, required = false, d
   };
 
   return (
-    <div className="relative" onBlur={(event) => {
+    <div className="country-select" onBlur={(event) => {
       if (!event.currentTarget.contains(event.relatedTarget)) {
         const match = COUNTRIES.find((country) => searchText(country.name) === searchText(query.trim()) || country.code.toLowerCase() === query.trim().toLowerCase());
         if (match) choose(match);
         setOpen(false);
       }
     }}>
-      <Globe className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none" aria-hidden="true" />
+      <Globe className="country-select-globe" aria-hidden="true" />
       <input
         ref={inputRef}
         id={inputId}
@@ -84,28 +84,28 @@ export default function CountrySelect({ id, value, onChange, required = false, d
         }}
         onKeyDown={handleKeyDown}
         onInvalid={() => setOpen(true)}
-        className="w-full pl-10 pr-10 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:border-brand-primary"
+        className="country-select-input"
       />
       <button type="button" tabIndex={-1} aria-label={open ? 'Close country choices' : 'Show country choices'} disabled={disabled}
-        className="absolute right-1 top-1 p-2 text-slate-500" onMouseDown={(event) => event.preventDefault()}
+        className="country-select-toggle" onMouseDown={(event) => event.preventDefault()}
         onClick={() => { inputRef.current?.focus(); setOpen(!open); }}>
-        <ChevronDown className="w-4 h-4" aria-hidden="true" />
+        <ChevronDown className="country-select-chevron" aria-hidden="true" />
       </button>
-      <p id={`${inputId}-hint`} className="mt-1.5 text-xs text-slate-500">Type to search, then choose a country.</p>
+      <p id={`${inputId}-hint`} className="country-select-hint">Type to search, then choose a country.</p>
       {open && (
-        <ul id={listId} ref={listRef} role="listbox" aria-label="Countries" className="absolute z-30 top-11 inset-x-0 max-h-60 overflow-y-auto rounded-lg border border-slate-300 bg-white py-1 shadow-lg">
+        <ul id={listId} ref={listRef} role="listbox" aria-label="Countries" className="country-select-options">
           {options.map((country, index) => (
             <li key={country.code} id={`${listId}-${country.code}`} role="option" aria-selected={value === country.name} data-index={index}
-              className={`px-3.5 py-2.5 text-sm cursor-pointer flex items-center justify-between gap-2 ${index === activeIndex ? 'bg-brand-50 text-brand-ink' : 'text-slate-800 hover:bg-slate-50'}`}
+              className={`country-select-option ${index === activeIndex ? 'country-select-option-active' : 'country-select-option-idle'}`}
               onMouseDown={(event) => event.preventDefault()} onMouseMove={() => setActiveIndex(index)} onClick={() => choose(country)}>
               <span>{country.name}</span>
-              {value === country.name && <Check className="w-4 h-4 shrink-0" aria-hidden="true" />}
+              {value === country.name && <Check className="country-select-check" aria-hidden="true" />}
             </li>
           ))}
-          {!options.length && <li className="px-3.5 py-3 text-sm text-slate-500" role="presentation">No matching countries.</li>}
+          {!options.length && <li className="country-select-empty" role="presentation">No matching countries.</li>}
         </ul>
       )}
-      <span className="sr-only" aria-live="polite">{open ? `${options.length} countries available.` : ''}</span>
+      <span className="country-select-announcement" aria-live="polite">{open ? `${options.length} countries available.` : ''}</span>
     </div>
   );
 }

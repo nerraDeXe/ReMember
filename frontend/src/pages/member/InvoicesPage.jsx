@@ -47,89 +47,89 @@ export default function InvoicesPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="page-stack">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-          <Receipt className="w-6 h-6 text-brand-ink" />
+        <h1 className="page-title">
+          <Receipt className="invoices-receipt-icon" />
           Payment Invoices & Receipts
         </h1>
-        <p className="text-xs text-slate-500 mt-1">
+        <p className="page-description">
           Review your membership renewals and receipts. Demo payments do not involve real money.
         </p>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+      <div className="table-frame">
         {loading ? (
-          <div className="py-20 flex justify-center">
-            <RefreshCw className="w-8 h-8 text-brand-ink animate-spin" />
+          <div className="loading-container">
+            <RefreshCw className="loading-spinner" />
           </div>
         ) : invoices.length === 0 ? (
-          <div className="p-12 text-center text-xs text-slate-500">
-            <Receipt className="w-8 h-8 mx-auto mb-2 text-slate-400" />
+          <div className="invoices-empty">
+            <Receipt className="invoices-empty-icon" />
             No payment invoices on file yet.
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 uppercase tracking-wider text-[10px]">
+          <div className="table-scroll">
+            <table className="table-base">
+              <thead className="table-heading">
                 <tr>
-                  <th className="p-4">Invoice #</th>
-                  <th className="p-4">Date</th>
-                  <th className="p-4">Tier Plan</th>
-                  <th className="p-4">Payment Method</th>
-                  <th className="p-4">Amount</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4 text-right">Actions</th>
+                  <th className="data-table-cell">Invoice #</th>
+                  <th className="data-table-cell">Date</th>
+                  <th className="data-table-cell">Tier Plan</th>
+                  <th className="data-table-cell">Payment Method</th>
+                  <th className="data-table-cell">Amount</th>
+                  <th className="data-table-cell">Status</th>
+                  <th className="invoices-actions-heading">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="table-body">
                 {invoices.map((inv) => {
                   const isPaid = inv.paymentStatus === 'paid';
                   return (
-                    <tr key={inv._id} className="hover:bg-slate-50/75 transition-colors">
-                      <td className="p-4 font-mono font-bold text-brand-ink">
+                    <tr key={inv._id} className="data-table-row">
+                      <td className="invoices-number-cell">
                         {inv.invoiceNumber}
                       </td>
-                      <td className="p-4 text-slate-600">
+                      <td className="invoices-date-cell">
                         {inv.paidAt
                           ? new Date(inv.paidAt).toLocaleDateString()
                           : new Date(inv.createdAt).toLocaleDateString()}
                       </td>
-                      <td className="p-4 font-semibold text-slate-900">
+                      <td className="invoices-tier-cell">
                         {inv.tierName}
                       </td>
-                      <td className="p-4 text-slate-500 font-mono text-[11px]">
+                      <td className="invoices-method-cell">
                         {inv.paymentMethod}
                       </td>
-                      <td className="p-4 font-bold text-slate-900">
+                      <td className="invoices-amount-cell">
                         MYR {Number(inv.amount).toFixed(2)}
                       </td>
-                      <td className="p-4">
+                      <td className="data-table-cell">
                         <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
+                          className={`invoices-status-badge ${
                             isPaid
-                              ? 'bg-brand-50 text-brand-ink border-brand-primary'
-                              : 'bg-slate-100 text-brand-ink border-brand-silver'
+                              ? "invoices-status-paid"
+                              : "invoices-status-declined"
                           }`}
                         >
-                          {isPaid ? <CheckCircle2 className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
+                          {isPaid ? <CheckCircle2 className="icon-tiny" /> : <AlertCircle className="icon-tiny" />}
                           {inv.paymentStatus}
                         </span>
                       </td>
-                      <td className="p-4 text-right space-x-2">
+                      <td className="invoices-actions-cell">
                         <button
                           onClick={() => setInvoiceId(String(inv._id))}
-                          className="p-1.5 rounded bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 transition-colors"
+                          className="invoices-receipt-action"
                           title="View Printable Receipt"
                         >
-                          <Eye className="w-4 h-4" />
+                          <Eye className="icon-default" />
                         </button>
                         <button
                           onClick={() => handleDownload(inv)}
-                          className="p-1.5 rounded bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 transition-colors"
+                          className="invoices-receipt-action"
                           title="Download Invoice JSON"
                         >
-                          <Download className="w-4 h-4" />
+                          <Download className="icon-default" />
                         </button>
                       </td>
                     </tr>
@@ -142,11 +142,11 @@ export default function InvoicesPage() {
       </div>
 
       {invoiceId && !selectedInvoice && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-muted/35">
-          <div role="dialog" aria-modal="true" aria-label="Invoice receipt" className="bg-white border border-slate-200 rounded-xl w-full max-w-lg p-6 space-y-4">
-            <p role={loading ? 'status' : 'alert'} className="text-sm text-slate-700">{loading ? 'Loading invoice...' : loadError || 'This invoice could not be found in your current membership.'}</p>
-            {loadError && <button onClick={loadInvoices} className="mr-4 text-sm font-semibold text-brand-ink hover:underline">Retry</button>}
-            <button onClick={() => closeQuery(['invoice'])} className="text-sm font-semibold text-brand-ink hover:underline">Back to invoices</button>
+        <div className="invoices-receipt-overlay">
+          <div role="dialog" aria-modal="true" aria-label="Invoice receipt" className="invoices-receipt-dialog">
+            <p role={loading ? 'status' : 'alert'} className="invoices-receipt-status">{loading ? 'Loading invoice...' : loadError || 'This invoice could not be found in your current membership.'}</p>
+            {loadError && <button onClick={loadInvoices} className="invoices-retry-button">Retry</button>}
+            <button onClick={() => closeQuery(['invoice'])} className="invoices-return-button">Back to invoices</button>
           </div>
         </div>
       )}

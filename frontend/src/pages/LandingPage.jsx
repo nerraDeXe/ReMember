@@ -58,29 +58,29 @@ export default function LandingPage({ onNavigate }) {
 
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
+    <div className="landing-page">
       {/* Top Bar */}
-      <nav className="border-b border-slate-200 bg-white sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+      <nav className="landing-navbar">
+        <div className="landing-navbar-content">
+          <div className="landing-navbar-actions">
 
             <img
               src="/remember-logo.png"
               alt="ReMember"
-              className="h-12 w-auto object-contain"
+              className="landing-logo"
             />
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="landing-navbar-actions">
             <button
               onClick={() => onNavigate('login')}
-              className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 transition-colors"
+              className="landing-signin"
             >
               Sign In
             </button>
             <button
               onClick={() => onNavigate('register')}
-              className="px-4 py-2 text-xs font-bold bg-brand-primary hover:bg-brand-secondary text-brand-ink rounded-lg transition-colors"
+              className="landing-signup"
             >
               Join ReMember
             </button>
@@ -89,25 +89,25 @@ export default function LandingPage({ onNavigate }) {
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-20 pb-12">
-        <div className="max-w-5xl mx-auto px-4 text-center">
+      <section className="landing-hero">
+        <div className="landing-hero-content">
           {/* Hero Quick Search Shortcut */}
-          <div className="mt-8 max-w-2xl mx-auto">
-            <div className="relative flex items-center">
-              <Search className="w-5 h-5 text-slate-400 absolute left-4" />
+          <div className="landing-search">
+            <div className="landing-search-field">
+              <Search className="landing-search-icon" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search public organisations (e.g. AI, Climate, Arts, London)..."
-                className="w-full pl-12 pr-10 py-3.5 bg-white border-2 border-slate-200 hover:border-brand-primary/50 focus:border-brand-primary rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none shadow-sm transition-all"
+                className="landing-search-input"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3.5 p-1 text-slate-400 hover:text-slate-600 rounded-md"
+                  className="landing-clear-search"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="icon-default" />
                 </button>
               )}
             </div>
@@ -116,24 +116,24 @@ export default function LandingPage({ onNavigate }) {
       </section>
 
       {/* Organisation Search & Discovery Section */}
-      <section id="organisations" className="py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+      <section id="organisations" className="landing-directory">
+        <div className="landing-directory-heading">
           <div>
-            <div className="flex items-center gap-2 text-xs font-bold text-brand-ink uppercase tracking-wider mb-1">
-              <Building2 className="w-4 h-4" />
+            <div className="landing-directory-label">
+              <Building2 className="icon-default" />
               <span>Public Directory</span>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold font-heading text-slate-900">
+            <h2 className="landing-heading">
               Browse Public Organisations
             </h2>
-            <p className="text-xs sm:text-sm text-slate-500 mt-1">
+            <p className="landing-directory-description">
               Admins configure whether organisations are open to the public or set to private invite.
             </p>
           </div>
 
           {/* Live Result Count */}
-          <div className="text-xs font-semibold text-slate-600 bg-white px-3.5 py-2 rounded-lg border border-slate-200 shadow-xs flex items-center gap-2 self-start md:self-auto">
-            <span className="w-2 h-2 rounded-full bg-brand-500 animate-pulse" />
+          <div className="landing-results-count">
+            <span className="landing-results-indicator" />
             <span>
               {loadingOrgs ? 'Loading organisations...' : `${filteredOrganisations.length} Public Organisation${filteredOrganisations.length === 1 ? '' : 's'} Available`}
             </span>
@@ -141,9 +141,9 @@ export default function LandingPage({ onNavigate }) {
         </div>
 
         {/* Category Pills Filter */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-6 no-scrollbar">
-          <span className="text-xs font-semibold text-slate-400 flex items-center gap-1 pl-1 pr-2 shrink-0">
-            <Filter className="w-3.5 h-3.5" /> Filter:
+        <div className="landing-category-filters">
+          <span className="landing-filter-label">
+            <Filter className="icon-small" /> Filter:
           </span>
           {categories.map((cat) => {
             const isActive = selectedCategory === cat;
@@ -151,10 +151,10 @@ export default function LandingPage({ onNavigate }) {
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 ${
+                className={`landing-category-filter ${
                   isActive
-                    ? 'bg-brand-primary text-brand-ink shadow-sm'
-                    : 'bg-white hover:bg-slate-100 text-slate-600 border border-slate-200'
+                    ? "landing-category-active"
+                    : "landing-category-idle"
                 }`}
               >
                 {cat}
@@ -165,17 +165,17 @@ export default function LandingPage({ onNavigate }) {
 
         {/* Organisations Grid */}
         {loadingOrgs ? (
-          <div className="py-16 text-center">
-            <div className="w-8 h-8 border-3 border-brand-primary border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-            <p className="text-xs text-slate-500 font-mono">LOADING PUBLIC ORGANISATIONS...</p>
+          <div className="landing-loading">
+            <div className="directory-loading-spinner" />
+            <p className="landing-loading-message">LOADING PUBLIC ORGANISATIONS...</p>
           </div>
         ) : filteredOrganisations.length === 0 ? (
-          <div className="py-16 text-center bg-white rounded-xl border border-slate-200 p-8 max-w-lg mx-auto shadow-sm">
-            <Building2 className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-            <h3 className="text-base font-bold text-slate-800">
+          <div className="landing-empty">
+            <Building2 className="landing-empty-icon" />
+            <h3 className="landing-empty-title">
               {organisations.length === 0 ? 'No Public Organisations Available' : 'No Matching Organisations Found'}
             </h3>
-            <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+            <p className="landing-empty-description">
               {organisations.length === 0
                 ? 'No public organisations have been registered yet. Administrators can create organisations and set them as public to appear in this directory.'
                 : `We couldn't find any public organisations matching "${searchQuery}". Organisations set to private invite are hidden from public search.`}
@@ -186,67 +186,67 @@ export default function LandingPage({ onNavigate }) {
                   setSearchQuery('');
                   setSelectedCategory('All');
                 }}
-                className="mt-4 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition-colors"
+                className="landing-clear-filters"
               >
                 Clear Search & Filters
               </button>
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="landing-cards">
             {filteredOrganisations.map((org) => (
               <div
                 key={org._id}
-                className="bg-white rounded-xl border border-slate-200 hover:border-brand-primary/50 hover:shadow-md transition-all flex flex-col justify-between overflow-hidden group"
+                className="group landing-card"
               >
                 <div>
                   {/* Card Banner */}
-                  <div className="h-28 relative overflow-hidden bg-slate-100">
-                    <OrganisationImage src={org.bannerUrl} kind="banner" alt={`${org.name} banner`} className="w-full h-full" imageClassName="group-hover:scale-105 transition-transform duration-500" />
-                    <div className="absolute inset-0 bg-brand-muted/10" />
+                  <div className="landing-card-banner">
+                    <OrganisationImage src={org.bannerUrl} kind="banner" alt={`${org.name} banner`} className="landing-banner-image" imageClassName="landing-card-banner-zoom" />
+                    <div className="landing-banner-shade" />
                     
                     {/* Public Visibility Badge */}
-                    <div className="absolute top-3 right-3">
-                      <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-brand-500/90 text-brand-ink backdrop-blur-xs flex items-center gap-1 shadow-sm">
-                        <Globe className="w-3 h-3" />
+                    <div className="landing-public-badge-position">
+                      <span className="landing-card-public-badge">
+                        <Globe className="icon-tiny" />
                         Public
                       </span>
                     </div>
 
                     {/* Category Tag */}
-                    <div className="absolute bottom-2.5 left-3">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-white/90 text-slate-800 backdrop-blur-xs">
+                    <div className="landing-category-position">
+                      <span className="landing-category-badge">
                         {org.category}
                       </span>
                     </div>
                   </div>
 
                   {/* Card Content */}
-                  <div className="p-5">
-                    <div className="flex items-start gap-3 mb-3">
-                      <OrganisationImage src={org.logoUrl} alt={`${org.name} logo`} className="w-11 h-11 rounded-lg border border-slate-200 shrink-0 -mt-8 relative z-10 bg-white shadow-sm" />
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-base font-bold text-slate-900 group-hover:text-brand-ink transition-colors truncate">
+                  <div className="landing-card-content">
+                    <div className="landing-card-heading">
+                      <OrganisationImage src={org.logoUrl} alt={`${org.name} logo`} className="landing-card-logo" />
+                      <div className="landing-card-identity">
+                        <h3 className="landing-card-name">
                           {org.name}
                         </h3>
-                        <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mt-0.5">
-                          <MapPin className="w-3 h-3 shrink-0 text-slate-400" />
-                          <span className="truncate">{org.location}</span>
+                        <div className="landing-card-location">
+                          <MapPin className="landing-card-location-icon" />
+                          <span className="landing-location-text">{org.location}</span>
                         </div>
                       </div>
                     </div>
 
-                    <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed mb-4">
+                    <p className="landing-card-description">
                       {org.description}
                     </p>
 
                     {/* Tags */}
                     {org.tags && org.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mb-4">
+                      <div className="landing-card-tags">
                         {org.tags.slice(0, 3).map((tag, idx) => (
                           <span
                             key={idx}
-                            className="px-2 py-0.5 rounded bg-slate-100 text-slate-600 text-[10px] font-medium"
+                            className="landing-card-tag"
                           >
                             #{tag}
                           </span>
@@ -257,25 +257,25 @@ export default function LandingPage({ onNavigate }) {
                 </div>
 
                 {/* Card Footer */}
-                <div className="px-5 py-3.5 bg-slate-50/80 border-t border-slate-100 flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-600">
-                    <Users className="w-3.5 h-3.5 text-brand-ink" />
+                <div className="landing-card-footer">
+                  <div className="landing-member-count">
+                    <Users className="landing-detail-icon" />
                     <span>{org.memberCount || 1} Members</span>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="landing-actions">
                     <button
                       onClick={() => setSelectedOrgId(String(org._id))}
-                      className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-200 transition-colors"
+                      className="landing-details-button"
                     >
                       Details
                     </button>
                     <button
                       onClick={() => onNavigate('register')}
-                      className="px-3 py-1.5 rounded-lg text-xs font-bold bg-brand-primary hover:bg-brand-secondary text-brand-ink flex items-center gap-1 transition-colors shadow-xs"
+                      className="landing-join-button"
                     >
                       <span>Join</span>
-                      <ArrowRight className="w-3 h-3" />
+                      <ArrowRight className="icon-tiny" />
                     </button>
                   </div>
                 </div>
@@ -286,44 +286,44 @@ export default function LandingPage({ onNavigate }) {
       </section>
 
       {/* Feature Highlights Grid */}
-      <section className="py-16 border-t border-slate-200 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-12">
-            <h2 className="text-2xl sm:text-3xl font-extrabold font-heading text-slate-900">
+      <section className="landing-features">
+        <div className="landing-features-content">
+          <div className="landing-features-heading">
+            <h2 className="landing-heading">
               Built for Public Communities & Private Invites
             </h2>
-            <p className="text-xs sm:text-sm text-slate-500 mt-2">
+            <p className="landing-features-description">
               Admins have complete control over public discoverability or private invitation access.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="p-6 rounded-xl bg-slate-50 border border-slate-200 hover:border-brand-primary/50 transition-colors">
-              <div className="w-10 h-10 rounded-lg bg-brand-primary text-brand-ink flex items-center justify-center mb-4">
-                <Globe className="w-5 h-5" />
+          <div className="landing-feature-grid">
+            <div className="landing-discovery-feature">
+              <div className="landing-discovery-icon">
+                <Globe className="icon-medium" />
               </div>
-              <h3 className="text-base font-bold text-slate-900 mb-2">Public Search & Discovery</h3>
-              <p className="text-xs text-slate-600 leading-relaxed">
+              <h3 className="landing-feature-title">Public Search & Discovery</h3>
+              <p className="landing-detail-copy">
                 Members can search and explore any organisation set to public. Public organisations receive open discovery and instant applicant registration.
               </p>
             </div>
 
-            <div className="p-6 rounded-xl bg-slate-50 border border-slate-200 hover:border-brand-secondary/50 transition-colors">
-              <div className="w-10 h-10 rounded-lg bg-brand-secondary text-brand-ink flex items-center justify-center mb-4">
-                <Lock className="w-5 h-5" />
+            <div className="landing-privacy-feature">
+              <div className="landing-privacy-icon">
+                <Lock className="icon-medium" />
               </div>
-              <h3 className="text-base font-bold text-slate-900 mb-2">Private Invite Controls</h3>
-              <p className="text-xs text-slate-600 leading-relaxed">
+              <h3 className="landing-feature-title">Private Invite Controls</h3>
+              <p className="landing-detail-copy">
                 Admins can toggle any organisation between Public and Private with 1 click. Private organisations are strictly hidden from public directories.
               </p>
             </div>
 
-            <div className="p-6 rounded-xl bg-slate-50 border border-slate-200 hover:border-brand-accent transition-colors">
-              <div className="w-10 h-10 rounded-lg bg-brand-accent text-slate-950 flex items-center justify-center mb-4">
-                <Wallet className="w-5 h-5" />
+            <div className="landing-wallet-feature">
+              <div className="landing-wallet-icon">
+                <Wallet className="icon-medium" />
               </div>
-              <h3 className="text-base font-bold text-slate-900 mb-2">Google Wallet Digital Pass</h3>
-              <p className="text-xs text-slate-600 leading-relaxed">
+              <h3 className="landing-feature-title">Google Wallet Digital Pass</h3>
+              <p className="landing-detail-copy">
                 Instant digital pass issuance for verified members with barcode credentials, live sync, and automated confirmation emails.
               </p>
             </div>
@@ -333,53 +333,53 @@ export default function LandingPage({ onNavigate }) {
 
       {/* Organisation Details Modal */}
       {selectedOrgId && !selectedOrg && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-muted/40">
-          <div role="dialog" aria-modal="true" aria-label="Organisation details" className="bg-white border border-slate-200 rounded-xl w-full max-w-lg p-6 space-y-4">
-            <p role={loadingOrgs ? 'status' : 'alert'} className="text-sm text-slate-700">{loadingOrgs ? 'Loading organisation...' : loadError || 'This public organisation could not be found.'}</p>
-            <button onClick={() => closeQuery(['organisationDetails'])} className="text-sm font-semibold text-brand-ink hover:underline">Back to directory</button>
+        <div className="landing-details-overlay">
+          <div role="dialog" aria-modal="true" aria-label="Organisation details" className="landing-details-status">
+            <p role={loadingOrgs ? 'status' : 'alert'} className="landing-details-message">{loadingOrgs ? 'Loading organisation...' : loadError || 'This public organisation could not be found.'}</p>
+            <button onClick={() => closeQuery(['organisationDetails'])} className="landing-back-to-directory">Back to directory</button>
           </div>
         </div>
       )}
       {selectedOrg && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-muted/40 backdrop-blur-xs animate-fadeIn">
-          <div role="dialog" aria-modal="true" aria-label={`${selectedOrg.name} details`} className="bg-white rounded-2xl max-w-xl w-full border border-slate-200 shadow-2xl overflow-hidden animate-scaleUp max-h-[90vh] flex flex-col">
+        <div className="landing-details-overlay">
+          <div role="dialog" aria-modal="true" aria-label={`${selectedOrg.name} details`} className="landing-details-dialog">
             {/* Modal Header Banner */}
-            <div className="h-36 relative overflow-hidden bg-slate-100 shrink-0">
-              <OrganisationImage src={selectedOrg.bannerUrl} kind="banner" alt={`${selectedOrg.name} banner`} className="w-full h-full" />
-              <div className="absolute inset-0 bg-brand-muted/10" />
+            <div className="landing-details-banner">
+              <OrganisationImage src={selectedOrg.bannerUrl} kind="banner" alt={`${selectedOrg.name} banner`} className="landing-banner-image" />
+              <div className="landing-banner-shade" />
               <button
                 onClick={() => closeQuery(['organisationDetails'])}
                 aria-label="Close organisation details"
-                className="absolute top-3.5 right-3.5 w-8 h-8 rounded-full bg-white hover:bg-slate-100 text-brand-ink flex items-center justify-center transition-colors"
+                className="landing-details-close"
               >
-                <X className="w-4 h-4" />
+                <X className="icon-default" />
               </button>
-              <div className="absolute bottom-3 left-4 flex items-center gap-2">
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-brand-500 text-brand-ink flex items-center gap-1 shadow-sm">
-                  <Globe className="w-3 h-3" />
+              <div className="landing-details-badges">
+                <span className="landing-public-badge">
+                  <Globe className="icon-tiny" />
                   Public Organisation
                 </span>
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-white/90 text-slate-800">
+                <span className="landing-category-badge">
                   {selectedOrg.category}
                 </span>
               </div>
             </div>
 
             {/* Modal Body */}
-            <div className="p-6 overflow-y-auto space-y-4 flex-1">
-              <div className="flex items-start gap-4">
-                <OrganisationImage src={selectedOrg.logoUrl} alt={`${selectedOrg.name} logo`} className="w-14 h-14 rounded-xl border-2 border-white shadow-md -mt-10 relative z-10 bg-white shrink-0" />
+            <div className="landing-details-body">
+              <div className="landing-details-heading">
+                <OrganisationImage src={selectedOrg.logoUrl} alt={`${selectedOrg.name} logo`} className="landing-details-logo" />
                 <div>
-                  <h3 className="text-xl font-black text-slate-900 leading-tight">
+                  <h3 className="landing-details-name">
                     {selectedOrg.name}
                   </h3>
-                  <div className="flex items-center gap-3 text-xs text-slate-500 mt-1">
-                    <span className="flex items-center gap-1">
-                      <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                  <div className="landing-details-summary">
+                    <span className="landing-summary-item">
+                      <MapPin className="landing-summary-icon" />
                       {selectedOrg.location}
                     </span>
-                    <span className="flex items-center gap-1">
-                      <Users className="w-3.5 h-3.5 text-brand-ink" />
+                    <span className="landing-summary-item">
+                      <Users className="landing-detail-icon" />
                       {selectedOrg.memberCount} Members
                     </span>
                   </div>
@@ -387,34 +387,34 @@ export default function LandingPage({ onNavigate }) {
               </div>
 
               <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                <h4 className="landing-about-heading">
                   About this Organisation
                 </h4>
-                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                <p className="landing-about-text">
                   {selectedOrg.description}
                 </p>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-brand-50/70 border border-brand-primary/60">
-                <h4 className="text-xs font-bold text-slate-800 flex items-center gap-1.5 mb-1">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-brand-ink" />
+              <div className="landing-join-policy">
+                <h4 className="landing-policy-heading">
+                  <CheckCircle2 className="landing-detail-icon" />
                   Join Requirements & Policy
                 </h4>
-                <p className="text-xs text-slate-600 leading-relaxed">
+                <p className="landing-detail-copy">
                   {selectedOrg.joinRequirements || 'Open enrollment for verified members with instant digital pass issuance.'}
                 </p>
               </div>
 
               {selectedOrg.tags && selectedOrg.tags.length > 0 && (
                 <div>
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+                  <h4 className="landing-tags-heading">
                     Community Focus & Tags
                   </h4>
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="landing-details-tags">
                     {selectedOrg.tags.map((tag, i) => (
                       <span
                         key={i}
-                        className="px-2.5 py-1 rounded-md bg-slate-100 text-slate-700 text-xs font-medium"
+                        className="landing-details-tag"
                       >
                         #{tag}
                       </span>
@@ -425,25 +425,25 @@ export default function LandingPage({ onNavigate }) {
             </div>
 
             {/* Modal Footer */}
-            <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0">
+            <div className="landing-details-footer">
               {selectedOrg.website ? (
                 <a
                   href={selectedOrg.website}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-xs font-semibold text-slate-600 hover:text-brand-ink flex items-center gap-1"
+                  className="landing-website-link"
                 >
-                  <ExternalLink className="w-3.5 h-3.5" />
+                  <ExternalLink className="icon-small" />
                   <span>Visit Website</span>
                 </a>
               ) : (
-                <span className="text-xs text-slate-400">Official ReMember Network Partner</span>
+                <span className="landing-partner-label">Official ReMember Network Partner</span>
               )}
 
-              <div className="flex items-center gap-2">
+              <div className="landing-actions">
                 <button
                   onClick={() => closeQuery(['organisationDetails'])}
-                  className="px-4 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-200 transition-colors"
+                  className="landing-details-dismiss"
                 >
                   Close
                 </button>
@@ -451,10 +451,10 @@ export default function LandingPage({ onNavigate }) {
                   onClick={() => {
                     onNavigate('register');
                   }}
-                  className="px-5 py-2 rounded-lg text-xs font-bold bg-brand-primary hover:bg-brand-secondary text-brand-ink flex items-center gap-1.5 transition-colors shadow-sm"
+                  className="landing-apply-button"
                 >
                   <span>Apply & Join</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
+                  <ArrowRight className="icon-small" />
                 </button>
               </div>
             </div>
@@ -463,7 +463,7 @@ export default function LandingPage({ onNavigate }) {
       )}
 
       {/* Footer */}
-      <footer className="border-t border-slate-200 bg-white py-8 text-center text-xs text-slate-500">
+      <footer className="landing-footer">
         <p>ReMember Community Management System &copy; 2026. Public Directory & Private Invite Network.</p>
       </footer>
     </div>

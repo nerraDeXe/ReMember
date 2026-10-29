@@ -1,4 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap');
+@import './styles/event-display.css';
+@import './styles/navigation.css';
+@import './styles/interface.css';
 
 @tailwind base;
 @tailwind components;
@@ -40,12 +43,12 @@
     background-color: var(--color-secondary);
     color: var(--color-ink);
   }
-}
 
-/* Keep keyboard focus visible even on inputs with focus:outline-none. */
-:root :focus-visible {
-  outline: 2px solid var(--color-ink);
-  outline-offset: 3px;
+  /* Named focus styles override this fallback just as the former utilities did. */
+  :root :focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 3px;
+  }
 }
 
 /* Flat clean scrollbars */

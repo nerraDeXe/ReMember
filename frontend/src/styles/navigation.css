@@ -1,0 +1,108 @@
+/* Navigation, reusable image and country controls, and toast notifications. */
+@layer components {
+  /* Navbar */
+  .navbar { @apply sticky top-0 z-40 w-full border-b border-slate-200 bg-white; }
+  .navbar-content { @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between; }
+  .navbar-brand { @apply flex items-center gap-3 cursor-pointer; }
+  .navbar-brand-row { @apply flex items-center gap-2; }
+  .navbar-logo { @apply h-12 w-auto object-contain; }
+  .navbar-portal-badge { @apply text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border; }
+  .navbar-portal-admin { @apply bg-brand-primary/10 text-brand-ink border-brand-primary/30; }
+  .navbar-portal-member { @apply bg-brand-accent/20 text-slate-800 border-brand-accent/40 font-semibold; }
+  .navbar-tools { @apply flex items-center gap-3; }
+  .navbar-organisations { @apply flex items-center gap-1.5 px-2 sm:px-3 py-2 rounded-lg text-xs font-semibold border; }
+  .navbar-organisations-active { @apply bg-brand-primary border-brand-primary text-brand-ink; }
+  .navbar-organisations-idle { @apply bg-white border-slate-200 text-slate-700 hover:bg-slate-100; }
+  .navbar-tool-icon { @apply w-4 h-4; }
+  .navbar-organisations-label { @apply hidden sm:inline; }
+  .navbar-account { @apply relative; }
+  .navbar-account-button { @apply flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-slate-100 border border-transparent hover:border-slate-200 transition-colors; }
+  .navbar-avatar { @apply w-8 h-8 shrink-0 rounded-full border border-brand-secondary bg-slate-50 flex items-center justify-center; }
+  .navbar-avatar-image { @apply w-full h-full rounded-full object-cover; }
+  .navbar-avatar-icon { @apply w-4 h-4 text-slate-500; }
+  .navbar-account-summary { @apply text-left hidden md:block; }
+  .navbar-account-name { @apply text-xs font-bold text-slate-800 truncate max-w-[120px]; }
+  .navbar-account-tier { @apply text-[10px] text-brand-ink font-mono font-bold; }
+  .navbar-menu-chevron, .navbar-profile-icon { @apply w-3.5 h-3.5 text-slate-400; }
+  .navbar-account-menu { @apply absolute right-0 mt-2 w-56 rounded-xl bg-white border border-slate-200 shadow-xl py-2 z-50; }
+  .navbar-menu-details { @apply px-4 py-2 border-b border-slate-100; }
+  .navbar-menu-name { @apply text-xs font-bold text-slate-900 truncate; }
+  .navbar-menu-email { @apply text-[11px] text-slate-500 truncate; }
+  .navbar-membership-number { @apply text-[10px] text-brand-ink font-mono font-bold mt-0.5; }
+  .navbar-menu-links { @apply py-1; }
+  .navbar-menu-link { @apply w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2; }
+  .navbar-profile-link { @apply w-full text-left px-4 py-2 text-xs text-slate-700 hover:text-slate-900 hover:bg-slate-50 flex items-center gap-2; }
+  .navbar-menu-icon { @apply w-3.5 h-3.5; }
+  .navbar-signout-section { @apply border-t border-slate-100 pt-1; }
+  .navbar-signout-button { @apply w-full text-left px-4 py-2 text-xs text-brand-ink hover:bg-slate-100 flex items-center gap-2 font-medium; }
+
+  /* Sidebar */
+  .sidebar-link { @apply w-full flex items-center gap-3 rounded-lg text-xs font-semibold transition-colors text-left; }
+  .sidebar-link-nested { @apply px-3 py-2.5; }
+  .sidebar-link-main { @apply px-3.5 py-2.5; }
+  .sidebar-link-active { @apply bg-brand-primary text-brand-ink shadow-sm; }
+  .sidebar-link-idle { @apply text-slate-600 hover:text-slate-900 hover:bg-slate-100; }
+  .sidebar-link-icon { @apply w-4 h-4 shrink-0; }
+  .sidebar-icon-active { @apply text-brand-ink; }
+  .sidebar-icon-idle { @apply text-slate-500; }
+  .mobile-portal-nav { @apply md:hidden w-full border-b border-slate-200 bg-white px-4 py-3; }
+  .mobile-portal-label { @apply block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5; }
+  .mobile-portal-select { @apply w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-primary; }
+  .sidebar { @apply w-64 shrink-0 hidden md:flex flex-col bg-white border-r border-slate-200 min-h-[calc(100vh-4rem)] p-4; }
+  .sidebar-back-link { @apply w-full flex items-center gap-2 px-3 py-2 mb-3 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg; }
+  .sidebar-back-icon { @apply w-4 h-4; }
+  .sidebar-organisation { @apply flex items-center gap-3 p-3 mb-5 rounded-xl bg-slate-50 border border-slate-200; }
+  .sidebar-organisation-logo { @apply w-10 h-10 rounded-lg border border-slate-200 shrink-0; }
+  .sidebar-organisation-details { @apply min-w-0; }
+  .sidebar-organisation-name { @apply text-xs font-bold text-slate-900 break-words; }
+  .sidebar-portal-name { @apply text-[10px] text-slate-500 mt-1; }
+  .sidebar-groups { @apply space-y-5; }
+  .sidebar-group-label { @apply px-3 mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-500; }
+  .sidebar-group-links { @apply space-y-1; }
+  .sidebar-communication-button { @apply w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs font-semibold text-left transition-colors; }
+  .sidebar-communication-active { @apply bg-slate-100 text-slate-900; }
+  .sidebar-communication-icon { @apply w-4 h-4 shrink-0 text-slate-500; }
+  .sidebar-communication-label { @apply flex-1; }
+  .sidebar-communication-chevron { @apply w-3.5 h-3.5 transition-transform; }
+  .sidebar-communication-open { @apply rotate-180; }
+  .sidebar-nested-links { @apply ml-5 mt-1 pl-2 border-l border-slate-200 space-y-1; }
+  .sidebar-footer { @apply mt-auto pt-6; }
+  .sidebar-help-text { @apply rounded-lg bg-slate-50 border border-slate-200 px-3 py-3 text-[11px] text-slate-500 leading-relaxed; }
+
+  /* CountrySelect */
+  .country-select { @apply relative; }
+  .country-select-globe { @apply w-4 h-4 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none; }
+  .country-select-input { @apply w-full pl-10 pr-10 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:border-brand-primary; }
+  .country-select-toggle { @apply absolute right-1 top-1 p-2 text-slate-500; }
+  .country-select-chevron { @apply w-4 h-4; }
+  .country-select-hint { @apply mt-1.5 text-xs text-slate-500; }
+  .country-select-options { @apply absolute z-30 top-11 inset-x-0 max-h-60 overflow-y-auto rounded-lg border border-slate-300 bg-white py-1 shadow-lg; }
+  .country-select-option { @apply px-3.5 py-2.5 text-sm cursor-pointer flex items-center justify-between gap-2; }
+  .country-select-option-active { @apply bg-brand-50 text-brand-ink; }
+  .country-select-option-idle { @apply text-slate-800 hover:bg-slate-50; }
+  .country-select-check { @apply w-4 h-4 shrink-0; }
+  .country-select-empty { @apply px-3.5 py-3 text-sm text-slate-500; }
+  .country-select-announcement { @apply sr-only; }
+
+  /* OrganisationImage */
+  .organisation-image { @apply bg-slate-100 text-slate-400 overflow-hidden; }
+  .organisation-image-content { @apply w-full h-full; }
+  .organisation-image-logo { @apply object-contain; }
+  .organisation-image-banner { @apply object-cover; }
+  .organisation-image-placeholder { @apply w-full h-full flex items-center justify-center; }
+  .organisation-image-banner-icon { @apply w-10 h-10; }
+  .organisation-image-logo-icon { @apply w-6 h-6; }
+
+  /* ToastContext */
+  .toast-list { @apply fixed bottom-5 right-5 z-50 flex flex-col space-y-3 pointer-events-none max-w-md w-full px-4; }
+  .toast { @apply pointer-events-auto flex items-start gap-3 p-4 rounded-lg border shadow-lg transition-all duration-300; }
+  .toast-success { @apply bg-white border-brand-primary text-brand-ink; }
+  .toast-error { @apply bg-white border-brand-muted text-brand-ink; }
+  .toast-info { @apply bg-white border-brand-primary text-slate-800; }
+  .toast-icon-wrapper { @apply shrink-0 mt-0.5; }
+  .toast-icon { @apply w-5 h-5 text-brand-ink; }
+  .toast-message { @apply flex-1 text-sm font-medium leading-relaxed text-slate-800; }
+  .toast-dismiss { @apply text-slate-400 hover:text-slate-700 transition-colors p-1; }
+  .toast-dismiss-icon { @apply w-4 h-4; }
+
+}

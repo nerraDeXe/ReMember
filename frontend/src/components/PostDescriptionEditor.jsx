@@ -149,24 +149,24 @@ export default function PostDescriptionEditor({ initialContent, initialText = ''
   const busy = disabled || reading || !editor;
   return (
     <div>
-      <div className={`overflow-hidden rounded-lg border bg-white focus-within:ring-2 focus-within:ring-brand-primary ${invalid ? 'border-red-300' : 'border-slate-300'} ${disabled ? 'bg-slate-50' : ''}`}>
-        <div role="toolbar" aria-label="Description formatting" className="flex flex-wrap items-center gap-1 border-b border-slate-200 bg-slate-50 px-2 py-2">
+      <div className={`post-editor-frame ${invalid ? "post-editor-invalid" : "post-editor-valid"} ${disabled ? "post-editor-disabled" : ''}`}>
+        <div role="toolbar" aria-label="Description formatting" className="post-editor-toolbar">
           {tools.map(tool => {
             const Icon = tool.icon;
-            return <button key={tool.key} type="button" title={`${tool.label}${tool.shortcut ? ` (${tool.shortcut})` : ''}`} aria-label={tool.label} aria-pressed={Boolean(toolbarState?.[tool.key])} disabled={busy} onMouseDown={event => event.preventDefault()} onClick={tool.run} className={`inline-flex h-8 w-8 items-center justify-center rounded text-slate-700 transition-colors disabled:opacity-40 ${toolbarState?.[tool.key] ? 'bg-brand-primary text-brand-ink' : 'hover:bg-slate-200'}`}><Icon className="h-4 w-4" aria-hidden="true" /></button>;
+            return <button key={tool.key} type="button" title={`${tool.label}${tool.shortcut ? ` (${tool.shortcut})` : ''}`} aria-label={tool.label} aria-pressed={Boolean(toolbarState?.[tool.key])} disabled={busy} onMouseDown={event => event.preventDefault()} onClick={tool.run} className={`post-editor-format-button ${toolbarState?.[tool.key] ? "post-editor-format-active" : "post-editor-format-idle"}`}><Icon className="icon-default" aria-hidden="true" /></button>;
           })}
-          <span className="mx-1 h-5 w-px bg-slate-300" aria-hidden="true" />
-          <button type="button" disabled={busy} aria-label="Insert image" title="Insert image" onMouseDown={event => event.preventDefault()} onClick={() => { selectionRef.current = { from: editor.state.selection.from, to: editor.state.selection.to }; fileInput.current?.click(); }} className="inline-flex h-8 items-center gap-1.5 rounded px-2 text-xs font-semibold text-slate-700 hover:bg-slate-200 disabled:opacity-40">{reading ? <RefreshCw className="h-4 w-4 animate-spin" aria-hidden="true" /> : <ImagePlus className="h-4 w-4" aria-hidden="true" />}<span>{reading ? 'Reading image…' : 'Insert image'}</span></button>
-          <span className="ml-auto flex items-center gap-1">
-            <button type="button" disabled={busy || !toolbarState?.undo} aria-label="Undo" title="Undo" onMouseDown={event => event.preventDefault()} onClick={() => editor.chain().focus().undo().run()} className="inline-flex h-8 w-8 items-center justify-center rounded text-slate-600 hover:bg-slate-200 disabled:opacity-30"><Undo2 className="h-4 w-4" aria-hidden="true" /></button>
-            <button type="button" disabled={busy || !toolbarState?.redo} aria-label="Redo" title="Redo" onMouseDown={event => event.preventDefault()} onClick={() => editor.chain().focus().redo().run()} className="inline-flex h-8 w-8 items-center justify-center rounded text-slate-600 hover:bg-slate-200 disabled:opacity-30"><Redo2 className="h-4 w-4" aria-hidden="true" /></button>
+          <span className="post-editor-toolbar-divider" aria-hidden="true" />
+          <button type="button" disabled={busy} aria-label="Insert image" title="Insert image" onMouseDown={event => event.preventDefault()} onClick={() => { selectionRef.current = { from: editor.state.selection.from, to: editor.state.selection.to }; fileInput.current?.click(); }} className="post-editor-insert-image">{reading ? <RefreshCw className="icon-spinner" aria-hidden="true" /> : <ImagePlus className="icon-default" aria-hidden="true" />}<span>{reading ? 'Reading image…' : 'Insert image'}</span></button>
+          <span className="post-editor-history">
+            <button type="button" disabled={busy || !toolbarState?.undo} aria-label="Undo" title="Undo" onMouseDown={event => event.preventDefault()} onClick={() => editor.chain().focus().undo().run()} className="post-editor-history-button"><Undo2 className="icon-default" aria-hidden="true" /></button>
+            <button type="button" disabled={busy || !toolbarState?.redo} aria-label="Redo" title="Redo" onMouseDown={event => event.preventDefault()} onClick={() => editor.chain().focus().redo().run()} className="post-editor-history-button"><Redo2 className="icon-default" aria-hidden="true" /></button>
           </span>
         </div>
         <EditorContent editor={editor} className="post-description-editor" />
       </div>
       <input ref={fileInput} type="file" accept={IMAGE_MIME_TYPES.join(',')} aria-label="Choose description image" onChange={insertImage} disabled={busy} className="sr-only" tabIndex={-1} />
-      {editorError && <p role="alert" className="mt-2 text-xs text-red-700">{editorError}</p>}
-      <p className="mt-2 text-[11px] leading-relaxed text-slate-500">Select text to format it. Insert up to {POST_CONTENT_LIMITS.images} images (JPEG, PNG or WebP, 2 MB each).</p>
+      {editorError && <p role="alert" className="post-editor-image-error">{editorError}</p>}
+      <p className="post-editor-help">Select text to format it. Insert up to {POST_CONTENT_LIMITS.images} images (JPEG, PNG or WebP, 2 MB each).</p>
     </div>
   );
 }

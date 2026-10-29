@@ -144,10 +144,7 @@ export function AuthProvider({ children }) {
   const resendVerification = async () => applyAuthenticatedRequest(() => api.resendVerification());
   const completeOnboarding = async () => applyAuthenticatedRequest(() => api.completeOnboarding());
   const selectOrganisation = async (organisationId) => {
-    const expectedToken = currentTokenRef.current;
-    const response = await api.selectOrganisation(organisationId);
-    if (!expectedToken || expectedToken !== currentTokenRef.current) throw new Error('Your session has ended. Sign in again.');
-    const data = applySession(response);
+    const data = await applyAuthenticatedRequest(() => api.selectOrganisation(organisationId));
     return data.user;
   };
   const googleSignIn = async (details) => {

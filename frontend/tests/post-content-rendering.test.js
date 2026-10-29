@@ -33,7 +33,7 @@ test('Post descriptions display formatting and numbered lists without interpreti
   ));
   assert.match(html, /<u><em><strong>&lt;script&gt;/);
   assert.match(html, /<br\/>Next line/);
-  assert.match(html, /<ol start="3" class="list-decimal/);
+  assert.match(html, /<ol start="3" class="post-content-ordered-list"/);
   assert.match(html, /<li[^>]*><p[^>]*>Third item<\/p><\/li>/);
   assert.doesNotMatch(html, /<script>/);
 });

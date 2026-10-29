@@ -6,8 +6,8 @@ import { useToast } from '../context/ToastContext.jsx';
 import AccountShell from '../components/AccountShell.jsx';
 import { useNavigation, useUrlQuery, useUrlState } from '../routing.jsx';
 
-const inputClass = 'w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:border-brand-primary';
-const labelClass = 'block text-xs font-semibold text-slate-700 mb-1.5';
+const inputClass = "org-setup-input";
+const labelClass = "field-label";
 const newTier = () => ({ key: crypto.randomUUID(), name: '', price: '', interval: 'monthly' });
 
 export default function OrganisationSetupPage({ onNavigate }) {
@@ -83,60 +83,60 @@ export default function OrganisationSetupPage({ onNavigate }) {
 
   return (
     <AccountShell wide title="Create your organisation" description="Set up a home for your community. You will manage your organisation from its admin dashboard." onNavigate={onNavigate}>
-      <ol className="grid grid-cols-2 gap-3 mb-7 text-xs font-semibold" aria-label="Organisation setup progress">
-        <li className={`rounded-lg border p-3 ${step === 1 ? 'border-brand-primary bg-brand-50 text-brand-ink' : 'border-slate-200 bg-slate-50 text-slate-600'}`} aria-current={step === 1 ? 'step' : undefined}>1. Membership tiers</li>
-        <li className={`rounded-lg border p-3 ${step === 2 ? 'border-brand-primary bg-brand-50 text-brand-ink' : 'border-slate-200 bg-slate-50 text-slate-600'}`} aria-current={step === 2 ? 'step' : undefined}>2. Organisation details</li>
+      <ol className="org-setup-steps" aria-label="Organisation setup progress">
+        <li className={`org-setup-step ${step === 1 ? "org-setup-step-active" : "org-setup-step-idle"}`} aria-current={step === 1 ? 'step' : undefined}>1. Membership tiers</li>
+        <li className={`org-setup-step ${step === 2 ? "org-setup-step-active" : "org-setup-step-idle"}`} aria-current={step === 2 ? 'step' : undefined}>2. Organisation details</li>
       </ol>
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} className="section-stack">
         {step === 1 ? (
           <>
-            <div><h2 className="text-lg font-bold text-slate-900">Start with your membership tiers</h2><p className="text-sm text-slate-600 mt-1.5 leading-relaxed">Create at least one tier and choose its name and amount. Set an amount of 0 for free membership. You can add more tiers later.</p></div>
-            <div className="space-y-4">
+            <div><h2 className="section-title">Start with your membership tiers</h2><p className="org-setup-tiers-help">Create at least one tier and choose its name and amount. Set an amount of 0 for free membership. You can add more tiers later.</p></div>
+            <div className="form-stack">
               {tiers.map((tier, index) => (
-                <fieldset key={tier.key} className="rounded-xl border border-slate-200 p-4">
-                  <legend className="px-1 text-xs font-semibold text-slate-600">Tier {index + 1}</legend>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <fieldset key={tier.key} className="org-setup-tier">
+                  <legend className="org-setup-tier-label">Tier {index + 1}</legend>
+                  <div className="org-setup-tier-fields">
                     <div><label htmlFor={`tier-name-${tier.key}`} className={labelClass}>Tier Name *</label><input id={`tier-name-${tier.key}`} type="text" value={tier.name} onChange={(event) => updateTier(tier.key, 'name', event.target.value)} required maxLength={80} placeholder="e.g. Community" className={inputClass} /></div>
                     <div><label htmlFor={`tier-price-${tier.key}`} className={labelClass}>Amount (MYR) *</label><input id={`tier-price-${tier.key}`} type="number" inputMode="decimal" min="0" step="0.01" value={tier.price} onChange={(event) => updateTier(tier.key, 'price', event.target.value)} required placeholder="0.00" className={inputClass} /></div>
                     <div><label htmlFor={`tier-interval-${tier.key}`} className={labelClass}>Billing Period</label><select id={`tier-interval-${tier.key}`} value={tier.interval} onChange={(event) => updateTier(tier.key, 'interval', event.target.value)} className={inputClass}><option value="monthly">Monthly</option><option value="yearly">Yearly</option></select></div>
                   </div>
-                  <button type="button" onClick={() => setTiers((previous) => previous.filter((item) => item.key !== tier.key))} disabled={tiers.length === 1} title={tiers.length === 1 ? 'Your organisation needs at least one membership tier.' : undefined} className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed"><Trash2 className="w-3.5 h-3.5" aria-hidden="true" /> Remove tier</button>
+                  <button type="button" onClick={() => setTiers((previous) => previous.filter((item) => item.key !== tier.key))} disabled={tiers.length === 1} title={tiers.length === 1 ? 'Your organisation needs at least one membership tier.' : undefined} className="org-setup-remove-tier"><Trash2 className="icon-small" aria-hidden="true" /> Remove tier</button>
                 </fieldset>
               ))}
-              <button type="button" onClick={() => setTiers((previous) => [...previous, newTier()])} disabled={tiers.length >= 20} className="inline-flex items-center gap-2 text-sm font-semibold text-brand-ink border border-slate-300 rounded-lg px-3 py-2 hover:bg-slate-50 disabled:opacity-60"><Plus className="w-4 h-4" aria-hidden="true" /> Add another tier</button>
+              <button type="button" onClick={() => setTiers((previous) => [...previous, newTier()])} disabled={tiers.length >= 20} className="org-setup-add-tier"><Plus className="icon-default" aria-hidden="true" /> Add another tier</button>
             </div>
           </>
         ) : (
           <>
-            <div><h2 className="text-lg font-bold text-slate-900">Tell us about your organisation</h2><p className="text-sm text-slate-600 mt-1.5">Fields marked with * are required.</p></div>
+            <div><h2 className="section-title">Tell us about your organisation</h2><p className="org-setup-required-note">Fields marked with * are required.</p></div>
             <div><label htmlFor="organisation-name" className={labelClass}>Organisation Name *</label><input id="organisation-name" name="name" type="text" value={form.name} onChange={(event) => update('name', event.target.value)} required maxLength={120} disabled={saving || !!createdOrganisation} className={inputClass} /></div>
             <div><label htmlFor="organisation-description" className={labelClass}>Description *</label><textarea id="organisation-description" name="description" rows={3} value={form.description} onChange={(event) => update('description', event.target.value)} required maxLength={2000} disabled={saving || !!createdOrganisation} className={inputClass} /></div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div><label htmlFor="organisation-category" className={labelClass}>Category <span className="font-normal text-slate-500">(optional)</span></label><input id="organisation-category" type="text" value={form.category} onChange={(event) => update('category', event.target.value)} maxLength={80} disabled={saving || !!createdOrganisation} placeholder="e.g. Arts & Culture" className={inputClass} /></div>
-              <div><label htmlFor="organisation-location" className={labelClass}>Location <span className="font-normal text-slate-500">(optional)</span></label><input id="organisation-location" type="text" value={form.location} onChange={(event) => update('location', event.target.value)} maxLength={120} disabled={saving || !!createdOrganisation} className={inputClass} /></div>
+            <div className="org-setup-detail-fields">
+              <div><label htmlFor="organisation-category" className={labelClass}>Category <span className="org-setup-optional-label">(optional)</span></label><input id="organisation-category" type="text" value={form.category} onChange={(event) => update('category', event.target.value)} maxLength={80} disabled={saving || !!createdOrganisation} placeholder="e.g. Arts & Culture" className={inputClass} /></div>
+              <div><label htmlFor="organisation-location" className={labelClass}>Location <span className="org-setup-optional-label">(optional)</span></label><input id="organisation-location" type="text" value={form.location} onChange={(event) => update('location', event.target.value)} maxLength={120} disabled={saving || !!createdOrganisation} className={inputClass} /></div>
             </div>
             <fieldset>
-              <legend className={`${labelClass} mb-2`}>Organisation Visibility</legend>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <legend className={`${labelClass} org-setup-visibility-label`}>Organisation Visibility</legend>
+              <div className="org-setup-visibility-options">
                 {[{ value: 'public', title: 'Public', description: 'People can find your organisation and join from the directory.', Icon: Globe }, { value: 'private', title: 'Private', description: 'Your organisation is hidden from public searches.', Icon: Lock }].map(({ value, title, description, Icon }) => (
-                  <label key={value} className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer ${form.visibility === value ? 'border-brand-primary bg-brand-50' : 'border-slate-200'}`}>
-                    <input type="radio" name="visibility" value={value} checked={form.visibility === value} onChange={() => update('visibility', value)} disabled={saving || !!createdOrganisation} className="mt-1" />
-                    <span><span className="flex items-center gap-1.5 text-sm font-semibold text-slate-900"><Icon className="w-4 h-4" aria-hidden="true" />{title}</span><span className="block text-xs text-slate-600 mt-1 leading-relaxed">{description}</span></span>
+                  <label key={value} className={`org-setup-visibility-choice ${form.visibility === value ? "org-setup-visibility-selected" : "org-setup-visibility-idle"}`}>
+                    <input type="radio" name="visibility" value={value} checked={form.visibility === value} onChange={() => update('visibility', value)} disabled={saving || !!createdOrganisation} className="org-setup-visibility-radio" />
+                    <span><span className="org-setup-visibility-title"><Icon className="icon-default" aria-hidden="true" />{title}</span><span className="org-setup-visibility-description">{description}</span></span>
                   </label>
                 ))}
               </div>
             </fieldset>
-            <div className="rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-600">
-              {`${tiers.length} membership ${tiers.length === 1 ? 'tier' : 'tiers'} ready.`}{' '}<button type="button" onClick={goToTiers} disabled={saving || !!createdOrganisation} className="font-semibold text-brand-ink hover:underline">Edit tiers</button>
+            <div className="org-setup-tier-summary">
+              {`${tiers.length} membership ${tiers.length === 1 ? 'tier' : 'tiers'} ready.`}{' '}<button type="button" onClick={goToTiers} disabled={saving || !!createdOrganisation} className="org-setup-edit-tiers">Edit tiers</button>
             </div>
           </>
         )}
-        {error && <p role="alert" className="rounded-lg border border-slate-300 bg-slate-50 p-3 text-sm text-slate-800">{error}</p>}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-200">
-          <button type="button" onClick={() => { if (step === 2) goToTiers(); else onNavigate(user?.onboardingCompleted ? 'account-organisations' : 'account-onboarding'); }} disabled={saving || !!createdOrganisation} className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 px-2 py-2"><ArrowLeft className="w-4 h-4" aria-hidden="true" /> Back</button>
-          <div className="flex flex-wrap items-center gap-3">
-            <button type="submit" disabled={saving} className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg font-bold text-sm bg-brand-primary hover:bg-brand-secondary text-brand-ink disabled:opacity-60 disabled:cursor-not-allowed">
-              {saving ? <RefreshCw className="w-4 h-4 animate-spin" aria-hidden="true" /> : step === 1 ? <ArrowRight className="w-4 h-4" aria-hidden="true" /> : <Building2 className="w-4 h-4" aria-hidden="true" />}
+        {error && <p role="alert" className="org-setup-error">{error}</p>}
+        <div className="org-setup-footer">
+          <button type="button" onClick={() => { if (step === 2) goToTiers(); else onNavigate(user?.onboardingCompleted ? 'account-organisations' : 'account-onboarding'); }} disabled={saving || !!createdOrganisation} className="org-setup-back"><ArrowLeft className="icon-default" aria-hidden="true" /> Back</button>
+          <div className="org-setup-actions">
+            <button type="submit" disabled={saving} className="org-setup-submit">
+              {saving ? <RefreshCw className="icon-spinner" aria-hidden="true" /> : step === 1 ? <ArrowRight className="icon-default" aria-hidden="true" /> : <Building2 className="icon-default" aria-hidden="true" />}
               {saving ? createdOrganisation ? 'Opening dashboard…' : 'Creating organisation…' : step === 1 ? 'Continue' : createdOrganisation ? 'Open Dashboard' : 'Create Organisation'}
             </button>
           </div>

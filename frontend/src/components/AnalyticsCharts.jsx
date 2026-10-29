@@ -56,29 +56,29 @@ function monthLabel(point) {
 function ChartEmptyState({ message, donut = false }) {
   const Icon = donut ? PieChart : BarChart3;
   return (
-    <div className="flex min-h-[248px] flex-col items-center justify-center gap-3 rounded-lg bg-slate-50 px-5 text-center">
-      <Icon className="h-8 w-8 text-slate-400" aria-hidden="true" />
-      <p className="max-w-xs text-xs leading-relaxed text-slate-500">{message}</p>
+    <div className="chart-empty">
+      <Icon className="chart-empty-icon" aria-hidden="true" />
+      <p className="chart-empty-message">{message}</p>
     </div>
   );
 }
 
 function ChartDataTable({ caption, columns, rows }) {
   return (
-    <details className="mt-3 min-w-0 border-t border-slate-100 pt-3 text-xs">
-      <summary className="w-fit cursor-pointer rounded-sm font-medium text-slate-500 hover:text-slate-900">View chart data</summary>
-      <div className="mt-3 max-h-72 overflow-auto rounded-lg border border-slate-200">
-        <table className="w-full border-collapse text-left text-[11px]">
+    <details className="chart-data-details">
+      <summary className="chart-data-toggle">View chart data</summary>
+      <div className="chart-data-scroll">
+        <table className="chart-data-table">
           <caption className="sr-only">{caption}</caption>
-          <thead className="bg-slate-50 text-slate-600">
-            <tr>{columns.map((column, index) => <th key={`${column}-${index}`} scope="col" className="whitespace-nowrap px-3 py-2 font-semibold">{column}</th>)}</tr>
+          <thead className="chart-data-header">
+            <tr>{columns.map((column, index) => <th key={`${column}-${index}`} scope="col" className="chart-column-label">{column}</th>)}</tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 text-slate-700">
+          <tbody className="chart-data-body">
             {rows.map((row, rowIndex) => (
               <tr key={rowIndex}>
                 {row.map((cell, columnIndex) => columnIndex === 0
-                  ? <th key={columnIndex} scope="row" className="px-3 py-2 font-medium">{cell}</th>
-                  : <td key={columnIndex} className="whitespace-nowrap px-3 py-2 tabular-nums">{cell}</td>)}
+                  ? <th key={columnIndex} scope="row" className="chart-row-label">{cell}</th>
+                  : <td key={columnIndex} className="chart-data-cell">{cell}</td>)}
               </tr>
             ))}
           </tbody>
@@ -141,19 +141,19 @@ export function TrendChart({
   };
 
   return (
-    <div ref={containerRef} className="min-w-0">
+    <div ref={containerRef} className="chart-frame">
       {maximum === 0 ? <ChartEmptyState message={emptyMessage} /> : (
         <>
-          <div className="mb-1 flex min-h-6 flex-wrap gap-x-4 gap-y-2" aria-label="Chart legend">
+          <div className="chart-legend" aria-label="Chart legend">
             {visibleSeries.map((item, index) => (
-              <span key={item.key} className="flex items-center gap-2 text-[11px] font-medium text-slate-600">
+              <span key={item.key} className="chart-legend-item">
                 <svg width="22" height="10" aria-hidden="true"><line x1="0" y1="5" x2="22" y2="5" stroke={item.color} strokeWidth="2.5" strokeDasharray={index === 0 ? undefined : `${6 - (index % 3)} 3`} /></svg>
                 {item.label}
               </span>
             ))}
           </div>
-          <div className="relative" onMouseLeave={() => setHoveredIndex(null)}>
-            <svg viewBox={`0 0 ${width} ${height}`} className="block w-full overflow-visible" role="group" aria-labelledby={`${chartId}-title ${chartId}-description`}>
+          <div className="chart-plot" onMouseLeave={() => setHoveredIndex(null)}>
+            <svg viewBox={`0 0 ${width} ${height}`} className="chart-trend" role="group" aria-labelledby={`${chartId}-title ${chartId}-description`}>
               <title id={`${chartId}-title`}>{title}</title>
               <desc id={`${chartId}-description`}>Monthly line chart. Focus a month to read its values; use the left and right arrow keys to move between months. A data table is available below.</desc>
               <g aria-hidden="true">
@@ -202,20 +202,20 @@ export function TrendChart({
               })}
             </svg>
             {activePoint && (
-              <div className="pointer-events-none absolute top-0 z-10 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-[11px] shadow-lg" style={{ left: tooltipLeft, width: tooltipWidth }} aria-hidden="true">
-                <p className="mb-2 font-semibold text-slate-900">{monthLabel(activePoint).full}</p>
-                <dl className="space-y-1.5">
+              <div className="chart-tooltip" style={{ left: tooltipLeft, width: tooltipWidth }} aria-hidden="true">
+                <p className="chart-tooltip-title">{monthLabel(activePoint).full}</p>
+                <dl className="chart-tooltip-values">
                   {visibleSeries.map((item) => (
-                    <div key={item.key} className="flex items-center justify-between gap-3">
-                      <dt className="flex min-w-0 items-center gap-1.5 text-slate-600"><span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: item.color }} />{item.label}</dt>
-                      <dd className="shrink-0 font-semibold tabular-nums text-slate-900">{valueFormatter(safeValue(activePoint[item.key]))}</dd>
+                    <div key={item.key} className="chart-tooltip-row">
+                      <dt className="chart-tooltip-label"><span className="chart-tooltip-dot" style={{ backgroundColor: item.color }} />{item.label}</dt>
+                      <dd className="chart-tooltip-value">{valueFormatter(safeValue(activePoint[item.key]))}</dd>
                     </div>
                   ))}
                 </dl>
               </div>
             )}
           </div>
-          <p className="mt-1 text-[10px] text-slate-400">Hover or focus a month to see values.</p>
+          <p className="chart-interaction-hint">Hover or focus a month to see values.</p>
         </>
       )}
       {data.length > 0 && <ChartDataTable caption={`${title} data`} columns={['Month', ...visibleSeries.map((item) => item.label)]} rows={data.map((point) => [monthLabel(point).full, ...visibleSeries.map((item) => valueFormatter(safeValue(point[item.key])))])} />}
@@ -236,10 +236,10 @@ export function DonutChart({ data = [], title = 'Member composition', totalLabel
   let cumulative = 0;
 
   return (
-    <div className="min-w-0">
+    <div className="chart-frame">
       {total === 0 ? <ChartEmptyState message={emptyMessage} donut /> : (
-        <div className="flex min-h-[248px] flex-wrap items-center justify-center gap-x-4 gap-y-2">
-          <svg viewBox="0 0 220 220" className="h-44 w-44 shrink-0" role="img" aria-labelledby={`${chartId}-title ${chartId}-description`}>
+        <div className="chart-donut-layout">
+          <svg viewBox="0 0 220 220" className="chart-donut" role="img" aria-labelledby={`${chartId}-title ${chartId}-description`}>
             <title id={`${chartId}-title`}>{title}</title>
             <desc id={`${chartId}-description`}>{countFormatter(total)} {totalLabel} across {segments.length} categories. Counts and percentages for every category are listed in the legend and data table.</desc>
             {segments.map((item, index) => {
@@ -250,11 +250,11 @@ export function DonutChart({ data = [], title = 'Member composition', totalLabel
             <text x="110" y="108" textAnchor="middle" fill="#0F172A" fontSize={String(countFormatter(total)).length > 7 ? '20' : '30'} fontWeight="800">{countFormatter(total)}</text>
             <text x="110" y="132" textAnchor="middle" fill="#64748B" fontSize="12">{totalLabel}</text>
           </svg>
-          <ul className="max-h-60 min-w-0 flex-1 basis-36 space-y-3 overflow-y-auto py-3 pr-2" tabIndex={segments.length > 5 ? 0 : undefined} aria-label={`${title} legend`}>
+          <ul className="chart-donut-legend" tabIndex={segments.length > 5 ? 0 : undefined} aria-label={`${title} legend`}>
             {segments.map((item, index) => (
-              <li key={`${item.name}-${index}`} className="flex items-start justify-between gap-3 text-xs">
-                <span className="flex min-w-0 items-start gap-2 text-slate-600"><span className="mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: item.color }} /><span className="break-words">{item.name}</span></span>
-                <span className="shrink-0 whitespace-nowrap font-semibold tabular-nums text-slate-900">{countFormatter(item.value)} <span className="ml-1 font-normal text-slate-400">{percentFormatter(item.value)}</span></span>
+              <li key={`${item.name}-${index}`} className="chart-donut-item">
+                <span className="chart-donut-label"><span className="chart-donut-dot" style={{ backgroundColor: item.color }} /><span className="chart-category-name">{item.name}</span></span>
+                <span className="chart-donut-value">{countFormatter(item.value)} <span className="chart-donut-percent">{percentFormatter(item.value)}</span></span>
               </li>
             ))}
           </ul>

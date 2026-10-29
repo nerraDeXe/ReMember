@@ -4,9 +4,8 @@ import { api } from '../../api.js';
 import { useToast } from '../../context/ToastContext.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import EventModal from '../../components/EventModal.jsx';
-import EventSchedule, { EventLocation } from '../../components/EventSchedule.jsx';
+import EventSchedule, { EventLocation, EventStatusBadge } from '../../components/EventSchedule.jsx';
 import EventAnalytics from '../../components/EventAnalytics.jsx';
-import EventStatusBadge from '../../components/EventStatusBadge.jsx';
 import { getEventTiming } from '../../../../shared/eventTiming.js';
 import { useEventNow } from '../../useEventNow.js';
 import { getEventAccessLabel, getEligibleEventTiers } from '../../../../shared/events.js';
@@ -71,113 +70,113 @@ export default function EventManagementPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="page-stack">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="event-management-header">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <Calendar className="w-6 h-6 text-brand-ink" />
+          <h1 className="page-title">
+            <Calendar className="event-management-calendar-icon" />
             Community Event Operations
           </h1>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="page-description">
             Publish events for {user?.activeOrganisation?.name || 'your organisation'} with daily schedules, venues and membership access.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 self-start sm:self-auto">
-        <button type="button" onClick={loadEvents} disabled={loading} className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"><RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} aria-hidden="true" />Refresh events</button>
+        <div className="event-management-header-actions">
+        <button type="button" onClick={loadEvents} disabled={loading} className="event-management-refresh-button"><RefreshCw className={`icon-default ${loading ? "event-management-spinner" : ''}`} aria-hidden="true" />Refresh events</button>
         <button
           onClick={() => updateQuery({ event: 'new', roster: null })}
           disabled={loading || Boolean(tiersError)}
-          className="py-2.5 px-4 rounded-lg bg-brand-primary hover:bg-brand-secondary text-brand-ink font-bold text-xs flex items-center gap-2 transition-colors self-start sm:self-auto shadow-sm disabled:opacity-50"
+          className="event-management-create-button"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="icon-default" />
           <span>Create New Event</span>
         </button>
         </div>
       </div>
 
-      {tiersError && <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-300 bg-white p-4 text-sm text-slate-700">
+      {tiersError && <div role="alert" className="event-management-tier-error">
         <p>Membership access options could not be loaded. {tiersError}</p>
-        <button onClick={loadEvents} className="font-semibold underline">Retry</button>
+        <button onClick={loadEvents} className="event-management-tier-retry">Retry</button>
       </div>}
 
       {!loading && !loadError && <EventAnalytics key={organisationId} events={events} now={now} onInspectEvent={id => updateQuery({ roster: id, event: null })} />}
 
       {/* Events List */}
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+      <div className="table-frame">
         {loading ? (
-          <div className="py-20 flex justify-center">
-            <RefreshCw className="w-8 h-8 text-brand-ink animate-spin" />
+          <div className="loading-container">
+            <RefreshCw className="loading-spinner" />
           </div>
         ) : loadError ? (
-          <div role="alert" className="p-8 text-center text-sm text-slate-600">
-            <p>{loadError}</p><button onClick={loadEvents} className="mt-3 font-semibold underline">Retry</button>
+          <div role="alert" className="event-management-load-error">
+            <p>{loadError}</p><button onClick={loadEvents} className="event-management-return-link">Retry</button>
           </div>
         ) : events.length === 0 ? (
-          <div className="p-12 text-center text-xs text-slate-500">
-            <Calendar className="w-8 h-8 mx-auto mb-2 text-slate-400" />
+          <div className="event-management-empty">
+            <Calendar className="event-management-empty-icon" />
             No events published yet.
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 uppercase tracking-wider text-[10px]">
+          <div className="table-scroll">
+            <table className="table-base">
+              <thead className="table-heading">
                 <tr>
-                  <th className="p-4">Event Details</th>
-                  <th className="p-4">Date & Time</th>
-                  <th className="p-4">Location</th>
-                  <th className="p-4">RSVPs / Capacity</th>
-                  <th className="p-4">Allowed Tiers</th>
-                  <th className="p-4 text-right">Actions</th>
+                  <th className="data-table-cell">Event Details</th>
+                  <th className="data-table-cell">Date & Time</th>
+                  <th className="data-table-cell">Location</th>
+                  <th className="data-table-cell">RSVPs / Capacity</th>
+                  <th className="data-table-cell">Allowed Tiers</th>
+                  <th className="event-management-actions-cell">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="table-body">
                 {events.map((evt) => {
                   const rsvpsCount = evt.rsvps?.length || 0;
                   const accessLabel = getEventAccessLabel(evt, tiers);
                   const eligibleTiers = evt.tierAccess === 'minimum' ? getEligibleEventTiers(tiers, evt.minimumTierId) : [];
                   return (
-                    <tr key={evt._id} className="hover:bg-slate-50/75 transition-colors">
-                      <td className="p-4">
-                        <div className="font-bold text-slate-900 text-sm">{evt.title}</div>
-                        <div className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">
+                    <tr key={evt._id} className="data-table-row">
+                      <td className="data-table-cell">
+                        <div className="panel-title">{evt.title}</div>
+                        <div className="event-management-event-description">
                           {evt.description}
                         </div>
-                        <div className="mt-2"><EventStatusBadge status={getEventTiming(evt, now).status} /></div>
+                        <div className="event-management-event-status"><EventStatusBadge status={getEventTiming(evt, now).status} /></div>
                       </td>
 
-                      <td className="p-4 min-w-[215px] text-slate-600">
+                      <td className="event-management-schedule-cell">
                         <EventSchedule event={evt} compact />
                       </td>
 
-                      <td className="p-4 min-w-[170px] max-w-[230px] text-slate-600">
+                      <td className="event-management-location-cell">
                         <EventLocation event={evt} />
                       </td>
 
-                      <td className="p-4">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-slate-900">
+                      <td className="data-table-cell">
+                        <div className="event-management-rsvp-summary">
+                          <span className="event-management-record-name">
                             {rsvpsCount} / {evt.capacity}
                           </span>
                           <button
                             onClick={() => updateQuery({ roster: evt._id, event: null })}
-                            className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 border border-slate-200 text-brand-ink text-[10px] font-semibold flex items-center gap-1 transition-colors"
+                            className="event-management-attendees-button"
                             title="Inspect attendee list"
                           >
-                            <Eye className="w-3 h-3" />
+                            <Eye className="icon-tiny" />
                             <span>Attendees</span>
                           </button>
                         </div>
                       </td>
 
-                      <td className="p-4">
-                        <p className="mb-1.5 text-xs font-semibold text-slate-700">{accessLabel}</p>
-                        <div className="flex flex-wrap gap-1">
+                      <td className="data-table-cell">
+                        <p className="event-management-access-label">{accessLabel}</p>
+                        <div className="event-management-allowed-tiers">
                           {(evt.tierAccess === 'minimum' ? eligibleTiers.map(tier => tier.name) : evt.allowedTiers || []).map((name, idx) => (
                               <span
                                 key={idx}
-                                className="text-[10px] px-1.5 py-0.5 rounded bg-brand-50 text-brand-ink border border-brand-primary/30 font-medium"
+                                className="event-management-tier-badge"
                               >
                                 {name}
                               </span>
@@ -185,15 +184,15 @@ export default function EventManagementPage() {
                         </div>
                       </td>
 
-                      <td className="p-4 text-right">
+                      <td className="event-management-actions-cell">
                         <button
                           onClick={() => handleDeleteEvent(evt)}
                           disabled={Boolean(deletingId)}
-                          className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 border border-brand-silver text-brand-ink transition-colors disabled:opacity-40"
+                          className="event-management-delete-button"
                           title="Delete Event"
                           aria-label={`Delete ${evt.title}`}
                         >
-                          {deletingId === evt._id ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                          {deletingId === evt._id ? <RefreshCw className="icon-spinner" /> : <Trash2 className="icon-default" />}
                         </button>
                       </td>
                     </tr>
@@ -215,52 +214,52 @@ export default function EventManagementPage() {
       />
 
       {eventRoute === 'new' && !loading && tiersError && (
-        <div role="alert" className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600">
+        <div role="alert" className="event-management-detail-error">
           <p>Membership access options are needed before creating an event. Retry loading the membership tiers above.</p>
-          <button onClick={() => closeQuery(['event'])} className="mt-3 font-semibold underline">Return to events</button>
+          <button onClick={() => closeQuery(['event'])} className="event-management-return-link">Return to events</button>
         </div>
       )}
 
       {/* Attendee Roster Modal */}
       {eventRoute && eventRoute !== 'new' && (
-        <div role="alert" className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600">
+        <div role="alert" className="event-management-detail-error">
           <p>This event page could not be found.</p>
-          <button onClick={() => closeQuery(['event'])} className="mt-3 font-semibold underline">Return to events</button>
+          <button onClick={() => closeQuery(['event'])} className="event-management-return-link">Return to events</button>
         </div>
       )}
       {rosterId && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-brand-muted/35 flex items-center justify-center p-4">
-          <div className="relative w-full max-w-lg bg-white border border-slate-200 rounded-xl p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+        <div className="event-management-attendees-overlay">
+          <div className="event-management-attendees-dialog">
+            <div className="event-management-attendees-header">
               <div>
-                <h3 className="text-base font-bold text-slate-900">{inspectEvent?.title || 'Event attendees'}</h3>
-                {inspectEvent && <p className="text-xs text-slate-500">Attendee Guest List ({inspectEvent.rsvps?.length || 0} confirmed)</p>}
+                <h3 className="card-title">{inspectEvent?.title || 'Event attendees'}</h3>
+                {inspectEvent && <p className="text-caption">Attendee Guest List ({inspectEvent.rsvps?.length || 0} confirmed)</p>}
               </div>
               <button
                 onClick={() => closeQuery(['roster'])}
-                className="text-slate-400 hover:text-slate-700"
+                className="event-management-close-icon-button"
               >
-                <X className="w-5 h-5" />
+                <X className="icon-medium" />
               </button>
             </div>
 
-            <div className="max-h-72 overflow-y-auto divide-y divide-slate-100">
+            <div className="event-management-attendees-list">
               {loading ? (
-                <p role="status" className="py-8 text-center text-xs text-slate-500">Loading event attendees...</p>
+                <p role="status" className="event-management-attendees-loading">Loading event attendees...</p>
               ) : !inspectEvent ? (
-                <p role="alert" className="py-8 text-center text-xs text-slate-600">{loadError || 'This event could not be found. It may have been removed.'}</p>
+                <p role="alert" className="event-management-attendees-error">{loadError || 'This event could not be found. It may have been removed.'}</p>
               ) : (inspectEvent.rsvps || []).length === 0 ? (
-                <div className="py-8 text-center text-xs text-slate-400">
+                <div className="event-management-attendees-empty">
                   No attendees have RSVP'd yet.
                 </div>
               ) : (
                 inspectEvent.rsvps.map((guest, i) => (
-                  <div key={i} className="py-2.5 flex items-center justify-between text-xs">
+                  <div key={i} className="event-management-attendee">
                     <div>
-                      <div className="font-bold text-slate-900">{guest.userName}</div>
-                      <div className="text-[11px] text-slate-500">{guest.userEmail}</div>
+                      <div className="event-management-record-name">{guest.userName}</div>
+                      <div className="event-management-attendee-email">{guest.userEmail}</div>
                     </div>
-                    <div className="text-[11px] text-slate-400">
+                    <div className="event-management-attendee-date">
                       {new Date(guest.rsvpDate).toLocaleDateString()}
                     </div>
                   </div>
@@ -268,10 +267,10 @@ export default function EventManagementPage() {
               )}
             </div>
 
-            <div className="pt-2 text-right">
+            <div className="event-management-attendees-footer">
               <button
                 onClick={() => closeQuery(['roster'])}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-lg text-xs font-semibold transition-colors"
+                className="event-management-close-button"
               >
                 Close
               </button>

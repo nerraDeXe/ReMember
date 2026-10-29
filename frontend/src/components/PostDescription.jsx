@@ -51,19 +51,19 @@ function renderNode(node, key) {
   }
   if (node.type === 'hardBreak') return <br key={key} />;
   if (node.type === 'image') {
-    return <img key={key} src={node.attrs.src.trim()} alt={typeof node.attrs.alt === 'string' ? node.attrs.alt : ''} title={typeof node.attrs.title === 'string' ? node.attrs.title : undefined} loading="lazy" className="my-3 max-h-80 max-w-full rounded-lg object-contain" />;
+    return <img key={key} src={node.attrs.src.trim()} alt={typeof node.attrs.alt === 'string' ? node.attrs.alt : ''} title={typeof node.attrs.title === 'string' ? node.attrs.title : undefined} loading="lazy" className="post-content-image" />;
   }
   const children = (node.content || []).map((child, index) => renderNode(child, `${key}-${index}`));
-  if (node.type === 'paragraph') return <p key={key} className="min-h-7 whitespace-pre-wrap break-words">{children}</p>;
-  if (node.type === 'listItem') return <li key={key} className="pl-1">{children}</li>;
+  if (node.type === 'paragraph') return <p key={key} className="post-content-paragraph">{children}</p>;
+  if (node.type === 'listItem') return <li key={key} className="post-content-list-item">{children}</li>;
   if (node.type === 'orderedList') {
     const start = Number.isSafeInteger(node.attrs?.start) && node.attrs.start > 0 && node.attrs.start <= 1000000 ? node.attrs.start : 1;
-    return <ol key={key} start={start} className="list-decimal space-y-1 pl-6">{children}</ol>;
+    return <ol key={key} start={start} className="post-content-ordered-list">{children}</ol>;
   }
   return <React.Fragment key={key}>{children}</React.Fragment>;
 }
 
 export default function PostDescription({ content, description = '' }) {
-  if (!isRenderablePostContent(content)) return <p className="whitespace-pre-wrap break-words text-sm leading-7 text-slate-700">{description}</p>;
-  return <div className="space-y-3 break-words text-sm leading-7 text-slate-700">{renderNode(content, 'description')}</div>;
+  if (!isRenderablePostContent(content)) return <p className="post-content-plain-text">{description}</p>;
+  return <div className="post-content-rich-text">{renderNode(content, 'description')}</div>;
 }

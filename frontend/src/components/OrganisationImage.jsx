@@ -6,12 +6,12 @@ export default function OrganisationImage({ src, kind = 'logo', alt, className =
   useEffect(() => { setFailed(false); }, [src]);
   const Icon = kind === 'banner' ? ImageIcon : Building2;
   return (
-    <div className={`bg-slate-100 text-slate-400 overflow-hidden ${className}`}>
+    <div className={`organisation-image ${className}`}>
       {src && !failed ? (
-        <img src={src} alt={alt || `Organisation ${kind}`} onError={() => setFailed(true)} className={`w-full h-full ${kind === 'logo' ? 'object-contain' : 'object-cover'} ${imageClassName}`} />
+        <img src={src} alt={alt || `Organisation ${kind}`} onError={() => setFailed(true)} className={`organisation-image-content ${kind === 'logo' ? 'organisation-image-logo' : 'organisation-image-banner'} ${imageClassName}`} />
       ) : (
-        <div role="img" aria-label={`No ${kind} image`} className="w-full h-full flex items-center justify-center">
-          <Icon aria-hidden="true" className={kind === 'banner' ? 'w-10 h-10' : 'w-6 h-6'} />
+        <div role="img" aria-label={`No ${kind} image`} className="organisation-image-placeholder">
+          <Icon aria-hidden="true" className={kind === 'banner' ? 'organisation-image-banner-icon' : 'organisation-image-logo-icon'} />
         </div>
       )}
     </div>

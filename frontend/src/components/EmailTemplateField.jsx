@@ -9,7 +9,7 @@ const tagNames = {
   expiryDate: 'Expiry date',
   renewalDays: 'Reminder days',
 };
-const inputClass = 'w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-primary disabled:bg-slate-50';
+const inputClass = "email-template-input";
 
 export default function EmailTemplateField({ id, label, templateTitle, value, onChange, maxLength, multiline = false }) {
   const fieldRef = useRef(null);
@@ -50,26 +50,26 @@ export default function EmailTemplateField({ id, label, templateTitle, value, on
     id, ref: fieldRef, required: true, maxLength, value,
     'aria-describedby': `${id}-tags-help${message ? ` ${id}-tag-status` : ''}`,
     onChange: event => { setMessage(''); onChange(event.target.value); },
-    className: `${inputClass}${multiline ? ' resize-y' : ''}`,
+    className: `${inputClass} ${multiline ? 'email-template-multiline' : ''}`,
   };
 
-  return <div className="space-y-2">
-    <div className="flex items-center justify-between gap-3">
-      <label htmlFor={id} className="block text-xs font-semibold text-slate-700">{label}</label>
-      <span className="text-[11px] text-slate-500 tabular-nums">{value.length.toLocaleString()} / {maxLength.toLocaleString()}</span>
+  return <div className="detail-stack">
+    <div className="email-template-heading">
+      <label htmlFor={id} className="email-template-field-label">{label}</label>
+      <span className="email-template-character-count">{value.length.toLocaleString()} / {maxLength.toLocaleString()}</span>
     </div>
     {multiline ? <textarea {...fieldProps} rows={7} /> : <input {...fieldProps} type="text" />}
-    <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={`${templateTitle} ${target} tags`}>
-      <span id={`${id}-tags-help`} className="text-[11px] text-slate-500 mr-1">Add a tag:</span>
+    <div className="email-template-tags" role="group" aria-label={`${templateTitle} ${target} tags`}>
+      <span id={`${id}-tags-help`} className="email-template-tags-label">Add a tag:</span>
       {EMAIL_TEMPLATE_TOKENS.map(token => <button key={token} type="button"
         aria-label={`Insert ${tagNames[token].toLowerCase()} into ${templateTitle.toLowerCase()} ${target}`}
         title={`Insert {${token}}`}
         onMouseDown={event => event.preventDefault()}
         onClick={() => insertTag(token)}
-        className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 hover:border-brand-primary hover:bg-brand-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary disabled:opacity-50">
-        <Plus className="w-3 h-3" aria-hidden="true" />{tagNames[token]}
+        className="email-template-insert-tag">
+        <Plus className="icon-tiny" aria-hidden="true" />{tagNames[token]}
       </button>)}
     </div>
-    {message && <p id={`${id}-tag-status`} role="status" className="text-xs text-amber-800">{message}</p>}
+    {message && <p id={`${id}-tag-status`} role="status" className="email-template-tag-status">{message}</p>}
   </div>;
 }

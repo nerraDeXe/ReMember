@@ -1,0 +1,1475 @@
+/* Shared display patterns. Page-specific rules follow in source-file order. */
+@layer components {
+  .icon-tiny { @apply w-3 h-3; }
+  .icon-small { @apply w-3.5 h-3.5; }
+  .icon-default { @apply w-4 h-4; }
+  .icon-medium { @apply w-5 h-5; }
+  .icon-large { @apply w-6 h-6; }
+  .icon-spinner { @apply w-4 h-4 animate-spin; }
+  .page-stack { @apply space-y-6; }
+  .section-stack { @apply space-y-5; }
+  .form-stack { @apply space-y-4; }
+  .content-stack { @apply space-y-3; }
+  .detail-stack { @apply space-y-2; }
+  .field-label { @apply block text-xs font-semibold text-slate-700 mb-1.5; }
+  .page-title { @apply text-2xl font-bold text-slate-900 flex items-center gap-2; }
+  .page-description { @apply text-xs text-slate-500 mt-1; }
+  .text-caption { @apply text-xs text-slate-500; }
+  .text-description { @apply text-sm text-slate-600; }
+  .section-title { @apply text-lg font-bold text-slate-900; }
+  .card-title { @apply text-base font-bold text-slate-900; }
+  .panel-title { @apply text-sm font-bold text-slate-900; }
+  .panel-card { @apply p-6 rounded-xl bg-white border border-slate-200 shadow-sm; }
+  .loading-container { @apply py-20 flex justify-center; }
+  .loading-spinner { @apply w-8 h-8 text-brand-ink animate-spin; }
+  .table-frame { @apply bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm; }
+  .table-scroll { @apply overflow-x-auto; }
+  .table-base { @apply w-full text-left text-xs; }
+  .table-heading { @apply bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 uppercase tracking-wider text-[10px]; }
+  .table-body { @apply divide-y divide-slate-100; }
+  .data-table-row { @apply hover:bg-slate-50/75 transition-colors; }
+  .data-table-cell { @apply p-4; }
+
+  /* App.jsx */
+  .app-initializing { @apply min-h-screen bg-slate-50 flex items-center justify-center text-slate-900; }
+  .app-loading-content { @apply flex flex-col items-center gap-3; }
+  .app-loading-spinner { @apply w-10 h-10 border-4 border-brand-primary border-t-transparent rounded-full animate-spin; }
+  .app-loading-message { @apply text-xs text-slate-500 font-mono tracking-wider; }
+  .app-not-found { @apply min-h-screen flex flex-col items-center justify-center gap-4 bg-slate-50; }
+  .app-not-found-title { @apply text-2xl font-bold; }
+  .app-home-link { @apply font-semibold underline; }
+  .app-shell { @apply min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans; }
+  .app-layout { @apply flex-1 flex flex-col md:flex-row max-w-7xl w-full mx-auto; }
+  .app-page { @apply flex-1 min-w-0 p-4 sm:p-6 lg:p-8 overflow-y-auto; }
+  .app-loading-screen { @apply min-h-screen bg-slate-50 flex items-center justify-center text-sm text-slate-600; }
+
+  /* components/AccountShell.jsx */
+  .account-shell-main { @apply min-h-screen bg-slate-50 flex items-center justify-center px-4 py-10 sm:py-14; }
+  .account-shell-content { @apply w-full; }
+  .account-shell-wide { @apply max-w-3xl; }
+  .account-shell-narrow { @apply max-w-xl; }
+  .account-shell-brand { @apply mb-7 flex justify-center; }
+  .account-shell-home-link { @apply inline-flex items-center gap-2.5 text-slate-900; }
+  .account-shell-logo { @apply h-24 w-auto object-contain; }
+  .account-shell-card { @apply bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm; }
+  .account-shell-header { @apply mb-7; }
+  .account-shell-title { @apply text-2xl sm:text-3xl font-bold text-slate-900; }
+  .account-shell-description { @apply text-sm text-slate-600 mt-2 leading-relaxed; }
+
+  /* components/AnalyticsCharts.jsx */
+  .chart-empty { @apply flex min-h-[248px] flex-col items-center justify-center gap-3 rounded-lg bg-slate-50 px-5 text-center; }
+  .chart-empty-icon { @apply h-8 w-8 text-slate-400; }
+  .chart-empty-message { @apply max-w-xs text-xs leading-relaxed text-slate-500; }
+  .chart-data-details { @apply mt-3 min-w-0 border-t border-slate-100 pt-3 text-xs; }
+  .chart-data-toggle { @apply w-fit cursor-pointer rounded-sm font-medium text-slate-500 hover:text-slate-900; }
+  .chart-data-scroll { @apply mt-3 max-h-72 overflow-auto rounded-lg border border-slate-200; }
+  .chart-data-table { @apply w-full border-collapse text-left text-[11px]; }
+  .chart-data-header { @apply bg-slate-50 text-slate-600; }
+  .chart-column-label { @apply whitespace-nowrap px-3 py-2 font-semibold; }
+  .chart-data-body { @apply divide-y divide-slate-100 text-slate-700; }
+  .chart-row-label { @apply px-3 py-2 font-medium; }
+  .chart-data-cell { @apply whitespace-nowrap px-3 py-2 tabular-nums; }
+  .chart-frame { @apply min-w-0; }
+  .chart-legend { @apply mb-1 flex min-h-6 flex-wrap gap-x-4 gap-y-2; }
+  .chart-legend-item { @apply flex items-center gap-2 text-[11px] font-medium text-slate-600; }
+  .chart-plot { @apply relative; }
+  .chart-trend { @apply block w-full overflow-visible; }
+  .chart-tooltip { @apply pointer-events-none absolute top-0 z-10 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-[11px] shadow-lg; }
+  .chart-tooltip-title { @apply mb-2 font-semibold text-slate-900; }
+  .chart-tooltip-values { @apply space-y-1.5; }
+  .chart-tooltip-row { @apply flex items-center justify-between gap-3; }
+  .chart-tooltip-label { @apply flex min-w-0 items-center gap-1.5 text-slate-600; }
+  .chart-tooltip-dot { @apply h-2 w-2 shrink-0 rounded-full; }
+  .chart-tooltip-value { @apply shrink-0 font-semibold tabular-nums text-slate-900; }
+  .chart-interaction-hint { @apply mt-1 text-[10px] text-slate-400; }
+  .chart-donut-layout { @apply flex min-h-[248px] flex-wrap items-center justify-center gap-x-4 gap-y-2; }
+  .chart-donut { @apply h-44 w-44 shrink-0; }
+  .chart-donut-legend { @apply max-h-60 min-w-0 flex-1 basis-36 space-y-3 overflow-y-auto py-3 pr-2; }
+  .chart-donut-item { @apply flex items-start justify-between gap-3 text-xs; }
+  .chart-donut-label { @apply flex min-w-0 items-start gap-2 text-slate-600; }
+  .chart-donut-dot { @apply mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full; }
+  .chart-category-name { @apply break-words; }
+  .chart-donut-value { @apply shrink-0 whitespace-nowrap font-semibold tabular-nums text-slate-900; }
+  .chart-donut-percent { @apply ml-1 font-normal text-slate-400; }
+
+  /* components/CommunicationLayout.jsx */
+  .communication-header { @apply rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden; }
+  .communication-heading { @apply px-5 py-5 sm:px-6 sm:py-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4; }
+  .communication-identity { @apply flex items-start gap-3.5; }
+  .communication-icon { @apply w-11 h-11 rounded-xl bg-brand-primary/20 text-brand-ink flex items-center justify-center shrink-0; }
+  .communication-title { @apply text-2xl font-bold text-slate-900; }
+  .communication-intro { @apply text-xs text-slate-600 mt-1.5 leading-relaxed; }
+  .communication-organisation { @apply inline-flex items-center gap-2 self-start rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 max-w-full sm:max-w-48; }
+  .communication-organisation-icon { @apply w-3.5 h-3.5 shrink-0; }
+  .communication-organisation-name { @apply truncate; }
+  .communication-tabs { @apply flex gap-5 px-5 sm:px-6 border-t border-slate-100; }
+  .communication-tab { @apply inline-flex items-center gap-2 py-3.5 border-b-2 text-xs font-bold transition-colors; }
+  .communication-tab-active { @apply border-brand-primary text-slate-900; }
+  .communication-tab-idle { @apply border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300; }
+
+  /* components/DashboardAnalytics.jsx */
+  .analytics-card { @apply min-w-0 rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm; }
+  .analytics-grid { @apply grid grid-cols-1 lg:grid-cols-2 gap-5; }
+  .analytics-skeleton-title { @apply h-4 w-36 rounded bg-slate-100 motion-safe:animate-pulse; }
+  .analytics-skeleton-value { @apply mt-3 h-7 w-24 rounded bg-slate-100 motion-safe:animate-pulse; }
+  .analytics-skeleton-chart { @apply mt-6 h-60 rounded-lg bg-slate-50 motion-safe:animate-pulse; }
+  .analytics-header { @apply flex flex-col xl:flex-row xl:items-end justify-between gap-3; }
+  .analytics-title { @apply text-lg font-bold text-slate-900 flex items-center gap-2; }
+  .analytics-title-icon { @apply h-5 w-5 text-brand-ink; }
+  .analytics-range-form { @apply flex flex-wrap items-end gap-2; }
+  .analytics-range-label { @apply min-w-[140px] flex-1 sm:flex-none text-[11px] font-semibold text-slate-600; }
+  .analytics-month-input { @apply mt-1 block w-full min-w-0 sm:w-40 rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs font-semibold text-slate-700; }
+  .analytics-apply-range { @apply flex items-center gap-2 rounded-lg border border-brand-primary bg-brand-primary px-3 py-2 text-xs font-semibold text-brand-ink hover:bg-brand-secondary disabled:opacity-50; }
+  .analytics-range-spinner { @apply h-3.5 w-3.5 motion-safe:animate-spin; }
+  .analytics-range-error { @apply mt-2 text-xs text-rose-700; }
+  .analytics-load-error { @apply rounded-xl border border-rose-200 bg-rose-50 p-5 text-sm text-rose-900; }
+  .analytics-error-heading { @apply flex items-center gap-2 font-semibold; }
+  .analytics-error-icon { @apply h-4 w-4 shrink-0; }
+  .analytics-error-message { @apply mt-1 text-xs; }
+  .analytics-retry { @apply mt-3 rounded-lg border border-rose-300 px-3 py-2 text-xs font-semibold hover:bg-rose-100; }
+  .analytics-card-header { @apply flex flex-wrap items-start justify-between gap-3; }
+  .analytics-metric { @apply mt-2 text-2xl font-extrabold text-slate-900 tabular-nums; }
+  .analytics-metric-caption { @apply mt-0.5 text-xs text-slate-500; }
+  .analytics-metric-options { @apply flex rounded-lg bg-slate-100 p-1; }
+  .analytics-metric-option { @apply rounded-md px-2.5 py-1.5 text-[11px] font-semibold; }
+  .analytics-metric-active { @apply bg-white text-slate-900 shadow-sm; }
+  .analytics-metric-idle { @apply text-slate-500 hover:text-slate-900; }
+  .analytics-chart { @apply mt-5; }
+  .analytics-chart-note { @apply mt-3 text-[11px] leading-relaxed text-slate-500; }
+  .analytics-breakdown-label { @apply flex items-center gap-2 text-xs text-slate-500; }
+  .analytics-breakdown-select { @apply rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs font-semibold text-slate-700; }
+  .analytics-revenue-header { @apply flex items-start justify-between gap-3; }
+  .analytics-revenue-details { @apply flex items-center gap-1 py-1 text-xs font-semibold text-slate-600 hover:text-slate-900; }
+
+  /* components/EmailTemplateField.jsx */
+  .email-template-input { @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-primary disabled:bg-slate-50; }
+  .email-template-multiline { @apply resize-y; }
+  .email-template-heading { @apply flex items-center justify-between gap-3; }
+  .email-template-field-label { @apply block text-xs font-semibold text-slate-700; }
+  .email-template-character-count { @apply text-[11px] text-slate-500 tabular-nums; }
+  .email-template-tags { @apply flex flex-wrap items-center gap-1.5; }
+  .email-template-tags-label { @apply text-[11px] text-slate-500 mr-1; }
+  .email-template-insert-tag { @apply inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 hover:border-brand-primary hover:bg-brand-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary disabled:opacity-50; }
+  .email-template-tag-status { @apply text-xs text-amber-800; }
+
+  /* components/EventAnalytics.jsx */
+  .event-analytics-card { @apply min-w-0 rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm; }
+  .event-analytics-header { @apply flex flex-wrap items-end justify-between gap-3; }
+  .event-analytics-title { @apply flex items-center gap-2 text-lg font-bold text-slate-900; }
+  .event-analytics-scope-label { @apply text-xs font-semibold text-slate-600; }
+  .event-analytics-scope-select { @apply mt-1 block rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-700; }
+  .event-analytics-summary-grid { @apply grid grid-cols-1 sm:grid-cols-2 gap-5; }
+  .event-analytics-summary-header { @apply flex items-center justify-between gap-3; }
+  .event-analytics-summary-label { @apply text-xs font-semibold text-slate-500; }
+  .event-analytics-summary-icon { @apply h-5 w-5 text-brand-ink; }
+  .event-analytics-summary-value { @apply mt-3 text-3xl font-extrabold text-slate-900 tabular-nums; }
+  .event-analytics-summary-note { @apply mt-2 text-xs leading-relaxed text-slate-500; }
+  .event-analytics-view-upcoming { @apply mt-3 text-xs font-semibold text-slate-700 underline underline-offset-4; }
+  .event-analytics-charts { @apply grid grid-cols-1 xl:grid-cols-2 gap-5 items-start; }
+  .event-analytics-trend-header { @apply flex flex-wrap items-start justify-between gap-3; }
+  .event-analytics-trend-total { @apply mt-2 text-2xl font-extrabold text-slate-900 tabular-nums; }
+  .event-analytics-trend-period { @apply rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs font-semibold text-slate-700; }
+  .event-analytics-trend-chart { @apply mt-5; }
+  .event-analytics-trend-note { @apply mt-3 text-[11px] leading-relaxed text-slate-500; }
+  .event-analytics-empty { @apply mt-5 rounded-lg bg-slate-50 px-4 py-8 text-center text-xs text-slate-500; }
+  .event-analytics-event-totals { @apply mt-5 max-h-[32rem] overflow-y-auto divide-y divide-slate-100; }
+  .event-analytics-event-item { @apply py-4 first:pt-0 last:pb-0; }
+  .event-analytics-event-summary { @apply flex items-start justify-between gap-3; }
+  .event-analytics-event-details { @apply min-w-0; }
+  .event-analytics-event-name { @apply break-words text-sm font-semibold text-slate-900; }
+  .event-analytics-event-date { @apply mt-1 text-[11px] text-slate-500; }
+  .event-analytics-rsvp-count { @apply shrink-0 text-sm font-bold text-slate-900 tabular-nums; }
+  .event-analytics-rsvp-track { @apply mt-3 h-2 rounded-full bg-slate-100; }
+  .event-analytics-rsvp-bar { @apply h-2 rounded-full bg-brand-primary; }
+  .event-analytics-view-rsvps { @apply mt-2.5 inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-600 underline underline-offset-4; }
+
+  /* components/EventLocationField.jsx */
+  .venue-label { @apply block text-xs font-semibold text-slate-700; }
+  .venue-search-field { @apply relative; }
+  .venue-input-icon { @apply absolute left-3 top-3 h-4 w-4 text-slate-400; }
+  .venue-input { @apply w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-primary disabled:bg-slate-50; }
+  .venue-search-help { @apply text-[11px] leading-relaxed text-slate-500; }
+  .venue-search-actions { @apply flex flex-wrap items-center gap-2; }
+  .venue-search-button { @apply inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50; }
+  .venue-search-spinner { @apply h-3.5 w-3.5 animate-spin; }
+  .venue-selected { @apply inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-[11px] font-semibold text-emerald-800; }
+  .venue-search-status { @apply text-xs text-slate-600; }
+  .venue-search-minimum { @apply text-[11px] text-slate-500; }
+  .venue-search-error { @apply rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs leading-relaxed text-slate-700; }
+  .venue-results { @apply max-h-56 divide-y divide-slate-200 overflow-y-auto rounded-lg border border-slate-200 bg-white; }
+  .venue-result { @apply flex w-full items-start gap-2.5 p-3 text-left text-xs leading-relaxed text-slate-700 hover:bg-slate-50 focus:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-brand-primary disabled:opacity-50; }
+  .venue-result-icon { @apply mt-0.5 h-4 w-4 shrink-0 text-brand-ink; }
+  .venue-result-address { @apply min-w-0 break-words; }
+  .venue-map-links { @apply flex flex-wrap gap-x-4 gap-y-2; }
+  .venue-map-link { @apply inline-flex items-center gap-1 text-xs font-semibold text-slate-600 underline underline-offset-4; }
+  .venue-attribution { @apply text-[10px] text-slate-500; }
+  .venue-attribution-link { @apply underline underline-offset-2; }
+
+  /* components/EventModal.jsx */
+  .event-modal-input { @apply w-full min-w-0 rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-primary disabled:bg-slate-50 disabled:text-slate-500; }
+  .event-modal-overlay { @apply fixed inset-0 z-50 flex items-start justify-center overflow-clip bg-brand-muted/40 p-3 sm:p-5; }
+  .event-modal-dialog { @apply flex max-h-[calc(100dvh-1.5rem)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl sm:max-h-[calc(100dvh-2.5rem)]; }
+  .event-modal-header { @apply flex shrink-0 items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 p-4 sm:px-6 sm:py-5; }
+  .event-modal-heading { @apply flex items-center gap-3; }
+  .event-modal-icon { @apply hidden rounded-lg bg-brand-primary p-2 text-brand-ink sm:block; }
+  .event-modal-intro { @apply mt-0.5 text-xs text-slate-500; }
+  .event-modal-close { @apply rounded-lg p-2 text-slate-500 hover:bg-slate-200 disabled:opacity-40; }
+  .event-modal-form { @apply min-h-0 overflow-y-auto p-4 sm:p-6; }
+  .event-modal-fields { @apply min-w-0 space-y-6; }
+  .event-modal-form-section { @apply rounded-xl border border-slate-200 bg-slate-50/70 p-4; }
+  .event-modal-schedule-heading { @apply mb-1 flex items-center gap-2 text-sm font-bold text-slate-900; }
+  .event-modal-schedule-help { @apply mb-4 text-xs leading-relaxed text-slate-500; }
+  .event-modal-date-fields { @apply grid grid-cols-1 gap-4 min-[360px]:grid-cols-2; }
+  .event-modal-schedule-error { @apply mt-2 text-xs text-red-700; }
+  .event-modal-date-policy { @apply mt-2 text-xs text-slate-500; }
+  .event-modal-field-offset { @apply mt-4; }
+  .event-modal-timezone-help { @apply mt-1.5 text-[11px] text-slate-500; }
+  .event-modal-daily-schedule { @apply mt-4 space-y-3; }
+  .event-modal-schedule-day { @apply min-w-0 rounded-lg border border-slate-200 bg-white px-3 pb-3; }
+  .event-modal-day-label { @apply px-1 pt-2 text-xs font-semibold text-slate-800; }
+  .event-modal-time-fields { @apply mt-2 grid grid-cols-2 gap-3; }
+  .event-modal-overnight-help { @apply mt-3 text-[11px] leading-relaxed text-slate-500; }
+  .event-modal-capacity-field { @apply max-w-xs; }
+  .event-modal-access-heading { @apply mb-3 flex items-center gap-2 text-sm font-bold text-slate-900; }
+  .event-modal-all-tiers-option { @apply flex cursor-pointer items-start gap-2.5 text-sm text-slate-700; }
+  .event-modal-access-radio { @apply mt-1 accent-brand-ink; }
+  .event-modal-option-title { @apply block font-semibold; }
+  .event-modal-minimum-tier-option { @apply flex items-start gap-2.5 text-sm; }
+  .event-modal-option-enabled { @apply cursor-pointer text-slate-700; }
+  .event-modal-option-disabled { @apply text-slate-400; }
+  .event-modal-tier-order-help { @apply mt-2 text-[11px] leading-relaxed text-slate-500; }
+  .event-modal-eligible-summary { @apply mt-4 border-t border-slate-200 pt-3; }
+  .event-modal-eligible-label { @apply mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500; }
+  .event-modal-eligible-tiers { @apply flex flex-wrap gap-1.5; }
+  .event-modal-eligible-tier { @apply rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700; }
+  .event-modal-submit-error { @apply mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800; }
+  .event-modal-footer { @apply mt-6 flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:justify-end; }
+  .event-modal-cancel { @apply rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50; }
+  .event-modal-create { @apply flex items-center justify-center gap-2 rounded-lg bg-brand-primary px-5 py-2.5 text-sm font-bold text-brand-ink shadow-sm transition-colors hover:bg-brand-secondary disabled:cursor-wait disabled:opacity-60; }
+
+  /* components/GoogleSignIn.jsx */
+  .google-signin-button-mount { @apply flex justify-center; }
+  .google-signin-disabled { @apply opacity-60 pointer-events-none; }
+  .google-signin-loading { @apply text-xs text-center text-slate-500; }
+  .google-signin-status { @apply text-xs text-center text-slate-600; }
+  .google-signin-error { @apply rounded-lg border border-brand-accent bg-brand-50 p-3 text-sm text-slate-800; }
+  .google-signin-recovery-action { @apply mt-2 font-semibold underline; }
+
+  /* components/GoogleWalletPass.jsx */
+  .wallet-pass-layout { @apply flex flex-col items-center w-full max-w-md mx-auto; }
+  .wallet-pass-preview { @apply w-full relative; }
+  .wallet-pass-badge { @apply w-full h-full rounded-xl p-6 border border-brand-muted/30; }
+  .wallet-pass-header { @apply flex items-center justify-between mb-4; }
+  .wallet-pass-action-group { @apply flex items-center gap-2; }
+  .wallet-pass-brand-icon { @apply w-8 h-8 rounded; }
+  .wallet-pass-icon-center { @apply flex items-center justify-center; }
+  .wallet-pass-organisation-name { @apply text-[10px] tracking-widest uppercase font-bold opacity-80 block; }
+  .wallet-pass-title { @apply text-sm font-extrabold tracking-tight; }
+  .wallet-pass-member { @apply flex items-center gap-4 my-4; }
+  .wallet-pass-avatar { @apply w-14 h-14 rounded-full border-2 border-white/50; }
+  .wallet-pass-avatar-image { @apply w-full h-full rounded-full object-cover; }
+  .wallet-pass-avatar-icon { @apply w-7 h-7; }
+  .wallet-pass-member-details { @apply flex-1; }
+  .wallet-pass-member-name { @apply text-lg font-bold leading-tight; }
+  .wallet-pass-membership-number { @apply text-xs font-mono tracking-wider mt-0.5; }
+  .wallet-pass-tier-position { @apply inline-block mt-1; }
+  .wallet-pass-tier-badge { @apply px-2 py-0.5 rounded text-[11px] font-semibold border border-brand-muted/30; }
+  .wallet-pass-metadata { @apply grid grid-cols-2 gap-2 p-3 rounded-lg; }
+  .wallet-pass-metadata-spacing { @apply text-xs my-4; }
+  .wallet-pass-metadata-label { @apply text-[10px] uppercase opacity-75 block; }
+  .wallet-pass-metadata-value { @apply font-semibold; }
+  .wallet-pass-verified { @apply font-semibold flex items-center gap-1; }
+  .wallet-pass-codes { @apply flex items-center justify-between pt-2 border-t border-brand-muted/30; }
+  .wallet-pass-barcode-group { @apply flex flex-col; }
+  .wallet-pass-barcode { @apply flex items-end gap-[2px] h-7 px-1.5 bg-white rounded p-1; }
+  .wallet-pass-barcode-bar { @apply w-[2px]; }
+  .wallet-pass-barcode-ink { @apply bg-black; }
+  .wallet-pass-barcode-gap { @apply bg-transparent; }
+  .wallet-pass-barcode-number { @apply text-[9px] font-mono opacity-75 mt-0.5 text-center; }
+  .wallet-pass-qr-frame { @apply p-1.5 bg-white rounded; }
+  .wallet-pass-qr-icon { @apply w-8 h-8 text-black; }
+  .wallet-pass-actions { @apply w-full mt-4 space-y-2.5; }
+  .wallet-pass-save-link { @apply w-full flex items-center justify-center gap-3 bg-white hover:bg-brand-50 text-brand-ink font-medium py-3 px-5 rounded-lg border border-brand-silver transition-colors shadow-sm; }
+  .wallet-pass-google-brand { @apply flex items-center gap-1; }
+  .wallet-pass-save-label { @apply text-sm font-semibold tracking-wide; }
+  .wallet-pass-external-icon { @apply w-4 h-4 text-slate-400; }
+  .wallet-pass-copy-link { @apply flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 text-xs border border-slate-300 transition-colors shadow-sm; }
+  .wallet-pass-copied-icon { @apply w-3.5 h-3.5 text-brand-ink; }
+  .wallet-pass-copied-label { @apply text-brand-ink font-semibold; }
+  .wallet-pass-sync-button { @apply flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 text-xs border border-slate-300 transition-colors shadow-sm; }
+  .wallet-pass-syncing { @apply animate-spin; }
+  .wallet-pass-sync-footer { @apply text-center; }
+  .wallet-pass-sync-status { @apply text-[11px] text-slate-500 flex items-center justify-center gap-1; }
+  .wallet-pass-sync-indicator { @apply w-1.5 h-1.5 rounded-full bg-brand-primary inline-block; }
+
+  /* components/ImageUploadField.jsx */
+  .image-upload-field { @apply rounded-xl border border-slate-200 p-4 space-y-3; }
+  .image-upload-label { @apply text-xs font-bold text-slate-700; }
+  .image-upload-preview { @apply rounded-lg border border-slate-200; }
+  .image-upload-banner-preview { @apply h-24 w-full; }
+  .image-upload-logo-preview { @apply h-24 w-24; }
+  .image-upload-actions { @apply flex flex-wrap items-center gap-2; }
+  .image-upload-choose { @apply inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-brand-primary text-brand-ink text-xs font-semibold focus-within:ring-2 focus-within:ring-brand-muted; }
+  .image-upload-busy { @apply opacity-60; }
+  .image-upload-ready { @apply cursor-pointer hover:bg-brand-secondary; }
+  .image-upload-reading { @apply w-3.5 h-3.5 animate-spin; }
+  .image-upload-remove { @apply inline-flex items-center gap-1 px-2 py-2 text-xs text-slate-600 hover:bg-slate-100 rounded-lg disabled:opacity-60; }
+  .image-upload-file-help { @apply text-[11px] text-slate-500; }
+  .image-upload-error { @apply text-xs text-slate-700; }
+
+  /* components/InvoiceModal.jsx */
+  .invoice-overlay { @apply fixed inset-0 z-50 overflow-y-auto bg-brand-muted/35 flex items-center justify-center p-4; }
+  .invoice-dialog { @apply relative w-full max-w-xl bg-white border border-slate-200 rounded-xl overflow-hidden shadow-2xl print:border-none print:shadow-none print:bg-white print:text-black; }
+  .invoice-toolbar { @apply p-5 border-b border-slate-200 bg-white flex items-center justify-between print:hidden; }
+  .invoice-toolbar-group { @apply flex items-center gap-2; }
+  .invoice-document-label { @apply text-xs uppercase tracking-wider font-bold text-slate-500; }
+  .invoice-document-number { @apply text-sm font-mono font-bold text-brand-ink; }
+  .invoice-document-action { @apply p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded text-xs flex items-center gap-1 transition-colors; }
+  .invoice-close { @apply p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded transition-colors; }
+  .invoice-document { @apply p-8 space-y-6 bg-white text-slate-900 print:bg-white print:text-black; }
+  .invoice-letterhead { @apply flex items-start justify-between border-b border-slate-200 print:border-neutral-300 pb-6; }
+  .invoice-brand { @apply text-2xl font-black text-slate-900 print:text-black tracking-tight; }
+  .invoice-brand-accent { @apply text-brand-ink print:text-black; }
+  .invoice-organisation { @apply text-xs text-slate-500 print:text-neutral-600 mt-0.5; }
+  .invoice-billing-note { @apply text-xs text-slate-400 print:text-neutral-500 mt-1; }
+  .invoice-details-right { @apply text-right; }
+  .invoice-status { @apply inline-flex items-center gap-1.5 px-3 py-1 rounded text-xs font-bold border uppercase tracking-wide; }
+  .invoice-status-paid { @apply bg-brand-50 text-brand-ink border-brand-primary; }
+  .invoice-status-unpaid { @apply bg-slate-100 text-brand-ink border-brand-muted; }
+  .invoice-number { @apply text-xs text-slate-500 print:text-neutral-600 mt-2 font-mono; }
+  .invoice-billing-details { @apply grid grid-cols-2 gap-6 text-xs; }
+  .invoice-section-label { @apply text-slate-500 print:text-neutral-500 uppercase font-semibold block mb-1; }
+  .invoice-member-name { @apply font-bold text-slate-900 print:text-black text-sm; }
+  .invoice-member-email { @apply text-slate-500 print:text-neutral-600; }
+  .invoice-payment-method { @apply text-slate-400 print:text-neutral-500 mt-1 font-mono text-[11px]; }
+  .invoice-payment-detail { @apply text-slate-700 print:text-neutral-700; }
+  .invoice-detail-label { @apply text-slate-500; }
+  .invoice-transaction-id { @apply text-slate-400 print:text-neutral-500 font-mono text-[11px] truncate max-w-[200px] ml-auto; }
+  .invoice-items-frame { @apply border border-slate-200 print:border-neutral-300 rounded-lg overflow-hidden; }
+  .invoice-items-header { @apply bg-slate-50 print:bg-neutral-100 text-slate-600 print:text-neutral-600 font-semibold border-b border-slate-200 print:border-neutral-300; }
+  .invoice-item-cell { @apply p-3; }
+  .invoice-interval-heading { @apply p-3 text-center; }
+  .invoice-amount-heading { @apply p-3 text-right; }
+  .invoice-items-body { @apply divide-y divide-slate-200 print:divide-neutral-200; }
+  .invoice-item-title { @apply font-semibold text-slate-900 print:text-black; }
+  .invoice-item-description { @apply text-[11px] text-slate-500 print:text-neutral-600; }
+  .invoice-item-interval { @apply p-3 text-center text-slate-700 print:text-neutral-700 capitalize; }
+  .invoice-item-amount { @apply p-3 text-right font-bold text-slate-900 print:text-black; }
+  .invoice-item-placeholder { @apply p-3 text-center text-slate-500; }
+  .invoice-totals-align { @apply flex justify-end pt-2; }
+  .invoice-totals { @apply w-56 space-y-1.5 text-xs text-right; }
+  .invoice-subtotal-row { @apply flex justify-between text-slate-500 print:text-neutral-600; }
+  .invoice-total-row { @apply flex justify-between text-sm font-extrabold text-slate-900 print:text-black pt-2 border-t border-slate-200 print:border-neutral-300; }
+  .invoice-total-amount { @apply text-brand-ink font-black print:text-black; }
+  .invoice-credit-note { @apply text-xs text-slate-500 print:text-neutral-600; }
+  .invoice-footer { @apply pt-4 border-t border-slate-200 print:border-neutral-300 text-center text-[11px] text-slate-500 print:text-neutral-500; }
+
+  /* components/PaymentModal.jsx */
+  .checkout-breakdown { @apply rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm space-y-2; }
+  .checkout-breakdown-item { @apply flex justify-between gap-3; }
+  .checkout-breakdown-total { @apply flex justify-between gap-3 border-t border-slate-200 pt-2; }
+  .checkout-breakdown-note { @apply text-xs text-slate-600; }
+  .checkout-card { @apply w-full bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm; }
+  .checkout-header { @apply p-5 sm:p-6 border-b border-slate-200 flex items-center justify-between gap-3; }
+  .checkout-heading { @apply flex items-center gap-3; }
+  .checkout-icon { @apply p-2.5 rounded-xl bg-brand-primary text-brand-ink; }
+  .checkout-close { @apply p-2 text-slate-500 hover:text-slate-900; }
+  .checkout-demo-banner { @apply px-5 sm:px-6 py-3 border-b border-amber-200 bg-amber-50 flex items-center gap-2 text-xs font-semibold text-amber-950; }
+  .checkout-demo-icon { @apply w-4 h-4 shrink-0; }
+  .checkout-progress { @apply px-5 sm:px-6 pt-5 flex items-center gap-2 text-xs text-slate-400; }
+  .checkout-step-connector { @apply flex-1 h-px bg-slate-200; }
+  .checkout-step { @apply flex items-center gap-1.5; }
+  .checkout-step-active { @apply text-slate-900 font-semibold; }
+  .checkout-step-number { @apply w-5 h-5 border border-current rounded-full flex items-center justify-center shrink-0; }
+  .checkout-body { @apply p-5 sm:p-6 space-y-5; }
+  .checkout-notice { @apply rounded-lg bg-slate-50 border border-slate-200 p-3 text-sm text-slate-700; }
+  .checkout-error { @apply flex gap-2 text-sm text-red-800 rounded-lg border border-red-200 bg-red-50 p-3; }
+  .checkout-error-icon { @apply w-4 h-4 mt-0.5 shrink-0; }
+  .checkout-loading { @apply py-10 flex justify-center items-center gap-3 text-sm text-slate-600; }
+  .checkout-loading-spinner { @apply w-5 h-5 animate-spin; }
+  .checkout-success { @apply text-center py-3; }
+  .checkout-success-icon { @apply w-12 h-12 mx-auto text-emerald-600; }
+  .checkout-success-title { @apply text-xl font-bold text-slate-900 mt-3; }
+  .checkout-success-message { @apply text-sm text-slate-500 mt-2; }
+  .checkout-receipt { @apply rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3 text-sm; }
+  .checkout-receipt-title { @apply flex items-center gap-2 font-semibold; }
+  .checkout-receipt-item { @apply flex justify-between gap-4; }
+  .checkout-receipt-label { @apply text-slate-500; }
+  .checkout-receipt-value { @apply font-semibold; }
+  .checkout-reference { @apply font-mono text-xs break-all text-right; }
+  .checkout-receipt-total { @apply border-t border-slate-200 pt-3 flex justify-between font-bold; }
+  .checkout-continue { @apply w-full py-3 flex items-center justify-center gap-2 rounded-lg bg-brand-primary hover:bg-brand-secondary text-brand-ink font-bold text-sm; }
+  .checkout-receipt-note { @apply text-xs text-center text-slate-500; }
+  .checkout-restart { @apply text-sm font-semibold underline; }
+  .checkout-order-summary { @apply rounded-xl border border-slate-200 bg-slate-50 p-4; }
+  .checkout-order-details { @apply flex items-end justify-between gap-4 mt-2; }
+  .checkout-order-tier { @apply text-sm font-semibold; }
+  .checkout-order-amount { @apply text-xl font-bold; }
+  .checkout-authorization-heading { @apply flex items-center gap-2 text-sm font-bold mb-3; }
+  .checkout-demo-card { @apply rounded-xl bg-slate-900 text-white p-5 space-y-5; }
+  .checkout-demo-card-header { @apply flex justify-between text-xs text-slate-300; }
+  .checkout-demo-card-number { @apply font-mono text-lg tracking-widest; }
+  .checkout-demo-card-details { @apply flex justify-between text-xs; }
+  .checkout-field-label { @apply block text-sm font-semibold; }
+  .checkout-account-select { @apply w-full mt-2 border border-slate-300 rounded-lg bg-white p-3 text-sm font-normal; }
+  .checkout-verification-hint { @apply block mt-1 text-xs font-normal text-slate-500; }
+  .checkout-sample-code { @apply font-mono; }
+  .checkout-verification-input { @apply w-full rounded-lg border border-slate-300 px-4 py-3 text-center tracking-[0.5em] font-mono text-lg; }
+  .checkout-outcome-label { @apply block text-xs text-slate-500; }
+  .checkout-outcome-select { @apply block w-full mt-2 rounded-lg border border-slate-200 p-2.5 text-sm text-slate-700 bg-white; }
+  .checkout-submit { @apply w-full flex items-center justify-center gap-2 py-3 rounded-lg bg-brand-primary hover:bg-brand-secondary font-bold text-sm text-brand-ink disabled:opacity-60; }
+  .checkout-authorization-actions { @apply flex justify-between gap-4 text-sm; }
+  .checkout-change-details { @apply font-semibold underline flex items-center gap-1; }
+  .checkout-cancel { @apply text-slate-500 underline; }
+  .checkout-options-heading { @apply text-sm font-bold mb-3; }
+  .checkout-choice { @apply flex items-center gap-3 rounded-lg border p-3 cursor-pointer; }
+  .checkout-choice-selected { @apply bg-brand-50 border-brand-primary; }
+  .checkout-choice-idle { @apply border-slate-200; }
+  .checkout-choice-radio { @apply accent-brand-primary; }
+  .checkout-tier-name { @apply flex-1 text-sm font-semibold; }
+  .checkout-tier-price { @apply text-sm font-bold; }
+  .checkout-tier-interval { @apply block text-right text-xs font-normal text-slate-500; }
+  .checkout-quote-error { @apply text-sm text-red-700; }
+  .checkout-retry-quote { @apply mt-2 font-semibold underline; }
+  .checkout-method-icon { @apply w-5 h-5 text-slate-600; }
+  .checkout-payment-policy { @apply text-xs leading-relaxed text-slate-500; }
+  .checkout-overlay { @apply fixed inset-0 z-50 overflow-y-auto bg-brand-muted/35 flex items-center justify-center p-4; }
+  .checkout-dialog { @apply w-full max-w-xl; }
+
+  /* components/PhoneInput.jsx */
+  .phone-field { @apply flex rounded-lg border border-slate-300 bg-white overflow-hidden focus-within:border-brand-primary; }
+  .phone-calling-code { @apply px-3 py-2.5 border-r border-slate-200 bg-slate-50 text-sm text-slate-700; }
+  .phone-input { @apply w-full min-w-0 px-3 py-2.5 text-sm text-slate-900 bg-white disabled:bg-slate-50 focus:outline-none; }
+  .phone-hint { @apply mt-1.5 text-xs text-slate-500; }
+
+  /* components/PostCard.jsx */
+  .post-card-article { @apply min-w-0 rounded-2xl border bg-white overflow-hidden shadow-sm; }
+  .post-card-featured-border { @apply border-brand-primary/70; }
+  .post-card-standard-border { @apply border-slate-200; }
+  .post-card-latest-banner { @apply flex items-center gap-2 border-b border-brand-primary/50 bg-brand-primary/15 px-5 py-3 text-xs font-bold text-brand-ink sm:px-6; }
+  .post-card-organisation-label { @apply ml-auto text-[10px] font-semibold uppercase tracking-wider; }
+  .post-card-featured-layout { @apply grid md:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]; }
+  .post-card-media { @apply bg-slate-50 overflow-hidden; }
+  .post-card-featured-media { @apply md:order-2 md:min-h-64; }
+  .post-card-image { @apply w-full object-contain; }
+  .post-card-featured-image { @apply max-h-80 md:h-full md:max-h-96; }
+  .post-card-standard-image { @apply h-44; }
+  .post-card-body { @apply min-w-0; }
+  .post-card-featured-body { @apply p-5 sm:p-6; }
+  .post-card-standard-body { @apply p-5; }
+  .post-card-metadata { @apply mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500; }
+  .post-card-date { @apply inline-flex items-center gap-1.5; }
+  .post-card-published { @apply ml-auto inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-1 font-semibold text-slate-600; }
+  .post-card-title { @apply break-words font-bold leading-snug text-slate-900; }
+  /* Font-size utilities also set line-height; retain the shared title spacing. */
+  .post-card-featured-title { @apply text-xl leading-snug sm:text-2xl; }
+  .post-card-standard-title { @apply text-lg leading-snug; }
+  .post-card-subtitle { @apply mt-2 break-words text-sm font-medium leading-relaxed text-slate-600; }
+  .post-card-description-section { @apply mt-4 border-t border-slate-100 pt-4; }
+  .post-card-featured-description { @apply sm:mt-5 sm:pt-5; }
+  .post-card-excerpt { @apply relative; }
+  .post-card-excerpt-collapsed { @apply max-h-56 overflow-hidden; }
+  .post-card-excerpt-fade { @apply pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-white to-transparent; }
+  .post-card-expand { @apply mt-3 inline-flex items-center gap-1.5 rounded text-xs font-bold text-slate-700 underline decoration-brand-primary decoration-2 underline-offset-4; }
+  .post-card-footer { @apply border-t border-slate-100 bg-slate-50/70 px-5 py-3; }
+  .post-card-delete-prompt { @apply text-xs font-medium leading-relaxed text-slate-700; }
+  .post-card-delete-error { @apply text-xs text-red-700; }
+  .post-card-delete-actions { @apply flex flex-wrap items-center gap-2; }
+  .post-card-confirm-delete { @apply inline-flex items-center gap-1.5 rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50; }
+  .post-card-deleting { @apply h-3.5 w-3.5 animate-spin; }
+  .post-card-keep { @apply inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-50; }
+  .post-card-author-row { @apply flex items-center justify-between gap-3; }
+  .post-card-author { @apply min-w-0 truncate text-[11px] text-slate-500; }
+  .post-card-actions { @apply flex shrink-0 items-center gap-1; }
+  .post-card-edit { @apply inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-semibold text-slate-600 hover:bg-white disabled:opacity-50; }
+  .post-card-delete { @apply inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-semibold text-slate-600 hover:bg-red-50 hover:text-red-700 disabled:opacity-50; }
+
+  /* components/PostDescription.jsx */
+  .post-content-image { @apply my-3 max-h-80 max-w-full rounded-lg object-contain; }
+  .post-content-paragraph { @apply min-h-7 whitespace-pre-wrap break-words; }
+  .post-content-list-item { @apply pl-1; }
+  .post-content-ordered-list { @apply list-decimal space-y-1 pl-6; }
+  .post-content-plain-text { @apply whitespace-pre-wrap break-words text-sm leading-7 text-slate-700; }
+  .post-content-rich-text { @apply space-y-3 break-words text-sm leading-7 text-slate-700; }
+
+  /* components/PostDescriptionEditor.jsx */
+  .post-editor-frame { @apply overflow-hidden rounded-lg border bg-white focus-within:ring-2 focus-within:ring-brand-primary; }
+  .post-editor-invalid { @apply border-red-300; }
+  .post-editor-valid { @apply border-slate-300; }
+  .post-editor-disabled { @apply bg-slate-50; }
+  .post-editor-toolbar { @apply flex flex-wrap items-center gap-1 border-b border-slate-200 bg-slate-50 px-2 py-2; }
+  .post-editor-format-button { @apply inline-flex h-8 w-8 items-center justify-center rounded text-slate-700 transition-colors disabled:opacity-40; }
+  .post-editor-format-active { @apply bg-brand-primary text-brand-ink; }
+  .post-editor-format-idle { @apply hover:bg-slate-200; }
+  .post-editor-toolbar-divider { @apply mx-1 h-5 w-px bg-slate-300; }
+  .post-editor-insert-image { @apply inline-flex h-8 items-center gap-1.5 rounded px-2 text-xs font-semibold text-slate-700 hover:bg-slate-200 disabled:opacity-40; }
+  .post-editor-history { @apply ml-auto flex items-center gap-1; }
+  .post-editor-history-button { @apply inline-flex h-8 w-8 items-center justify-center rounded text-slate-600 hover:bg-slate-200 disabled:opacity-30; }
+  .post-editor-image-error { @apply mt-2 text-xs text-red-700; }
+  .post-editor-help { @apply mt-2 text-[11px] leading-relaxed text-slate-500; }
+
+  /* components/TierModal.jsx */
+  .tier-modal-overlay { @apply fixed inset-0 z-50 overflow-y-auto bg-brand-muted/35 flex items-center justify-center p-4; }
+  .tier-modal-dialog { @apply relative w-full max-w-lg bg-white border border-slate-200 rounded-xl overflow-hidden shadow-2xl; }
+  .tier-modal-header { @apply p-5 border-b border-slate-200 bg-white flex items-center justify-between; }
+  .tier-modal-heading { @apply flex items-center gap-3; }
+  .tier-modal-icon { @apply p-2 rounded-lg bg-brand-primary text-brand-ink; }
+  .tier-modal-close { @apply p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded transition-colors; }
+  .tier-modal-form { @apply p-6 space-y-4; }
+  .tier-modal-pricing-fields { @apply grid grid-cols-2 gap-4; }
+  .tier-modal-field-label { @apply block text-xs font-semibold text-slate-700 mb-1; }
+  .tier-modal-input { @apply w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-brand-primary; }
+  .tier-modal-perks-input { @apply w-full px-3.5 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-brand-primary font-mono text-xs; }
+  .tier-modal-footer { @apply pt-2; }
+  .tier-modal-save { @apply w-full py-3 bg-brand-primary hover:bg-brand-secondary text-brand-ink font-bold rounded-lg flex items-center justify-center gap-2 transition-colors; }
+
+  /* pages/AccountHomePage.jsx */
+  .account-tabs { @apply grid grid-cols-2 gap-1 rounded-xl border border-slate-200 bg-white p-1.5 shadow-sm sm:inline-flex; }
+  .account-tab { @apply inline-flex min-w-0 items-center justify-center gap-2 rounded-lg px-3 py-3 text-xs font-bold transition-colors sm:px-5 sm:text-sm; }
+  .account-tab-active { @apply bg-brand-primary text-brand-ink shadow-sm; }
+  .account-tab-idle { @apply text-slate-600 hover:bg-slate-50 hover:text-slate-900; }
+  .account-tab-icon { @apply hidden h-4 w-4 shrink-0 sm:block; }
+
+  /* pages/AccountOnboardingPage.jsx */
+  .onboarding-choices { @apply grid grid-cols-1 sm:grid-cols-2 gap-4; }
+  .onboarding-create-choice { @apply rounded-xl border border-brand-primary bg-brand-50 p-5 text-left hover:bg-brand-100 transition-colors disabled:opacity-60; }
+  .onboarding-create-icon { @apply w-11 h-11 rounded-xl bg-brand-primary flex items-center justify-center mb-4; }
+  .onboarding-choice-icon { @apply w-5 h-5 text-brand-ink; }
+  .onboarding-choice-description { @apply text-sm text-slate-600 mt-2 leading-relaxed; }
+  .onboarding-choice-action { @apply mt-5 inline-flex items-center gap-2 text-sm font-semibold text-brand-ink; }
+  .onboarding-browse-choice { @apply rounded-xl border border-slate-300 bg-white p-5 text-left hover:bg-slate-50 transition-colors disabled:opacity-60; }
+  .onboarding-browse-icon { @apply w-11 h-11 rounded-xl bg-slate-100 flex items-center justify-center mb-4; }
+  .onboarding-error { @apply mt-4 text-sm text-slate-800 rounded-lg border border-slate-300 bg-slate-50 p-3; }
+  .onboarding-account-note { @apply mt-5 text-sm text-slate-500 leading-relaxed; }
+  .onboarding-footer { @apply mt-5 text-center; }
+  .onboarding-signout { @apply text-xs font-semibold text-slate-600 hover:underline; }
+
+  /* pages/LandingPage.jsx */
+  .landing-page { @apply min-h-screen bg-slate-50 text-slate-900; }
+  .landing-navbar { @apply border-b border-slate-200 bg-white sticky top-0 z-30; }
+  .landing-navbar-content { @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between; }
+  .landing-navbar-actions { @apply flex items-center gap-3; }
+  .landing-logo { @apply h-12 w-auto object-contain; }
+  .landing-signin { @apply px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 transition-colors; }
+  .landing-signup { @apply px-4 py-2 text-xs font-bold bg-brand-primary hover:bg-brand-secondary text-brand-ink rounded-lg transition-colors; }
+  .landing-hero { @apply pt-20 pb-12; }
+  .landing-hero-content { @apply max-w-5xl mx-auto px-4 text-center; }
+  .landing-search { @apply mt-8 max-w-2xl mx-auto; }
+  .landing-search-field { @apply relative flex items-center; }
+  .landing-search-icon { @apply w-5 h-5 text-slate-400 absolute left-4; }
+  .landing-search-input { @apply w-full pl-12 pr-10 py-3.5 bg-white border-2 border-slate-200 hover:border-brand-primary/50 focus:border-brand-primary rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none shadow-sm transition-all; }
+  .landing-clear-search { @apply absolute right-3.5 p-1 text-slate-400 hover:text-slate-600 rounded-md; }
+  .landing-directory { @apply py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8; }
+  .landing-directory-heading { @apply flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8; }
+  .landing-directory-label { @apply flex items-center gap-2 text-xs font-bold text-brand-ink uppercase tracking-wider mb-1; }
+  .landing-heading { @apply text-2xl sm:text-3xl font-extrabold font-heading text-slate-900; }
+  .landing-directory-description { @apply text-xs sm:text-sm text-slate-500 mt-1; }
+  .landing-results-indicator { @apply w-2 h-2 rounded-full bg-brand-500 animate-pulse; }
+  .landing-filter-label { @apply text-xs font-semibold text-slate-400 flex items-center gap-1 pl-1 pr-2 shrink-0; }
+  .landing-category-filter { @apply px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0; }
+  .landing-category-active { @apply bg-brand-primary text-brand-ink shadow-sm; }
+  .landing-category-idle { @apply bg-white hover:bg-slate-100 text-slate-600 border border-slate-200; }
+  .landing-loading { @apply py-16 text-center; }
+  .landing-loading-message { @apply text-xs text-slate-500 font-mono; }
+  .landing-empty { @apply py-16 text-center bg-white rounded-xl border border-slate-200 p-8 max-w-lg mx-auto shadow-sm; }
+  .landing-empty-icon { @apply w-12 h-12 text-slate-300 mx-auto mb-3; }
+  .landing-empty-title { @apply text-base font-bold text-slate-800; }
+  .landing-empty-description { @apply text-xs text-slate-500 mt-1 max-w-sm mx-auto; }
+  .landing-clear-filters { @apply mt-4 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition-colors; }
+  .landing-cards { @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6; }
+  .landing-card { @apply bg-white rounded-xl border border-slate-200 hover:border-brand-primary/50 hover:shadow-md transition-all flex flex-col justify-between overflow-hidden; }
+  .landing-card-banner { @apply h-28 relative overflow-hidden bg-slate-100; }
+  .landing-banner-image { @apply w-full h-full; }
+  .landing-card-banner-zoom { @apply group-hover:scale-105 transition-transform duration-500; }
+  .landing-banner-shade { @apply absolute inset-0 bg-brand-muted/10; }
+  .landing-public-badge-position { @apply absolute top-3 right-3; }
+  .landing-category-position { @apply absolute bottom-2.5 left-3; }
+  .landing-card-content { @apply p-5; }
+  .landing-card-heading { @apply flex items-start gap-3 mb-3; }
+  .landing-card-logo { @apply w-11 h-11 rounded-lg border border-slate-200 shrink-0 -mt-8 relative z-10 bg-white shadow-sm; }
+  .landing-card-identity { @apply flex-1 min-w-0; }
+  .landing-card-name { @apply text-base font-bold text-slate-900 group-hover:text-brand-ink transition-colors truncate; }
+  .landing-card-location { @apply flex items-center gap-1.5 text-[11px] text-slate-500 mt-0.5; }
+  .landing-card-location-icon { @apply w-3 h-3 shrink-0 text-slate-400; }
+  .landing-location-text { @apply truncate; }
+  .landing-card-description { @apply text-xs text-slate-600 line-clamp-2 leading-relaxed mb-4; }
+  .landing-card-tags { @apply flex flex-wrap gap-1.5 mb-4; }
+  .landing-card-tag { @apply px-2 py-0.5 rounded bg-slate-100 text-slate-600 text-[10px] font-medium; }
+  .landing-card-footer { @apply px-5 py-3.5 bg-slate-50/80 border-t border-slate-100 flex items-center justify-between; }
+  .landing-member-count { @apply flex items-center gap-1.5 text-xs font-semibold text-slate-600; }
+  .landing-detail-icon { @apply w-3.5 h-3.5 text-brand-ink; }
+  .landing-actions { @apply flex items-center gap-2; }
+  .landing-details-button { @apply px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-200 transition-colors; }
+  .landing-features { @apply py-16 border-t border-slate-200 bg-white; }
+  .landing-features-content { @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8; }
+  .landing-features-heading { @apply text-center max-w-2xl mx-auto mb-12; }
+  .landing-features-description { @apply text-xs sm:text-sm text-slate-500 mt-2; }
+  .landing-feature-grid { @apply grid grid-cols-1 md:grid-cols-3 gap-6; }
+  .landing-discovery-feature { @apply p-6 rounded-xl bg-slate-50 border border-slate-200 hover:border-brand-primary/50 transition-colors; }
+  .landing-discovery-icon { @apply w-10 h-10 rounded-lg bg-brand-primary text-brand-ink flex items-center justify-center mb-4; }
+  .landing-feature-title { @apply text-base font-bold text-slate-900 mb-2; }
+  .landing-detail-copy { @apply text-xs text-slate-600 leading-relaxed; }
+  .landing-privacy-feature { @apply p-6 rounded-xl bg-slate-50 border border-slate-200 hover:border-brand-secondary/50 transition-colors; }
+  .landing-privacy-icon { @apply w-10 h-10 rounded-lg bg-brand-secondary text-brand-ink flex items-center justify-center mb-4; }
+  .landing-wallet-feature { @apply p-6 rounded-xl bg-slate-50 border border-slate-200 hover:border-brand-accent transition-colors; }
+  .landing-wallet-icon { @apply w-10 h-10 rounded-lg bg-brand-accent text-slate-950 flex items-center justify-center mb-4; }
+  .landing-details-overlay { @apply fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-muted/40; }
+  .landing-details-status { @apply bg-white border border-slate-200 rounded-xl w-full max-w-lg p-6 space-y-4; }
+  .landing-details-message { @apply text-sm text-slate-700; }
+  .landing-back-to-directory { @apply text-sm font-semibold text-brand-ink hover:underline; }
+  .landing-details-dialog { @apply bg-white rounded-2xl max-w-xl w-full border border-slate-200 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col; }
+  .landing-details-banner { @apply h-36 relative overflow-hidden bg-slate-100 shrink-0; }
+  .landing-details-close { @apply absolute top-3.5 right-3.5 w-8 h-8 rounded-full bg-white hover:bg-slate-100 text-brand-ink flex items-center justify-center transition-colors; }
+  .landing-details-badges { @apply absolute bottom-3 left-4 flex items-center gap-2; }
+  .landing-public-badge { @apply px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-brand-500 text-brand-ink flex items-center gap-1 shadow-sm; }
+  .landing-category-badge { @apply px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-white/90 text-slate-800; }
+  .landing-details-body { @apply p-6 overflow-y-auto space-y-4 flex-1; }
+  .landing-details-heading { @apply flex items-start gap-4; }
+  .landing-details-logo { @apply w-14 h-14 rounded-xl border-2 border-white shadow-md -mt-10 relative z-10 bg-white shrink-0; }
+  .landing-details-name { @apply text-xl font-black text-slate-900 leading-tight; }
+  .landing-details-summary { @apply flex items-center gap-3 text-xs text-slate-500 mt-1; }
+  .landing-summary-item { @apply flex items-center gap-1; }
+  .landing-summary-icon { @apply w-3.5 h-3.5 text-slate-400; }
+  .landing-about-heading { @apply text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5; }
+  .landing-about-text { @apply text-xs sm:text-sm text-slate-600 leading-relaxed; }
+  .landing-join-policy { @apply p-3.5 rounded-xl bg-brand-50/70 border border-brand-primary/60; }
+  .landing-policy-heading { @apply text-xs font-bold text-slate-800 flex items-center gap-1.5 mb-1; }
+  .landing-tags-heading { @apply text-xs font-bold uppercase tracking-wider text-slate-400 mb-2; }
+  .landing-details-tags { @apply flex flex-wrap gap-1.5; }
+  .landing-details-tag { @apply px-2.5 py-1 rounded-md bg-slate-100 text-slate-700 text-xs font-medium; }
+  .landing-details-footer { @apply p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0; }
+  .landing-website-link { @apply text-xs font-semibold text-slate-600 hover:text-brand-ink flex items-center gap-1; }
+  .landing-partner-label { @apply text-xs text-slate-400; }
+  .landing-details-dismiss { @apply px-4 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-200 transition-colors; }
+  .landing-apply-button { @apply px-5 py-2 rounded-lg text-xs font-bold bg-brand-primary hover:bg-brand-secondary text-brand-ink flex items-center gap-1.5 transition-colors shadow-sm; }
+  .landing-footer { @apply border-t border-slate-200 bg-white py-8 text-center text-xs text-slate-500; }
+
+  /* pages/LoginPage.jsx */
+  .login-logo { @apply w-auto object-contain; }
+  .login-page { @apply min-h-screen bg-slate-50 flex items-center justify-center p-4; }
+  .login-card { @apply w-full max-w-md bg-white border border-slate-200 rounded-xl p-8 shadow-xl; }
+  .login-header { @apply text-center mb-8; }
+  .login-home-link { @apply inline-flex items-center gap-2 mb-3 cursor-pointer; }
+  .login-title { @apply text-xl font-bold text-slate-900; }
+  .login-fields { @apply space-y-4 min-w-0; }
+  .login-field { @apply relative; }
+  .login-email-input { @apply w-full pl-10 pr-4 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary; }
+  .login-field-icon { @apply w-4 h-4 text-slate-400 absolute left-3.5 top-3.5; }
+  .login-password-input { @apply w-full pl-10 pr-12 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary; }
+  .login-password-toggle { @apply absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-500 hover:text-slate-900 rounded-r-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-primary; }
+  .login-options { @apply flex flex-wrap items-center justify-between gap-2 text-xs; }
+  .login-remember-label { @apply flex items-center gap-2 cursor-pointer; }
+  .login-remember-checkbox { @apply accent-brand-primary; }
+  .login-forgot-password { @apply font-semibold hover:underline; }
+  .login-submit { @apply w-full py-3 px-4 rounded-lg font-bold text-sm bg-brand-primary hover:bg-brand-secondary text-brand-ink flex items-center justify-center gap-2 transition-colors shadow-sm; }
+  .login-google-section { @apply mt-6 space-y-4; }
+  .login-google-label { @apply text-center text-xs text-slate-500; }
+  .login-signup-prompt { @apply mt-6 text-center text-xs text-slate-500; }
+  .login-signup-link { @apply text-brand-ink hover:underline font-semibold; }
+
+  /* pages/OrganisationSetupPage.jsx */
+  .org-setup-input { @apply w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:border-brand-primary; }
+  .org-setup-steps { @apply grid grid-cols-2 gap-3 mb-7 text-xs font-semibold; }
+  .org-setup-step { @apply rounded-lg border p-3; }
+  .org-setup-step-active { @apply border-brand-primary bg-brand-50 text-brand-ink; }
+  .org-setup-step-idle { @apply border-slate-200 bg-slate-50 text-slate-600; }
+  .org-setup-tiers-help { @apply text-sm text-slate-600 mt-1.5 leading-relaxed; }
+  .org-setup-tier { @apply rounded-xl border border-slate-200 p-4; }
+  .org-setup-tier-label { @apply px-1 text-xs font-semibold text-slate-600; }
+  .org-setup-tier-fields { @apply grid grid-cols-1 sm:grid-cols-3 gap-3; }
+  .org-setup-remove-tier { @apply mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed; }
+  .org-setup-add-tier { @apply inline-flex items-center gap-2 text-sm font-semibold text-brand-ink border border-slate-300 rounded-lg px-3 py-2 hover:bg-slate-50 disabled:opacity-60; }
+  .org-setup-required-note { @apply text-sm text-slate-600 mt-1.5; }
+  .org-setup-detail-fields { @apply grid grid-cols-1 sm:grid-cols-2 gap-4; }
+  .org-setup-optional-label { @apply font-normal text-slate-500; }
+  .org-setup-visibility-label { @apply mb-2; }
+  .org-setup-visibility-options { @apply grid grid-cols-1 sm:grid-cols-2 gap-3; }
+  .org-setup-visibility-choice { @apply flex items-start gap-3 p-4 rounded-xl border cursor-pointer; }
+  .org-setup-visibility-selected { @apply border-brand-primary bg-brand-50; }
+  .org-setup-visibility-idle { @apply border-slate-200; }
+  .org-setup-visibility-radio { @apply mt-1; }
+  .org-setup-visibility-title { @apply flex items-center gap-1.5 text-sm font-semibold text-slate-900; }
+  .org-setup-visibility-description { @apply block text-xs text-slate-600 mt-1 leading-relaxed; }
+  .org-setup-tier-summary { @apply rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-600; }
+  .org-setup-edit-tiers { @apply font-semibold text-brand-ink hover:underline; }
+  .org-setup-error { @apply rounded-lg border border-slate-300 bg-slate-50 p-3 text-sm text-slate-800; }
+  .org-setup-footer { @apply flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-200; }
+  .org-setup-back { @apply inline-flex items-center gap-2 text-sm font-semibold text-slate-600 px-2 py-2; }
+  .org-setup-actions { @apply flex flex-wrap items-center gap-3; }
+  .org-setup-submit { @apply inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg font-bold text-sm bg-brand-primary hover:bg-brand-secondary text-brand-ink disabled:opacity-60 disabled:cursor-not-allowed; }
+
+  /* pages/OrganisationsManagementPage.jsx */
+  .orgs-header { @apply flex flex-col md:flex-row md:items-center justify-between gap-4; }
+  .orgs-title { @apply text-2xl font-black text-slate-900 mt-1; }
+  .orgs-intro { @apply text-xs text-slate-600 mt-1 max-w-2xl; }
+  .orgs-header-actions { @apply flex flex-wrap items-center gap-3; }
+  .orgs-create { @apply py-2.5 px-4 rounded-lg bg-brand-primary hover:bg-brand-secondary text-brand-ink font-bold text-xs flex items-center gap-2 transition-colors shadow-sm; }
+  .orgs-summary { @apply grid grid-cols-2 rounded-lg border border-slate-200 bg-white sm:grid-cols-4; }
+  .orgs-stat-total { @apply min-w-0 px-4 py-3 sm:px-5; }
+  .orgs-stat-label { @apply text-xs font-medium text-slate-600; }
+  .orgs-stat-value { @apply mt-1 text-[32px] leading-none font-semibold tracking-tight text-slate-900 tabular-nums break-words md:text-[40px]; }
+  .orgs-stat-public { @apply min-w-0 border-l border-slate-200 px-4 py-3 sm:px-5; }
+  .orgs-stat-private { @apply min-w-0 border-t border-slate-200 px-4 py-3 sm:border-l sm:border-t-0 sm:px-5; }
+  .orgs-stat-members { @apply min-w-0 border-l border-t border-slate-200 px-4 py-3 sm:border-t-0 sm:px-5; }
+  .orgs-list-heading { @apply text-lg font-bold; }
+  .orgs-list-description { @apply text-xs text-slate-600 mt-1; }
+  .orgs-load-error { @apply flex items-center justify-between gap-3 bg-white border border-slate-300 rounded-lg p-4 text-sm; }
+  .orgs-retry { @apply font-semibold underline; }
+  .orgs-filters { @apply p-4 bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3; }
+  .orgs-search { @apply relative w-full sm:w-80; }
+  .orgs-search-icon { @apply w-4 h-4 text-slate-400 absolute left-3 top-3; }
+  .orgs-search-input { @apply w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-brand-primary; }
+  .orgs-visibility-filter { @apply flex items-center gap-2 w-full sm:w-auto; }
+  .orgs-filter-label { @apply text-xs font-semibold text-slate-500; }
+  .orgs-filter-options { @apply inline-flex rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-xs; }
+  .orgs-filter-all { @apply px-3 py-1.5 rounded-md font-semibold transition-colors; }
+  .orgs-filter-idle { @apply text-slate-600 hover:text-slate-900; }
+  .orgs-filter-option { @apply px-3 py-1.5 rounded-md font-semibold transition-colors flex items-center gap-1; }
+  .orgs-filter-icon { @apply w-3 h-3 text-brand-ink; }
+  .orgs-loading { @apply py-20 text-center bg-white rounded-xl border border-slate-200; }
+  .orgs-loading-message { @apply text-xs text-slate-500 font-mono; }
+  .orgs-empty { @apply py-16 text-center bg-white rounded-xl border border-slate-200 p-8; }
+  .orgs-empty-icon { @apply w-12 h-12 text-slate-300 mx-auto mb-3; }
+  .orgs-empty-title { @apply text-base font-bold text-slate-800; }
+  .orgs-empty-description { @apply text-xs text-slate-500 mt-1 max-w-sm mx-auto; }
+  .orgs-create-first { @apply mt-4 px-4 py-2 bg-brand-primary text-brand-ink text-xs font-bold rounded-lg hover:bg-brand-secondary transition-colors; }
+  .orgs-list-item { @apply p-5 hover:bg-slate-50/70 transition-colors flex flex-col lg:flex-row lg:items-center justify-between gap-4; }
+  .orgs-identity { @apply flex items-start gap-3.5 min-w-0; }
+  .orgs-logo { @apply w-12 h-12 rounded-xl border border-slate-200 shrink-0; }
+  .orgs-details { @apply min-w-0; }
+  .orgs-name-row { @apply flex flex-wrap items-center gap-2; }
+  .orgs-name { @apply text-sm font-bold text-slate-900 truncate; }
+  .orgs-category { @apply px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700; }
+  .orgs-description { @apply text-xs text-slate-600 line-clamp-1 mt-1 leading-relaxed; }
+  .orgs-metadata { @apply flex flex-wrap items-center gap-4 text-xs text-slate-500 mt-2; }
+  .orgs-location { @apply flex items-center gap-1; }
+  .orgs-location-icon { @apply w-3.5 h-3.5 text-slate-400; }
+  .orgs-member-count { @apply flex items-center gap-1 font-semibold text-slate-700; }
+  .orgs-detail-icon { @apply w-3.5 h-3.5 text-brand-ink; }
+  .orgs-website { @apply text-brand-ink hover:underline flex items-center gap-1; }
+  .orgs-actions { @apply flex flex-wrap items-center justify-between lg:justify-end gap-3.5 shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-100; }
+  .orgs-open-portal { @apply flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-brand-primary hover:bg-brand-secondary text-brand-ink text-xs font-bold disabled:opacity-60; }
+  .orgs-visibility-control { @apply flex items-center gap-2.5 p-2 rounded-xl bg-slate-50 border border-slate-200; }
+  .orgs-visibility-summary { @apply text-right; }
+  .orgs-visibility-heading { @apply flex items-center gap-1.5 justify-end; }
+  .orgs-visibility-dot { @apply w-2 h-2 rounded-full; }
+  .orgs-visibility-public { @apply bg-brand-primary; }
+  .orgs-visibility-private { @apply bg-brand-muted; }
+  .orgs-visibility-title { @apply text-xs font-bold text-brand-ink; }
+  .orgs-visibility-description { @apply text-[10px] text-slate-500; }
+  .orgs-visibility-switch { @apply relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none; }
+  .orgs-switch-off { @apply bg-brand-silver; }
+  .orgs-switch-thumb { @apply pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out; }
+  .orgs-thumb-on { @apply translate-x-5; }
+  .orgs-thumb-off { @apply translate-x-0; }
+  .orgs-edit-actions { @apply flex items-center gap-1.5; }
+  .orgs-edit { @apply p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors; }
+  .orgs-delete { @apply p-2 rounded-lg text-brand-ink hover:text-brand-ink hover:bg-slate-100 transition-colors; }
+  .orgs-editor-overlay { @apply fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-muted/35; }
+  .orgs-editor-status { @apply bg-white border border-slate-200 rounded-xl w-full max-w-lg p-6 space-y-4; }
+  .orgs-editor-message { @apply text-sm text-slate-700; }
+  .orgs-back-to-list { @apply text-sm font-semibold text-brand-ink hover:underline; }
+  .orgs-editor { @apply bg-white rounded-2xl max-w-xl w-full border border-slate-200 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col; }
+  .orgs-editor-header { @apply px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50; }
+  .orgs-editor-heading { @apply flex items-center gap-2; }
+  .orgs-editor-icon { @apply w-8 h-8 rounded-lg bg-brand-primary text-brand-ink flex items-center justify-center; }
+  .orgs-editor-subtitle { @apply text-[11px] text-slate-500; }
+  .orgs-editor-close { @apply p-1 text-slate-400 hover:text-slate-600 rounded-lg; }
+  .orgs-editor-form { @apply p-6 overflow-y-auto space-y-4 flex-1; }
+  .orgs-visibility-legend { @apply block text-xs font-bold text-slate-700 mb-2; }
+  .orgs-visibility-options { @apply grid grid-cols-1 sm:grid-cols-2 gap-3; }
+  .orgs-visibility-option { @apply p-3.5 rounded-xl border-2 cursor-pointer transition-all flex items-start gap-3; }
+  .orgs-visibility-option-idle { @apply border-slate-200 bg-white hover:border-slate-300; }
+  .orgs-visibility-radio { @apply mt-0.5 accent-brand-primary text-brand-ink focus:ring-brand-primary; }
+  .orgs-visibility-option-title { @apply text-xs font-bold text-slate-900 flex items-center gap-1.5; }
+  .orgs-visibility-option-description { @apply text-[11px] text-slate-500 mt-1 leading-snug; }
+  .orgs-editor-fields { @apply grid grid-cols-1 sm:grid-cols-2 gap-4; }
+  .orgs-editor-input { @apply w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-brand-primary; }
+  .orgs-editor-footer { @apply pt-4 border-t border-slate-100 flex items-center justify-end gap-3; }
+  .orgs-cancel { @apply px-4 py-2.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors; }
+  .orgs-save { @apply px-5 py-2.5 rounded-lg text-xs font-bold bg-brand-primary hover:bg-brand-secondary text-brand-ink flex items-center gap-1.5 transition-colors shadow-sm; }
+  .orgs-save-spinner { @apply w-3.5 h-3.5 animate-spin; }
+
+  /* pages/PasswordRecoveryPage.jsx */
+  .recovery-status { @apply text-sm bg-brand-50 border border-brand-accent rounded-lg p-4; }
+  .recovery-email-label { @apply block text-sm font-semibold; }
+  .recovery-email-input { @apply w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm; }
+  .recovery-error { @apply text-sm; }
+  .recovery-submit { @apply w-full py-3 rounded-lg bg-brand-primary hover:bg-brand-secondary text-sm font-bold disabled:opacity-60; }
+  .recovery-back-to-signin { @apply text-sm font-semibold mt-5 underline; }
+  .recovery-signin { @apply w-full rounded-lg bg-brand-primary py-3 text-sm font-bold; }
+  .recovery-request-another-link { @apply mt-4 font-semibold underline text-sm; }
+  .recovery-password-label { @apply text-sm font-semibold; }
+  .recovery-password-input { @apply mt-2 w-full border border-slate-300 rounded-lg px-3 py-2.5; }
+  .recovery-password-hint { @apply mt-2 text-xs text-slate-500; }
+  .recovery-request-new-link { @apply block text-xs font-semibold underline; }
+
+  /* pages/PostsPage.jsx */
+  .posts-input { @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-primary disabled:bg-slate-50 disabled:text-slate-500; }
+  .posts-header { @apply flex flex-wrap items-center justify-between gap-3; }
+  .posts-intro { @apply mt-1 text-xs leading-relaxed text-slate-500; }
+  .posts-header-actions { @apply flex flex-wrap items-center gap-3; }
+  .posts-audience-badge { @apply inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600; }
+  .posts-create { @apply inline-flex items-center gap-2 rounded-lg bg-brand-primary px-4 py-2.5 text-xs font-bold text-brand-ink hover:bg-brand-secondary disabled:opacity-50; }
+  .posts-total-badge { @apply rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600; }
+  .posts-editor-layout { @apply grid items-start gap-6 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]; }
+  .posts-missing-post { @apply rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-600; }
+  .posts-return-to-feed { @apply mt-4 font-semibold text-brand-ink underline; }
+  .posts-composer { @apply scroll-mt-24 rounded-2xl border border-slate-200 bg-white shadow-sm; }
+  .posts-composer-header { @apply flex items-start gap-3 border-b border-slate-100 p-5; }
+  .posts-composer-icon { @apply flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-primary/20 text-brand-ink; }
+  .posts-composer-form { @apply space-y-4 p-5; }
+  .posts-composer-fields { @apply min-w-0 space-y-4; }
+  .posts-field-heading { @apply mb-2 flex items-center justify-between gap-2; }
+  .posts-field-label { @apply text-xs font-semibold text-slate-700; }
+  .posts-required-mark { @apply text-slate-400; }
+  .posts-field-count { @apply text-[10px] tabular-nums text-slate-400; }
+  .posts-field-error { @apply mt-1.5 text-xs text-red-700; }
+  .posts-description-label { @apply mb-2 block text-xs font-semibold text-slate-700; }
+  .posts-editor-loading { @apply rounded-lg border border-slate-200 bg-slate-50 p-5 text-xs text-slate-500; }
+  .posts-description-feedback { @apply mt-1.5 flex flex-wrap items-start justify-between gap-2; }
+  .posts-description-error { @apply text-xs text-red-700; }
+  .posts-description-count { @apply ml-auto text-[11px] font-medium tabular-nums; }
+  .posts-count-limit { @apply text-amber-700; }
+  .posts-count-normal { @apply text-slate-500; }
+  .posts-form-error { @apply rounded-lg border border-red-200 bg-red-50 px-3 py-3 text-xs leading-relaxed text-red-700; }
+  .posts-composer-footer { @apply flex flex-wrap items-center gap-3 border-t border-slate-100 pt-4; }
+  .posts-cancel { @apply inline-flex items-center gap-1.5 rounded-lg px-2 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-50; }
+  .posts-publish { @apply ml-auto inline-flex items-center justify-center gap-2 rounded-lg bg-brand-primary px-4 py-2.5 text-sm font-bold text-brand-ink shadow-sm hover:bg-brand-secondary disabled:cursor-not-allowed disabled:opacity-50; }
+  .posts-feed { @apply min-w-0 scroll-mt-24 space-y-4; }
+  .posts-feed-header { @apply flex items-center justify-between gap-3 px-1; }
+  .posts-feed-heading { @apply flex items-center gap-2 text-sm font-bold text-slate-800; }
+  .posts-count-badge { @apply rounded-full bg-slate-200/70 px-2 py-0.5 text-[10px] text-slate-600; }
+  .posts-feed-caption { @apply text-[11px] text-slate-500; }
+  .posts-feed-status { @apply rounded-2xl border border-slate-200 bg-white p-5 sm:p-6; }
+  .posts-loading-label { @apply mb-6 flex items-center gap-2 text-xs text-slate-500; }
+  .posts-loading-skeleton { @apply animate-pulse space-y-3; }
+  .posts-skeleton-title { @apply h-5 w-2/3 rounded bg-slate-100; }
+  .posts-skeleton-summary { @apply h-3 w-5/6 rounded bg-slate-100; }
+  .posts-skeleton-line { @apply h-3 w-full rounded bg-slate-100; }
+  .posts-skeleton-ending { @apply h-3 w-4/5 rounded bg-slate-100; }
+  .posts-error-icon { @apply mb-3 h-6 w-6 text-slate-500; }
+  .posts-error-title { @apply text-sm font-bold text-slate-800; }
+  .posts-error-description { @apply mt-2 text-xs leading-relaxed text-slate-600; }
+  .posts-retry { @apply mt-4 inline-flex items-center gap-2 rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-200; }
+  .posts-empty { @apply rounded-2xl border border-slate-200 bg-white p-6 sm:p-8; }
+  .posts-empty-icon { @apply mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-primary/15; }
+  .posts-announcement-icon { @apply h-6 w-6 text-brand-ink; }
+  .posts-empty-description { @apply mt-2 max-w-md text-sm leading-relaxed text-slate-500; }
+  .posts-create-first { @apply mt-5 inline-flex items-center gap-2 rounded-lg bg-brand-primary px-4 py-2.5 text-xs font-bold text-brand-ink hover:bg-brand-secondary; }
+  .posts-audience-note { @apply mt-5 flex items-center gap-2 border-t border-slate-100 pt-4 text-xs text-slate-500; }
+  .posts-audience-icon { @apply h-4 w-4 shrink-0; }
+  .posts-member-feed { @apply grid items-start gap-5 md:grid-cols-2; }
+  .posts-feed-item { @apply min-w-0; }
+  .posts-featured { @apply md:col-span-2; }
+  .posts-pagination { @apply flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3; }
+  .posts-page-controls { @apply flex items-center gap-2; }
+  .posts-page-button { @apply rounded-lg border border-slate-200 bg-white p-2 text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40; }
+  .posts-page-number { @apply text-[11px] font-medium tabular-nums text-slate-600; }
+
+  /* pages/RegisterPage.jsx */
+  .register-input { @apply w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:border-brand-primary; }
+  .register-account-link { @apply text-sm font-semibold underline; }
+  .register-google-section { @apply mb-6; }
+  .register-email-divider { @apply text-center text-xs text-slate-500 mt-5; }
+  .register-fields { @apply space-y-5 min-w-0; }
+  .register-field-grid { @apply grid grid-cols-1 sm:grid-cols-2 gap-4; }
+  .register-google-email { @apply flex items-center gap-2 px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700; }
+  .register-email-lock { @apply w-4 h-4 shrink-0 text-slate-500; }
+  .register-email-address { @apply break-all; }
+  .register-field-hint { @apply mt-1.5 text-xs text-slate-500; }
+  .register-password-field { @apply relative; }
+  .register-password-input { @apply pr-12; }
+  .register-password-toggle { @apply absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-500 hover:text-slate-900 rounded-r-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-primary disabled:opacity-60; }
+  .register-optional-label { @apply font-normal text-slate-500; }
+  .register-bio-count { @apply mt-1 text-right text-xs text-slate-500; }
+  .register-error { @apply rounded-lg border border-slate-300 bg-slate-50 p-3 text-sm text-slate-800; }
+  .register-submit { @apply w-full py-3 px-4 rounded-lg font-bold text-sm bg-brand-primary hover:bg-brand-secondary text-brand-ink flex items-center justify-center gap-2 transition-colors disabled:opacity-60 disabled:cursor-not-allowed; }
+  .register-signin-prompt { @apply mt-6 text-center text-sm text-slate-500; }
+  .register-signin-link { @apply text-brand-ink hover:underline font-semibold; }
+
+  /* pages/VerifyEmailPage.jsx */
+  .verification-instructions { @apply mb-6 rounded-xl bg-brand-50 border border-brand-primary/40 p-4 flex gap-3; }
+  .verification-mail-icon { @apply w-5 h-5 text-brand-ink mt-0.5 shrink-0; }
+  .verification-instructions-text { @apply text-sm text-slate-700 leading-relaxed; }
+  .verification-email-address { @apply font-semibold break-all; }
+  .verification-delivery-error { @apply mb-5 text-sm text-slate-800 rounded-lg border border-slate-300 bg-slate-50 p-3; }
+  .verification-code-input { @apply w-full px-4 py-3 bg-white border border-slate-300 rounded-lg text-xl tracking-[0.3em] text-slate-900 focus:border-brand-primary; }
+  .verification-error { @apply text-sm text-slate-800 rounded-lg border border-slate-300 bg-slate-50 p-3; }
+  .verification-submit { @apply w-full py-3 px-4 rounded-lg font-bold text-sm bg-brand-primary hover:bg-brand-secondary text-brand-ink flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed; }
+  .verification-footer { @apply mt-5 text-center; }
+  .verification-resend { @apply text-sm font-semibold text-brand-ink hover:underline disabled:text-slate-500 disabled:no-underline disabled:cursor-not-allowed; }
+  .verification-account-prompt { @apply text-xs text-slate-500 mt-4; }
+  .verification-signout { @apply font-semibold text-slate-800 hover:underline; }
+
+  /* pages/admin/ActivityLogPage.jsx */
+  .activity-log-action-default { @apply bg-brand-50 text-brand-ink border-brand-primary/30; }
+  .activity-log-action-membership { @apply bg-brand-50 text-brand-ink border-brand-accent/50; }
+  .activity-log-payment-failed { @apply bg-slate-100 text-brand-ink border-brand-silver font-bold; }
+  .activity-log-action-unknown { @apply bg-slate-100 text-slate-700 border-slate-200; }
+  .activity-log-header { @apply flex flex-col sm:flex-row sm:items-center justify-between gap-4; }
+  .activity-log-scroll-text-icon { @apply w-6 h-6 text-brand-ink; }
+  .activity-log-filters { @apply flex items-center gap-2 self-start sm:self-auto; }
+  .activity-log-filter-icon { @apply w-4 h-4 text-slate-400; }
+  .activity-log-action-filter { @apply px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary; }
+  .activity-log-empty { @apply p-12 text-center text-xs text-slate-500; }
+  .activity-log-empty-icon { @apply w-8 h-8 mx-auto mb-2 text-slate-400; }
+  .activity-log-ip-heading { @apply p-4 text-right; }
+  .activity-log-timestamp-cell { @apply p-4 text-slate-500 font-mono text-[11px] whitespace-nowrap; }
+  .activity-log-timestamp { @apply flex items-center gap-1.5; }
+  .activity-log-clock-icon { @apply w-3.5 h-3.5 text-slate-400 shrink-0; }
+  .activity-log-action-badge { @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-semibold border; }
+  .activity-log-member-name { @apply font-semibold text-slate-900; }
+  .activity-log-member-email { @apply text-[11px] text-slate-500; }
+  .activity-log-actor-badge { @apply px-2 py-0.5 rounded bg-slate-100 border border-slate-200 text-[10px] font-mono uppercase text-slate-700; }
+  .activity-log-metadata-cell { @apply p-4 max-w-xs; }
+  .activity-log-metadata { @apply text-[11px] text-slate-700 font-mono bg-slate-50 p-2 rounded-lg border border-slate-200 truncate; }
+  .activity-log-ip-cell { @apply p-4 text-right font-mono text-slate-500 text-[11px]; }
+
+  /* pages/admin/AdminDashboard.jsx */
+  .admin-dashboard-welcome { @apply rounded-xl bg-white border border-slate-200 p-6 sm:p-8 shadow-sm; }
+  .admin-dashboard-welcome-content { @apply flex flex-col md:flex-row md:items-center justify-between gap-4; }
+  .admin-dashboard-greeting { @apply flex items-center gap-2; }
+  .admin-dashboard-greeting-label { @apply text-xs font-bold uppercase tracking-wider text-brand-ink; }
+  .admin-dashboard-title { @apply text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1; }
+  .admin-dashboard-welcome-description { @apply text-xs text-slate-600 mt-1; }
+  .admin-dashboard-actions { @apply flex flex-wrap items-center gap-3; }
+  .admin-dashboard-manage-button { @apply py-2.5 px-4 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 font-semibold text-xs flex items-center gap-2 transition-colors; }
+  .admin-dashboard-metrics { @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4; }
+  .admin-dashboard-metric-heading { @apply flex items-center justify-between; }
+  .admin-dashboard-metric-label { @apply text-xs font-semibold text-slate-500; }
+  .admin-dashboard-metric-icon { @apply p-2 rounded-lg bg-brand-50 text-brand-ink; }
+  .admin-dashboard-metric-value { @apply text-2xl font-black text-slate-900 mt-2; }
+  .admin-dashboard-revenue-breakdown { @apply text-[11px] text-slate-500 mt-1 flex items-center gap-1; }
+  .admin-dashboard-subscription-revenue { @apply text-brand-ink font-semibold; }
+  .admin-dashboard-registered-count { @apply text-xs font-normal text-slate-500; }
+  .admin-dashboard-metric-highlight { @apply text-[11px] text-brand-ink font-medium mt-1; }
+  .admin-dashboard-mrr-description { @apply text-[11px] text-slate-600 mt-1; }
+
+  /* pages/admin/EmailSettingsPage.jsx */
+  .email-settings-input { @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-primary disabled:bg-slate-50; }
+  .email-settings-introduction { @apply text-sm text-slate-600 mt-2; }
+  .email-settings-loading { @apply flex items-center gap-3 py-12 text-sm text-slate-600; }
+  .email-settings-spinner { @apply w-5 h-5 animate-spin; }
+  .email-settings-load-error { @apply rounded-xl border border-slate-300 bg-white p-5 space-y-3; }
+  .email-settings-load-error-message { @apply text-sm text-slate-700; }
+  .email-settings-retry-button { @apply text-sm font-semibold underline; }
+  .email-settings-delivery-notice { @apply rounded-xl border border-slate-200 bg-white p-4 text-xs text-slate-600 leading-relaxed; }
+  .email-settings-workspace { @apply grid xl:grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)] gap-6 items-start; }
+  .email-settings-template { @apply rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm; }
+  .email-settings-template-heading { @apply flex items-start justify-between gap-3 mb-5; }
+  .email-settings-template-description { @apply text-xs text-slate-600 mt-1 leading-relaxed; }
+  .email-settings-enabled-toggle { @apply flex items-center gap-2 text-xs font-semibold text-slate-700 shrink-0 pt-1; }
+  .email-settings-checkbox { @apply w-4 h-4 accent-brand-primary; }
+  .email-settings-reminder-label { @apply block text-xs font-semibold text-slate-700 mb-2; }
+  .email-settings-reminder-timing { @apply flex items-center gap-3; }
+  .email-settings-renewal-days { @apply max-w-24; }
+  .email-settings-preview-button { @apply inline-flex items-center gap-2 mt-4 text-xs font-semibold text-slate-700 underline underline-offset-4; }
+  .email-settings-preview { @apply rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden xl:sticky xl:top-24; }
+  .email-settings-preview-header { @apply px-5 py-4 bg-slate-50 border-b border-slate-200; }
+  .email-settings-preview-title { @apply text-sm font-bold flex items-center gap-2; }
+  .email-settings-preview-tabs { @apply flex gap-2 mt-3; }
+  .email-settings-preview-tab { @apply px-3 py-2 rounded-lg text-xs font-semibold border; }
+  .email-settings-preview-tab-selected { @apply bg-brand-primary text-brand-ink border-brand-primary; }
+  .email-settings-preview-tab-idle { @apply border-slate-300 bg-white text-slate-600; }
+  .email-settings-preview-content { @apply p-5 sm:p-6; }
+  .email-settings-preview-disabled-notice { @apply text-xs text-slate-600 mb-4 rounded-lg bg-slate-100 px-3 py-2; }
+  .email-settings-preview-recipient { @apply text-xs text-slate-500 mb-1; }
+  .email-settings-preview-subject { @apply text-sm font-bold break-words border-b border-slate-100 pb-4; }
+  .email-settings-preview-body { @apply text-sm text-slate-700 whitespace-pre-wrap break-words leading-relaxed mt-4; }
+  .email-settings-save-error { @apply rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700; }
+  .email-settings-save-footer { @apply flex flex-wrap items-center justify-end gap-3 border-t border-slate-200 pt-5; }
+  .email-settings-save-status { @apply text-xs text-slate-500 mr-auto; }
+  .email-settings-save-button { @apply inline-flex items-center gap-2 rounded-lg bg-brand-primary hover:bg-brand-secondary text-brand-ink px-5 py-2.5 text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed; }
+
+  /* pages/admin/EventManagementPage.jsx */
+  .event-management-header { @apply flex flex-col sm:flex-row sm:items-center justify-between gap-4; }
+  .event-management-calendar-icon { @apply w-6 h-6 text-brand-ink; }
+  .event-management-header-actions { @apply flex flex-wrap items-center gap-3 self-start sm:self-auto; }
+  .event-management-refresh-button { @apply inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50; }
+  .event-management-spinner { @apply animate-spin; }
+  .event-management-create-button { @apply py-2.5 px-4 rounded-lg bg-brand-primary hover:bg-brand-secondary text-brand-ink font-bold text-xs flex items-center gap-2 transition-colors self-start sm:self-auto shadow-sm disabled:opacity-50; }
+  .event-management-tier-error { @apply flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-300 bg-white p-4 text-sm text-slate-700; }
+  .event-management-tier-retry { @apply font-semibold underline; }
+  .event-management-load-error { @apply p-8 text-center text-sm text-slate-600; }
+  .event-management-return-link { @apply mt-3 font-semibold underline; }
+  .event-management-empty { @apply p-12 text-center text-xs text-slate-500; }
+  .event-management-empty-icon { @apply w-8 h-8 mx-auto mb-2 text-slate-400; }
+  .event-management-actions-cell { @apply p-4 text-right; }
+  .event-management-event-description { @apply text-[11px] text-slate-500 mt-0.5 line-clamp-1; }
+  .event-management-event-status { @apply mt-2; }
+  .event-management-schedule-cell { @apply p-4 min-w-[215px] text-slate-600; }
+  .event-management-location-cell { @apply p-4 min-w-[170px] max-w-[230px] text-slate-600; }
+  .event-management-rsvp-summary { @apply flex items-center gap-2; }
+  .event-management-record-name { @apply font-bold text-slate-900; }
+  .event-management-attendees-button { @apply px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 border border-slate-200 text-brand-ink text-[10px] font-semibold flex items-center gap-1 transition-colors; }
+  .event-management-access-label { @apply mb-1.5 text-xs font-semibold text-slate-700; }
+  .event-management-allowed-tiers { @apply flex flex-wrap gap-1; }
+  .event-management-tier-badge { @apply text-[10px] px-1.5 py-0.5 rounded bg-brand-50 text-brand-ink border border-brand-primary/30 font-medium; }
+  .event-management-delete-button { @apply p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 border border-brand-silver text-brand-ink transition-colors disabled:opacity-40; }
+  .event-management-detail-error { @apply rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600; }
+  .event-management-attendees-overlay { @apply fixed inset-0 z-50 overflow-y-auto bg-brand-muted/35 flex items-center justify-center p-4; }
+  .event-management-attendees-dialog { @apply relative w-full max-w-lg bg-white border border-slate-200 rounded-xl p-6 space-y-4 shadow-2xl; }
+  .event-management-attendees-header { @apply flex items-center justify-between pb-3 border-b border-slate-200; }
+  .event-management-close-icon-button { @apply text-slate-400 hover:text-slate-700; }
+  .event-management-attendees-list { @apply max-h-72 overflow-y-auto divide-y divide-slate-100; }
+  .event-management-attendees-loading { @apply py-8 text-center text-xs text-slate-500; }
+  .event-management-attendees-error { @apply py-8 text-center text-xs text-slate-600; }
+  .event-management-attendees-empty { @apply py-8 text-center text-xs text-slate-400; }
+  .event-management-attendee { @apply py-2.5 flex items-center justify-between text-xs; }
+  .event-management-attendee-email { @apply text-[11px] text-slate-500; }
+  .event-management-attendee-date { @apply text-[11px] text-slate-400; }
+  .event-management-attendees-footer { @apply pt-2 text-right; }
+  .event-management-close-button { @apply px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-lg text-xs font-semibold transition-colors; }
+
+  /* pages/admin/FinancialAnalyticsPage.jsx */
+  .financial-analytics-load-error { @apply rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-800; }
+  .financial-analytics-retry-button { @apply mt-3 text-xs font-semibold underline; }
+  .financial-analytics-bar-chart3-icon { @apply w-6 h-6 text-brand-ink; }
+  .financial-analytics-metrics { @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4; }
+  .financial-analytics-metric-heading { @apply flex items-center justify-between; }
+  .financial-analytics-metric-label { @apply text-xs font-semibold text-slate-500; }
+  .financial-analytics-metric-icon { @apply p-2 rounded-lg bg-brand-50 text-brand-ink; }
+  .financial-analytics-metric-value { @apply text-2xl font-black text-slate-900 mt-2; }
+  .financial-analytics-revenue-description { @apply text-[11px] text-slate-500 mt-1; }
+  .financial-analytics-revenue-share { @apply text-[11px] text-brand-ink mt-1 font-semibold; }
+  .financial-analytics-monthly-description { @apply text-[11px] text-slate-600 mt-1; }
+  .financial-analytics-breakdowns { @apply grid grid-cols-1 lg:grid-cols-2 gap-6; }
+  .financial-analytics-breakdown-card { @apply p-6 rounded-xl bg-white border border-slate-200 shadow-sm space-y-6; }
+  .financial-analytics-source-heading { @apply flex justify-between text-xs mb-1.5; }
+  .financial-analytics-source-label { @apply font-semibold text-slate-700 flex items-center gap-1.5; }
+  .financial-analytics-membership-dot { @apply w-2.5 h-2.5 rounded-full bg-brand-primary; }
+  .financial-analytics-source-value { @apply font-bold text-slate-900; }
+  .financial-analytics-source-track { @apply w-full h-3 bg-slate-100 rounded-full overflow-hidden p-0.5 border border-slate-200; }
+  .financial-analytics-membership-bar { @apply h-full rounded-full bg-brand-primary transition-all duration-500; }
+  .financial-analytics-event-dot { @apply w-2.5 h-2.5 rounded-full bg-brand-muted; }
+  .financial-analytics-event-bar { @apply h-full rounded-full bg-brand-muted transition-all duration-500; }
+  .financial-analytics-invoice-summary { @apply p-4 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-600 space-y-2; }
+  .financial-analytics-invoice-summary-row { @apply flex justify-between; }
+  .financial-analytics-paid-count { @apply text-slate-900; }
+  .financial-analytics-declined-count { @apply text-brand-ink; }
+  .financial-analytics-tier-card { @apply p-3 rounded-lg bg-slate-50 border border-slate-200; }
+  .financial-analytics-tier-heading { @apply flex justify-between text-xs mb-1; }
+  .financial-analytics-tier-name { @apply font-semibold text-slate-900; }
+  .financial-analytics-tier-revenue { @apply font-bold text-brand-ink; }
+  .financial-analytics-tier-track { @apply w-full h-1.5 bg-slate-200 rounded-full overflow-hidden; }
+  .financial-analytics-tier-bar { @apply h-full rounded-full; }
+  .financial-analytics-ledger-header { @apply p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between; }
+  .financial-analytics-date-heading { @apply p-4 text-right; }
+  .financial-analytics-invoice-number-cell { @apply p-4 font-mono font-bold text-brand-ink; }
+  .financial-analytics-member-cell { @apply p-4 font-semibold text-slate-900; }
+  .financial-analytics-tier-cell { @apply p-4 text-slate-700; }
+  .financial-analytics-method-cell { @apply p-4 text-slate-500 font-mono text-[11px]; }
+  .financial-analytics-amount-cell { @apply p-4 font-bold text-slate-900; }
+  .financial-analytics-status-badge { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border; }
+  .financial-analytics-status-paid { @apply bg-brand-50 text-brand-ink border-brand-primary/30; }
+  .financial-analytics-status-declined { @apply bg-slate-100 text-brand-ink border-brand-silver; }
+  .financial-analytics-date-cell { @apply p-4 text-right text-slate-500; }
+
+  /* pages/admin/MembersListPage.jsx */
+  .members-list-header { @apply flex flex-col sm:flex-row sm:items-center justify-between gap-4; }
+  .members-list-users-icon { @apply w-6 h-6 text-brand-ink; }
+  .members-list-header-actions { @apply flex flex-wrap gap-2 self-start sm:self-auto; }
+  .members-list-refresh-button { @apply py-2 px-4 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-semibold text-xs flex items-center gap-2 disabled:opacity-50; }
+  .members-list-spinner { @apply animate-spin; }
+  .members-list-export-button { @apply py-2 px-4 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-semibold text-xs flex items-center gap-2 transition-colors self-start sm:self-auto shadow-sm; }
+  .members-list-download-icon { @apply w-4 h-4 text-brand-ink; }
+  .members-list-filter-bar { @apply p-4 rounded-xl bg-white border border-slate-200 shadow-sm flex flex-col md:flex-row gap-3; }
+  .members-list-search-field { @apply relative flex-1; }
+  .members-list-search-input { @apply w-full pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary; }
+  .members-list-search-icon { @apply w-4 h-4 text-slate-400 absolute left-3 top-2.5; }
+  .members-list-inline-controls { @apply flex items-center gap-2; }
+  .members-list-filter-select { @apply px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary; }
+  .members-list-empty { @apply p-12 text-center text-xs text-slate-500; }
+  .members-list-empty-icon { @apply w-8 h-8 mx-auto mb-2 text-slate-400; }
+  .members-list-actions-cell { @apply p-4 text-right; }
+  .members-list-member-identity { @apply flex items-center gap-3; }
+  .members-list-avatar { @apply w-9 h-9 rounded-full border border-slate-200 bg-slate-50 flex items-center justify-center; }
+  .members-list-avatar-image { @apply w-full h-full rounded-full object-cover; }
+  .members-list-avatar-placeholder { @apply w-5 h-5 text-slate-500; }
+  .members-list-member-name { @apply font-bold text-slate-900 leading-tight; }
+  .members-list-member-email { @apply text-[11px] text-slate-500 mt-0.5; }
+  .members-list-number-cell { @apply p-4 font-mono font-bold text-brand-ink; }
+  .members-list-current-tier { @apply font-semibold text-slate-900; }
+  .members-list-change-tier-button { @apply px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-[10px] transition-colors; }
+  .members-list-cancellation-notice { @apply mt-1.5 text-[10px] text-slate-500; }
+  .members-list-cancellation-date { @apply mt-1 text-[10px] text-slate-500; }
+  .members-list-expiry-cell { @apply p-4 text-slate-600; }
+  .members-list-wallet-badge { @apply inline-flex items-center gap-1 text-[11px] text-brand-ink bg-brand-50 px-2 py-0.5 rounded border border-brand-primary/30; }
+  .members-list-member-actions { @apply flex items-center justify-end gap-1.5; }
+  .members-list-approve-button { @apply px-2 py-1 rounded bg-brand-50 hover:bg-brand-100 border border-brand-primary/30 text-brand-ink text-[10px] font-semibold transition-colors; }
+  .members-list-suspend-button { @apply px-2 py-1 rounded bg-brand-50 hover:bg-brand-100 border border-brand-accent/50 text-brand-ink text-[10px] font-semibold transition-colors; }
+  .members-list-revoke-button { @apply px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 border border-brand-silver text-brand-ink text-[10px] font-semibold transition-colors; }
+  .members-list-pagination { @apply p-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between text-xs text-slate-600; }
+  .members-list-result-count { @apply text-slate-900; }
+  .members-list-page-button { @apply p-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-slate-700 shadow-sm; }
+  .members-list-page-indicator { @apply font-semibold text-slate-900 px-2; }
+  .members-list-tier-overlay { @apply fixed inset-0 z-50 overflow-y-auto bg-brand-muted/35 flex items-center justify-center p-4; }
+  .members-list-tier-dialog { @apply relative w-full max-w-md bg-white border border-slate-200 rounded-xl p-6 space-y-5 shadow-2xl; }
+  .members-list-tier-dialog-header { @apply flex items-center justify-between pb-3 border-b border-slate-200; }
+  .members-list-layers-icon { @apply w-5 h-5 text-brand-ink; }
+  .members-list-tier-close-button { @apply text-slate-400 hover:text-slate-700; }
+  .members-list-tier-dialog-description { @apply text-xs text-slate-600; }
+  .members-list-return-button { @apply mt-4 font-semibold underline; }
+  .members-list-tier-option { @apply w-full p-3 rounded-lg border text-left transition-all flex items-center justify-between; }
+  .members-list-tier-option-selected { @apply bg-brand-50 border-brand-primary shadow-sm; }
+  .members-list-tier-option-idle { @apply bg-slate-50 border-slate-200 hover:border-slate-300; }
+  .members-list-tier-option-name { @apply text-xs font-bold text-slate-900; }
+  .members-list-tier-option-price { @apply text-[11px] text-brand-ink font-semibold; }
+  .members-list-wallet-sync-notice { @apply p-3 rounded-lg bg-brand-50 border border-brand-accent/50 text-[11px] text-slate-700 flex items-start gap-2; }
+  .members-list-sparkles-icon { @apply w-4 h-4 text-brand-ink shrink-0 mt-0.5; }
+  .members-list-tier-dialog-actions { @apply flex justify-end gap-2 pt-2; }
+  .members-list-tier-cancel-button { @apply px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-xs font-semibold; }
+  .members-list-tier-save-button { @apply px-5 py-2 rounded-lg bg-brand-primary hover:bg-brand-secondary text-brand-ink text-xs font-bold flex items-center gap-2 transition-colors shadow-sm active:scale-[0.99]; }
+  .members-list-tier-save-spinner { @apply w-3.5 h-3.5 animate-spin; }
+
+  /* pages/admin/PaymentGatewayPage.jsx */
+  .payment-gateway-page { @apply max-w-3xl space-y-6; }
+  .payment-gateway-title { @apply text-2xl font-bold text-slate-900; }
+  .payment-gateway-introduction { @apply mt-2 text-sm text-slate-600; }
+  .payment-gateway-demo-notice { @apply rounded-xl border border-amber-200 bg-amber-50 p-5 flex items-start gap-3; }
+  .payment-gateway-demo-icon { @apply w-6 h-6 text-amber-800 shrink-0; }
+  .payment-gateway-demo-title { @apply font-bold text-amber-950; }
+  .payment-gateway-demo-description { @apply text-sm text-amber-900 mt-1; }
+  .payment-gateway-details-card { @apply rounded-xl border border-slate-200 bg-white p-6 space-y-6; }
+  .payment-gateway-ready-status { @apply flex items-center gap-2 font-semibold text-emerald-800; }
+  .payment-gateway-methods { @apply grid sm:grid-cols-3 gap-3; }
+  .payment-gateway-method-card { @apply rounded-lg border border-slate-200 p-4; }
+  .payment-gateway-method-icon { @apply w-5 h-5 text-slate-600 mb-3; }
+  .payment-gateway-method-name { @apply text-sm font-semibold; }
+  .payment-gateway-behaviour-notes { @apply space-y-4 text-sm text-slate-600; }
+  .payment-gateway-behaviour-note { @apply flex items-start gap-3; }
+  .payment-gateway-note-icon { @apply w-5 h-5 shrink-0 text-slate-500; }
+
+  /* pages/admin/TiersManagementPage.jsx */
+  .tiers-management-header { @apply flex flex-col sm:flex-row sm:items-center justify-between gap-4; }
+  .tiers-management-layers-icon { @apply w-6 h-6 text-brand-ink; }
+  .tiers-management-create-button { @apply py-2.5 px-4 rounded-lg bg-brand-primary hover:bg-brand-secondary text-brand-ink font-bold text-xs flex items-center gap-2 transition-colors self-start sm:self-auto shadow-sm; }
+  .tiers-management-accent-form { @apply rounded-xl bg-white border border-slate-200 p-5 shadow-sm; }
+  .tiers-management-accent-controls { @apply flex flex-col sm:flex-row sm:items-end justify-between gap-5; }
+  .tiers-management-accent-fields { @apply flex items-center gap-3; }
+  .tiers-management-accent-picker { @apply h-10 w-14 shrink-0 rounded cursor-pointer bg-white border border-slate-300 p-1; }
+  .tiers-management-accent-label { @apply block text-xs font-semibold text-slate-700 mb-1; }
+  .tiers-management-accent-input { @apply w-36 px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 font-mono focus:outline-none focus:border-brand-primary; }
+  .tiers-management-accent-save-button { @apply inline-flex self-start sm:self-auto items-center justify-center gap-2 rounded-lg bg-brand-primary px-4 py-2.5 text-xs font-bold text-brand-ink hover:bg-brand-secondary disabled:opacity-50; }
+  .tiers-management-accent-error { @apply mt-3 text-xs text-red-700; }
+  .tiers-management-accent-status { @apply mt-3 text-xs text-green-700; }
+  .tiers-management-load-error { @apply rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600; }
+  .tiers-management-retry-button { @apply mt-3 font-semibold underline; }
+  .tiers-management-cards { @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6; }
+  .tiers-management-tier-card { @apply p-6 rounded-xl bg-white border border-slate-200 shadow-sm flex flex-col justify-between hover:border-slate-300 transition-colors relative; }
+  .tiers-management-card-header { @apply flex items-center justify-between mb-3; }
+  .tiers-management-tier-identity { @apply flex items-center gap-2; }
+  .tiers-management-colour-dot { @apply w-3 h-3 rounded-full; }
+  .tiers-management-price { @apply mb-4; }
+  .tiers-management-price-amount { @apply text-3xl font-black text-slate-900; }
+  .tiers-management-price-interval { @apply text-xs text-slate-500 ml-1; }
+  .tiers-management-tier-description { @apply text-xs text-slate-600 mb-5 leading-relaxed min-h-[36px]; }
+  .tiers-management-perks { @apply space-y-2 pt-4 border-t border-slate-100 text-xs; }
+  .tiers-management-perk { @apply flex items-start gap-2; }
+  .tiers-management-check-icon { @apply w-3.5 h-3.5 text-brand-ink shrink-0 mt-0.5; }
+  .tiers-management-perk-text { @apply text-slate-700; }
+  .tiers-management-card-actions { @apply pt-6 border-t border-slate-100 mt-6 flex items-center justify-end gap-2; }
+  .tiers-management-edit-button { @apply p-2 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-xs font-semibold flex items-center gap-1 transition-colors; }
+  .tiers-management-delete-button { @apply p-2 rounded-lg bg-slate-100 hover:bg-slate-200 border border-brand-silver text-brand-ink text-xs font-semibold flex items-center gap-1 transition-colors; }
+  .tiers-management-return-button { @apply mt-3 font-semibold text-brand-ink underline; }
+
+  /* pages/member/EventsCalendarPage.jsx */
+  .events-calendar-header { @apply flex flex-col sm:flex-row sm:items-center justify-between gap-4; }
+  .events-calendar-calendar-icon { @apply w-6 h-6 text-brand-ink; }
+  .events-calendar-filters { @apply flex items-center gap-1.5 overflow-x-auto pb-2 sm:pb-0; }
+  .events-calendar-filter-icon { @apply w-3.5 h-3.5 text-slate-400 mr-1 shrink-0; }
+  .events-calendar-filter-button { @apply px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors; }
+  .events-calendar-filter-selected { @apply bg-brand-primary text-brand-ink shadow-sm; }
+  .events-calendar-filter-idle { @apply bg-white text-slate-600 hover:text-slate-900 border border-slate-200; }
+  .events-calendar-loading { @apply flex items-center justify-center py-20; }
+  .events-calendar-empty { @apply text-center py-16 bg-white rounded-xl border border-slate-200 p-8 text-slate-500 text-xs shadow-sm; }
+  .events-calendar-empty-icon { @apply w-8 h-8 mx-auto mb-2 text-slate-400; }
+  .events-calendar-cards { @apply grid grid-cols-1 md:grid-cols-2 gap-6; }
+  .events-calendar-event-card { @apply rounded-xl border bg-white shadow-sm overflow-hidden flex flex-col justify-between transition-all; }
+  .events-calendar-event-attending { @apply border-brand-primary ring-1 ring-brand-primary/50; }
+  .events-calendar-event-available { @apply border-slate-200 hover:border-slate-300; }
+  .events-calendar-thumbnail { @apply h-44 relative overflow-hidden bg-slate-100; }
+  .events-calendar-thumbnail-image { @apply w-full h-full object-cover opacity-90; }
+  .events-calendar-thumbnail-placeholder { @apply flex h-full items-center justify-center bg-gradient-to-br from-brand-50 to-slate-100; }
+  .events-calendar-thumbnail-icon { @apply h-16 w-16 text-slate-300; }
+  .events-calendar-category-position { @apply absolute top-3 left-3 flex gap-2; }
+  .events-calendar-category-badge { @apply px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider bg-white text-brand-ink border border-brand-silver; }
+  .events-calendar-attending-badge { @apply absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1 rounded bg-brand-accent text-brand-ink font-bold text-xs shadow-sm; }
+  .events-calendar-event-content { @apply p-6 space-y-4; }
+  .events-calendar-card-title { @apply text-lg font-bold text-slate-900 leading-snug; }
+  .events-calendar-event-status { @apply mt-2; }
+  .events-calendar-event-description { @apply text-xs text-slate-600 mt-1 line-clamp-2 leading-relaxed; }
+  .events-calendar-event-details { @apply space-y-2 text-xs text-slate-700; }
+  .events-calendar-capacity { @apply p-3 rounded-lg bg-slate-50 border border-slate-200 space-y-1.5; }
+  .events-calendar-capacity-summary { @apply flex items-center justify-between text-[11px]; }
+  .events-calendar-capacity-label { @apply text-slate-500 flex items-center gap-1; }
+  .events-calendar-capacity-count { @apply font-semibold text-slate-900; }
+  .events-calendar-capacity-track { @apply w-full h-1.5 bg-slate-200 rounded-full overflow-hidden; }
+  .events-calendar-capacity-bar { @apply h-full rounded-full transition-all; }
+  .events-calendar-capacity-nearly-full { @apply bg-brand-secondary; }
+  .events-calendar-capacity-available { @apply bg-brand-primary; }
+  .events-calendar-tier-access { @apply flex items-center gap-1.5 flex-wrap; }
+  .events-calendar-tier-label { @apply text-[10px] uppercase font-bold text-slate-500; }
+  .events-calendar-access-badge { @apply text-[10px] px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200; }
+  .events-calendar-tier-badge { @apply text-[10px] px-2 py-0.5 rounded border; }
+  .events-calendar-tier-current { @apply bg-brand-50 text-brand-ink border-brand-primary font-bold; }
+  .events-calendar-tier-other { @apply bg-slate-100 text-slate-600 border-slate-200; }
+  .events-calendar-event-footer { @apply p-6 pt-0; }
+  .events-calendar-ended-notice { @apply rounded-lg border border-slate-200 bg-slate-100 px-4 py-3 text-center text-xs font-semibold text-slate-600; }
+  .events-calendar-cancel-rsvp-button { @apply w-full py-2.5 rounded-lg border border-brand-silver bg-slate-100 hover:bg-slate-200 text-brand-ink font-semibold text-xs flex items-center justify-center gap-2 transition-colors; }
+  .events-calendar-spinner { @apply w-3.5 h-3.5 animate-spin; }
+  .events-calendar-rsvp-closed-button { @apply w-full rounded-lg border border-slate-200 bg-slate-100 py-2.5 text-xs font-semibold text-slate-500; }
+  .events-calendar-rsvp-unavailable-button { @apply w-full py-2.5 rounded-lg bg-slate-100 border border-slate-200 text-slate-400 font-medium text-xs cursor-not-allowed; }
+  .events-calendar-rsvp-button { @apply w-full py-2.5 rounded-lg bg-brand-primary hover:bg-brand-secondary text-brand-ink font-bold text-xs flex items-center justify-center gap-2 transition-colors shadow-sm active:scale-[0.99]; }
+
+  /* pages/member/InvoicesPage.jsx */
+  .invoices-receipt-icon { @apply w-6 h-6 text-brand-ink; }
+  .invoices-empty { @apply p-12 text-center text-xs text-slate-500; }
+  .invoices-empty-icon { @apply w-8 h-8 mx-auto mb-2 text-slate-400; }
+  .invoices-actions-heading { @apply p-4 text-right; }
+  .invoices-number-cell { @apply p-4 font-mono font-bold text-brand-ink; }
+  .invoices-date-cell { @apply p-4 text-slate-600; }
+  .invoices-tier-cell { @apply p-4 font-semibold text-slate-900; }
+  .invoices-method-cell { @apply p-4 text-slate-500 font-mono text-[11px]; }
+  .invoices-amount-cell { @apply p-4 font-bold text-slate-900; }
+  .invoices-status-badge { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border; }
+  .invoices-status-paid { @apply bg-brand-50 text-brand-ink border-brand-primary; }
+  .invoices-status-declined { @apply bg-slate-100 text-brand-ink border-brand-silver; }
+  .invoices-actions-cell { @apply p-4 text-right space-x-2; }
+  .invoices-receipt-action { @apply p-1.5 rounded bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 transition-colors; }
+  .invoices-receipt-overlay { @apply fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-muted/35; }
+  .invoices-receipt-dialog { @apply bg-white border border-slate-200 rounded-xl w-full max-w-lg p-6 space-y-4; }
+  .invoices-receipt-status { @apply text-sm text-slate-700; }
+  .invoices-retry-button { @apply mr-4 text-sm font-semibold text-brand-ink hover:underline; }
+  .invoices-return-button { @apply text-sm font-semibold text-brand-ink hover:underline; }
+
+  /* pages/member/MemberDashboard.jsx */
+  .member-dashboard-loading { @apply flex items-center justify-center min-h-[60vh]; }
+  .member-dashboard-loading-content { @apply flex flex-col items-center gap-3; }
+  .member-dashboard-loading-message { @apply text-xs text-slate-400; }
+  .member-dashboard-welcome { @apply rounded-xl bg-white border border-slate-200 p-6 sm:p-8 shadow-sm; }
+  .member-dashboard-welcome-content { @apply flex flex-col md:flex-row md:items-center justify-between gap-6; }
+  .member-dashboard-greeting { @apply flex items-center gap-2; }
+  .member-dashboard-greeting-label { @apply text-xs font-bold uppercase tracking-wider text-brand-ink; }
+  .member-dashboard-member-name { @apply text-2xl sm:text-3xl font-extrabold text-slate-900; }
+  .member-dashboard-membership-details { @apply flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600; }
+  .member-dashboard-member-number { @apply font-mono text-brand-ink font-semibold; }
+  .member-dashboard-current-tier { @apply text-slate-900 font-semibold; }
+  .member-dashboard-expiry { @apply flex items-center gap-1; }
+  .member-dashboard-clock-icon { @apply w-3.5 h-3.5 text-slate-400; }
+  .member-dashboard-quick-actions { @apply flex items-center gap-3; }
+  .member-dashboard-manage-button { @apply py-2.5 px-5 rounded-lg bg-brand-primary hover:bg-brand-secondary text-brand-ink font-bold text-xs flex items-center gap-2 transition-colors shadow-sm; }
+  .member-dashboard-events-button { @apply py-2.5 px-4 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 font-semibold text-xs flex items-center gap-1.5 transition-colors; }
+  .member-dashboard-columns { @apply grid grid-cols-1 lg:grid-cols-12 gap-6 items-start; }
+  .member-dashboard-pass-column { @apply lg:col-span-5 space-y-4; }
+  .member-dashboard-pass-heading { @apply flex items-center justify-between; }
+  .member-dashboard-pass-title { @apply text-base font-bold text-slate-900 flex items-center gap-2; }
+  .member-dashboard-wallet-icon { @apply w-4 h-4 text-brand-ink; }
+  .member-dashboard-pass-unavailable { @apply space-y-3 text-sm text-slate-600; }
+  .member-dashboard-pass-manage-button { @apply px-4 py-2 rounded-lg bg-brand-primary text-brand-ink font-semibold; }
+  .member-dashboard-activity-column { @apply lg:col-span-7 space-y-6; }
+  .member-dashboard-card-heading { @apply flex items-center justify-between mb-4; }
+  .member-dashboard-card-link { @apply text-xs font-semibold text-brand-ink hover:underline; }
+  .member-dashboard-perks { @apply grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs; }
+  .member-dashboard-perk { @apply flex items-start gap-2.5 p-3 rounded-lg bg-slate-50 border border-slate-200 text-slate-700; }
+  .member-dashboard-perk-icon { @apply w-4 h-4 text-brand-muted shrink-0 mt-0.5; }
+  .member-dashboard-rsvps-empty { @apply text-center py-8 p-4 rounded-lg bg-slate-50 border border-dashed border-slate-200 text-xs text-slate-500; }
+  .member-dashboard-rsvps-empty-icon { @apply w-6 h-6 mx-auto mb-2 text-slate-400; }
+  .member-dashboard-browse-events-link { @apply block mx-auto mt-2 text-brand-ink font-semibold hover:underline; }
+  .member-dashboard-upcoming-card { @apply p-3.5 rounded-lg bg-slate-50 border border-slate-200 flex flex-wrap items-start justify-between gap-4; }
+  .member-dashboard-upcoming-details { @apply min-w-0 flex-1 basis-52 space-y-3; }
+  .member-dashboard-item-title { @apply text-xs font-bold text-slate-900; }
+  .member-dashboard-rsvp-confirmed { @apply px-2.5 py-1 rounded-full text-[11px] font-semibold bg-brand-50 text-brand-ink border border-brand-primary shrink-0; }
+  .member-dashboard-shortcuts { @apply grid grid-cols-1 sm:grid-cols-2 gap-4; }
+  .member-dashboard-shortcut-card { @apply p-4 rounded-lg bg-white border border-slate-200 hover:border-brand-primary cursor-pointer transition-colors shadow-sm flex items-center justify-between; }
+  .member-dashboard-shortcut-description { @apply text-[11px] text-slate-500 mt-0.5; }
+  .member-dashboard-shortcut-arrow { @apply w-4 h-4 text-slate-400 group-hover:text-brand-ink transition-colors; }
+
+  /* pages/member/MemberOrganisationsPage.jsx */
+  .member-organisations-header { @apply bg-white border border-slate-200 rounded-xl p-6 flex flex-wrap justify-between items-center gap-4; }
+  .member-organisations-title { @apply text-2xl font-bold text-slate-900; }
+  .member-organisations-introduction { @apply text-sm text-slate-600 mt-2; }
+  .member-organisations-membership-count { @apply px-3 py-1.5 rounded-lg bg-brand-50 border border-brand-primary/30 text-xs font-semibold text-brand-ink; }
+  .member-organisations-section-description { @apply text-xs text-slate-600 mt-1; }
+  .member-organisations-memberships { @apply grid sm:grid-cols-2 xl:grid-cols-3 gap-4; }
+  .member-organisations-membership-card { @apply bg-white border border-slate-200 rounded-xl p-5 flex flex-col gap-4; }
+  .member-organisations-membership-identity { @apply flex items-start gap-3 min-w-0; }
+  .member-organisations-membership-logo { @apply w-11 h-11 rounded-lg border border-slate-200 shrink-0; }
+  .member-organisations-membership-name-group { @apply min-w-0 flex-1; }
+  .member-organisations-membership-name { @apply font-bold text-sm text-slate-900 break-words; }
+  .member-organisations-membership-tier { @apply text-xs text-slate-600 mt-1 break-words; }
+  .member-organisations-membership-status { @apply flex flex-wrap items-center gap-2 text-xs; }
+  .member-organisations-status-badge { @apply px-2 py-1 rounded-md font-semibold capitalize; }
+  .member-organisations-status-active { @apply bg-emerald-50 text-emerald-800; }
+  .member-organisations-status-pending { @apply bg-amber-50 text-amber-800; }
+  .member-organisations-status-inactive { @apply bg-slate-100 text-slate-700; }
+  .member-organisations-expiry { @apply text-slate-500; }
+  .member-organisations-open-portal-button { @apply mt-auto flex items-center justify-center gap-2 px-4 py-2.5 border border-slate-300 rounded-lg text-xs font-bold hover:bg-slate-100 disabled:opacity-60; }
+  .member-organisations-memberships-empty { @apply bg-white border border-slate-200 rounded-xl p-5 flex items-start gap-3; }
+  .member-organisations-memberships-empty-icon { @apply p-2.5 bg-brand-50 rounded-lg text-brand-ink shrink-0; }
+  .member-organisations-memberships-empty-title { @apply font-semibold text-sm text-slate-900; }
+  .member-organisations-memberships-empty-description { @apply text-sm text-slate-600 mt-1; }
+  .member-organisations-directory { @apply space-y-4 pt-2; }
+  .member-organisations-directory-header { @apply flex flex-wrap justify-between items-start gap-3; }
+  .member-organisations-create-button { @apply border border-slate-300 hover:bg-slate-100 text-slate-700 font-semibold text-xs rounded-lg px-4 py-2.5; }
+  .member-organisations-filters { @apply flex flex-col sm:flex-row gap-3; }
+  .member-organisations-search-field { @apply relative flex-1; }
+  .member-organisations-search-icon { @apply w-4 h-4 absolute left-3 top-3.5 text-slate-500; }
+  .member-organisations-search-input { @apply w-full pl-10 pr-4 py-3 rounded-lg border border-slate-300 text-sm; }
+  .member-organisations-category-select { @apply w-full rounded-lg border border-slate-300 px-4 py-3 text-sm; }
+  .member-organisations-request-status { @apply text-sm text-slate-700; }
+  .member-organisations-directory-loading { @apply py-16 text-center; }
+  .member-organisations-spinner { @apply animate-spin w-6 h-6 mx-auto; }
+  .member-organisations-directory-loading-message { @apply mt-2 text-sm; }
+  .member-organisations-directory-empty { @apply bg-white border border-slate-200 rounded-xl p-10 text-center; }
+  .member-organisations-directory-empty-icon { @apply w-10 h-10 text-slate-400 mx-auto mb-3; }
+  .member-organisations-directory-empty-title { @apply font-semibold; }
+  .member-organisations-directory-results { @apply grid sm:grid-cols-2 xl:grid-cols-3 gap-5; }
+  .member-organisations-directory-card { @apply bg-white border border-slate-200 rounded-xl overflow-hidden flex flex-col; }
+  .member-organisations-directory-banner { @apply h-32 w-full; }
+  .member-organisations-directory-card-body { @apply p-5 flex-1; }
+  .member-organisations-public-category { @apply text-[11px] font-semibold text-slate-600 flex items-center gap-1; }
+  .member-organisations-directory-identity { @apply flex items-center gap-3 mt-2; }
+  .member-organisations-directory-logo { @apply w-10 h-10 rounded-lg border border-slate-200 shrink-0; }
+  .member-organisations-directory-name { @apply font-bold text-lg; }
+  .member-organisations-directory-description { @apply text-sm text-slate-600 line-clamp-3 mt-3; }
+  .member-organisations-directory-card-footer { @apply border-t border-slate-200 p-4 flex justify-between items-center; }
+  .member-organisations-member-count { @apply flex items-center gap-1.5 text-xs text-slate-600; }
+  .member-organisations-view-button { @apply flex items-center gap-1 text-xs font-bold bg-brand-primary hover:bg-brand-secondary px-3 py-2 rounded-lg disabled:opacity-60; }
+  .member-organisations-details-overlay { @apply fixed inset-0 z-50 bg-brand-muted/35 flex items-center justify-center p-4; }
+  .member-organisations-details-status-dialog { @apply bg-white border border-slate-200 rounded-xl w-full max-w-lg p-6 space-y-4; }
+  .member-organisations-return-button { @apply text-sm font-semibold text-brand-ink hover:underline; }
+  .member-organisations-join-dialog { @apply bg-white border border-slate-200 rounded-xl w-full max-w-lg max-h-[90vh] overflow-auto p-6 space-y-5; }
+  .member-organisations-join-header { @apply flex justify-between items-start gap-4; }
+  .member-organisations-join-title { @apply text-xl font-bold; }
+  .member-organisations-close-button { @apply p-1; }
+  .member-organisations-tier-legend { @apply text-sm font-semibold mb-2; }
+  .member-organisations-tier-option { @apply flex items-center gap-3 p-3 rounded-lg border cursor-pointer; }
+  .member-organisations-tier-selected { @apply border-brand-primary bg-brand-50; }
+  .member-organisations-tier-idle { @apply border-slate-300; }
+  .member-organisations-tier-radio { @apply accent-brand-primary; }
+  .member-organisations-tier-details { @apply flex-1 text-sm; }
+  .member-organisations-tier-description { @apply block text-xs text-slate-600 mt-1; }
+  .member-organisations-tier-price { @apply font-semibold text-sm; }
+  .member-organisations-tier-interval { @apply block text-xs font-normal text-slate-500; }
+  .member-organisations-join-error { @apply text-sm text-slate-800; }
+  .member-organisations-join-button { @apply w-full flex justify-center items-center gap-2 bg-brand-primary hover:bg-brand-secondary text-brand-ink font-bold rounded-lg py-3 text-sm disabled:opacity-60; }
+
+  /* pages/member/MembershipPage.jsx */
+  .membership-loading { @apply flex min-h-72 items-center justify-center gap-3 text-sm text-slate-600; }
+  .membership-spinner { @apply h-5 w-5 animate-spin; }
+  .membership-error-title { @apply text-2xl font-bold; }
+  .membership-load-error { @apply text-sm text-red-700; }
+  .membership-retry-button { @apply text-sm font-semibold underline; }
+  .membership-page-title { @apply text-2xl font-bold text-slate-900; }
+  .membership-section-description { @apply mt-2 text-sm text-slate-600; }
+  .membership-section-card { @apply rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm; }
+  .membership-overview-heading { @apply flex flex-wrap items-start justify-between gap-4; }
+  .membership-heading { @apply text-lg font-bold; }
+  .membership-organisation-name { @apply mt-1 text-sm text-slate-600; }
+  .membership-status-badge { @apply rounded-full border px-3 py-1 text-xs font-semibold; }
+  .membership-status-active { @apply border-brand-primary bg-brand-50 text-brand-ink; }
+  .membership-status-inactive { @apply border-slate-300 bg-slate-100 text-slate-700; }
+  .membership-summary { @apply mt-5 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-slate-200 bg-slate-50 p-4; }
+  .membership-current-label { @apply text-xs font-semibold text-slate-500; }
+  .membership-current-tier { @apply mt-1 text-xl font-bold; }
+  .membership-member-detail { @apply mt-1 text-xs text-slate-600; }
+  .membership-member-number { @apply font-mono; }
+  .membership-current-price { @apply font-semibold text-slate-900; }
+  .membership-current-interval { @apply text-sm font-normal text-slate-500; }
+  .membership-dates { @apply mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4; }
+  .membership-stat-label { @apply flex items-center gap-1.5 text-xs font-semibold text-slate-500; }
+  .membership-stat-value { @apply mt-1.5 text-sm font-semibold; }
+  .membership-credit-notice { @apply mt-4 text-sm text-slate-600; }
+  .membership-cancellation-notice { @apply mt-5 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900; }
+  .membership-scheduled-downgrade { @apply mt-5 rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950; }
+  .membership-scheduled-downgrade-title { @apply font-bold; }
+  .membership-scheduled-downgrade-detail { @apply mt-2; }
+  .membership-cancel-downgrade-button { @apply mt-3 rounded-lg border border-blue-300 bg-white px-3 py-2 text-xs font-semibold disabled:opacity-50; }
+  .membership-inactive-notice { @apply mt-5 text-sm text-slate-600; }
+  .membership-renew-button { @apply mt-4 rounded-lg bg-brand-primary px-4 py-2.5 text-sm font-bold text-brand-ink; }
+  .membership-management-columns { @apply grid items-start gap-6 xl:grid-cols-2; }
+  .membership-icon-heading { @apply flex items-center gap-2 text-base font-bold; }
+  .membership-heading-icon { @apply h-4 w-4 text-brand-ink; }
+  .membership-pass-description { @apply mb-5 mt-1 text-sm text-slate-500; }
+  .membership-pass-unavailable { @apply rounded-lg border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-500; }
+  .membership-pass-unavailable-icon { @apply mx-auto mb-2 h-6 w-6; }
+  .membership-upgrade-notice { @apply mt-3 text-sm text-blue-900; }
+  .membership-tier-status { @apply mt-4 text-sm text-slate-500; }
+  .membership-tiers-error { @apply mt-4 text-sm text-red-700; }
+  .membership-tier-list { @apply mt-4 space-y-3; }
+  .membership-tier-card { @apply rounded-lg border border-slate-200 p-4; }
+  .membership-tier-heading { @apply flex flex-wrap items-start justify-between gap-2; }
+  .membership-tier-name { @apply text-sm font-bold; }
+  .membership-tier-price { @apply text-sm font-semibold; }
+  .membership-tier-interval { @apply text-xs font-normal text-slate-500; }
+  .membership-tier-description { @apply mt-2 text-xs text-slate-600; }
+  .membership-tier-perks { @apply mt-3 space-y-1.5; }
+  .membership-tier-perk { @apply flex items-start gap-2 text-xs text-slate-600; }
+  .membership-tier-perk-icon { @apply h-3.5 w-3.5 shrink-0 text-brand-ink; }
+  .membership-review-upgrade-button { @apply mt-4 rounded-lg bg-brand-primary px-4 py-2 text-xs font-bold text-brand-ink hover:bg-brand-secondary; }
+  .membership-section-title { @apply text-base font-bold; }
+  .membership-schedule-downgrade-button { @apply mt-4 rounded-lg border border-slate-300 px-4 py-2 text-xs font-bold text-slate-800 hover:bg-slate-50 disabled:opacity-50; }
+  .membership-action-error { @apply mt-3 text-sm text-red-700; }
+  .membership-keep-button { @apply mt-4 rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold disabled:opacity-50; }
+  .membership-cancel-button { @apply mt-4 rounded-lg border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-700 hover:bg-red-50; }
+  .membership-action-overlay { @apply fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4; }
+  .membership-action-dialog { @apply w-full max-w-lg rounded-xl border border-slate-200 bg-white p-6 shadow-xl; }
+  .membership-action-description { @apply mt-3 text-sm leading-relaxed text-slate-600; }
+  .membership-cancel-downgrade-notice { @apply mt-3 text-sm text-amber-900; }
+  .membership-dialog-actions { @apply mt-6 flex flex-wrap justify-end gap-3; }
+  .membership-back-button { @apply rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold disabled:opacity-50; }
+  .membership-confirm-cancellation-button { @apply rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50; }
+  .membership-confirm-downgrade-button { @apply rounded-lg bg-brand-primary px-4 py-2.5 text-sm font-bold text-brand-ink disabled:opacity-50; }
+  .membership-checkout-redirect-status { @apply text-sm text-slate-500; }
+  .membership-checkout-page { @apply mx-auto max-w-2xl space-y-5; }
+  .membership-checkout-links { @apply flex flex-wrap gap-4 text-sm font-semibold; }
+  .membership-checkout-back-link { @apply underline; }
+
+  /* pages/member/ProfilePage.jsx */
+  .profile-page { @apply max-w-4xl mx-auto space-y-6; }
+  .profile-user-icon { @apply w-6 h-6 text-brand-ink; }
+  .profile-personal-details { @apply p-6 rounded-xl bg-white border border-slate-200 shadow-sm space-y-6; }
+  .profile-avatar-section { @apply flex flex-col sm:flex-row sm:items-center gap-5 pb-6 border-b border-slate-200; }
+  .profile-avatar { @apply w-20 h-20 shrink-0 rounded-full border-2 border-brand-primary bg-slate-50 flex items-center justify-center; }
+  .profile-avatar-image { @apply w-full h-full rounded-full object-cover; }
+  .profile-avatar-placeholder { @apply w-10 h-10 text-slate-400; }
+  .profile-avatar-controls { @apply flex-1; }
+  .profile-avatar-label { @apply text-xs font-semibold text-slate-700 mb-1; }
+  .profile-avatar-requirements { @apply text-[11px] text-slate-500 mb-3; }
+  .profile-avatar-actions { @apply flex flex-wrap items-center gap-2; }
+  .profile-avatar-upload-button { @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-primary hover:bg-brand-secondary text-brand-ink text-xs font-bold cursor-pointer transition-colors; }
+  .profile-avatar-remove-button { @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors; }
+  .profile-avatar-selected-file { @apply text-[11px] text-slate-500 mt-2 truncate; }
+  .profile-personal-fields { @apply grid grid-cols-1 sm:grid-cols-2 gap-4; }
+  .profile-name-input { @apply w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary; }
+  .profile-email-hint { @apply text-[10px] text-slate-500; }
+  .profile-email-input { @apply w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-500 cursor-not-allowed; }
+  .profile-member-number-input { @apply w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-mono text-brand-ink cursor-not-allowed; }
+  .profile-detail-input { @apply w-full px-3.5 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary; }
+  .profile-bio-character-count { @apply text-[11px] text-slate-500 text-right mt-1; }
+  .profile-address-panel { @apply p-6 rounded-xl bg-white border border-slate-200 shadow-sm space-y-4; }
+  .profile-panel-title { @apply text-sm font-bold text-slate-900 flex items-center gap-2; }
+  .profile-panel-icon { @apply w-4 h-4 text-brand-ink; }
+  .profile-address-label { @apply block text-xs font-semibold text-slate-700 mb-1; }
+  .profile-address-fields { @apply grid grid-cols-2 sm:grid-cols-4 gap-3; }
+  .profile-notifications-panel { @apply p-6 rounded-xl bg-white border border-slate-200 shadow-sm space-y-3; }
+  .profile-notification-options { @apply space-y-3 pt-2; }
+  .profile-notification-option { @apply flex items-center gap-3 cursor-pointer; }
+  .profile-notification-checkbox { @apply w-4 h-4 rounded text-brand-ink accent-brand-primary bg-white border-slate-300 cursor-pointer; }
+  .profile-notification-label { @apply text-xs text-slate-700; }
+  .profile-form-actions { @apply flex justify-end pt-2; }
+  .profile-save-button { @apply py-2.5 px-6 rounded-lg bg-brand-primary hover:bg-brand-secondary text-brand-ink font-bold text-sm flex items-center gap-2 transition-colors shadow-sm active:scale-[0.99]; }
+
+  /* Directory filters and badges. Unsupported legacy utilities produced no CSS. */
+  .landing-results-count { @apply text-xs font-semibold text-slate-600 bg-white px-3.5 py-2 rounded-lg border border-slate-200 flex items-center gap-2 self-start md:self-auto; }
+  .landing-category-filters { @apply flex items-center gap-2 overflow-x-auto pb-3 mb-6; }
+  .directory-loading-spinner { @apply w-8 h-8 border-brand-primary border-t-transparent rounded-full animate-spin mx-auto mb-3; }
+  .landing-card-public-badge { @apply px-2.5 py-1 rounded-full text-[10px] font-bold bg-brand-500/90 text-brand-ink flex items-center gap-1 shadow-sm; }
+  .landing-join-button { @apply px-3 py-1.5 rounded-lg text-xs font-bold bg-brand-primary hover:bg-brand-secondary text-brand-ink flex items-center gap-1 transition-colors; }
+  .orgs-filter-all-active { @apply bg-white text-slate-900; }
+  .orgs-filter-visibility-active { @apply bg-white text-brand-ink; }
+  .orgs-visibility-public-active { @apply border-brand-primary bg-brand-50/50; }
+  .orgs-visibility-private-active { @apply border-brand-muted bg-slate-100/50; }
+}

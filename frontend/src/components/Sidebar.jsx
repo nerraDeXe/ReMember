@@ -6,7 +6,7 @@ import {
   FileText, ChevronDown,
 } from 'lucide-react';
 import OrganisationImage from './OrganisationImage.jsx';
-import PageLink from './PageLink.jsx';
+import { PageLink } from '../routing.jsx';
 
 export default function Sidebar({ currentPage, onNavigate, isAdmin }) {
   const { user } = useAuth();
@@ -69,8 +69,8 @@ export default function Sidebar({ currentPage, onNavigate, isAdmin }) {
     const selected = currentPage === link.id;
     return (
       <PageLink key={link.id} page={link.id} onNavigate={onNavigate} aria-current={selected ? 'page' : undefined}
-        className={`w-full flex items-center gap-3 rounded-lg text-xs font-semibold transition-colors text-left ${nested ? 'px-3 py-2.5' : 'px-3.5 py-2.5'} ${selected ? 'bg-brand-primary text-brand-ink shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}>
-        <Icon className={`w-4 h-4 shrink-0 ${selected ? 'text-brand-ink' : 'text-slate-500'}`} aria-hidden="true" />
+        className={`sidebar-link ${nested ? 'sidebar-link-nested' : 'sidebar-link-main'} ${selected ? 'sidebar-link-active' : 'sidebar-link-idle'}`}>
+        <Icon className={`sidebar-link-icon ${selected ? 'sidebar-icon-active' : 'sidebar-icon-idle'}`} aria-hidden="true" />
         <span>{link.label}</span>
       </PageLink>
     );
@@ -78,38 +78,38 @@ export default function Sidebar({ currentPage, onNavigate, isAdmin }) {
 
   return (
     <>
-      <nav aria-label="Mobile portal navigation" className="md:hidden w-full border-b border-slate-200 bg-white px-4 py-3">
-        <label htmlFor="mobile-portal-page" className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">{isAdmin ? 'Admin portal' : 'Member portal'} · {user?.activeOrganisation?.name || 'My account'}</label>
-        <select id="mobile-portal-page" value={mobileValue} onChange={event => onNavigate(event.target.value)} className="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-primary">
+      <nav aria-label="Mobile portal navigation" className="mobile-portal-nav">
+        <label htmlFor="mobile-portal-page" className="mobile-portal-label">{isAdmin ? 'Admin portal' : 'Member portal'} · {user?.activeOrganisation?.name || 'My account'}</label>
+        <select id="mobile-portal-page" value={mobileValue} onChange={event => onNavigate(event.target.value)} className="mobile-portal-select">
           {!mobileValue && <option value="" disabled>Choose a page</option>}
           {mobileGroups.map(group => <optgroup key={group.label} label={group.label}>{group.links.map(link => <option key={link.id} value={link.id}>{link.label}</option>)}</optgroup>)}
         </select>
       </nav>
 
-      <aside className="w-64 shrink-0 hidden md:flex flex-col bg-white border-r border-slate-200 min-h-[calc(100vh-4rem)] p-4">
-        <PageLink page="account-organisations" onNavigate={onNavigate} className="w-full flex items-center gap-2 px-3 py-2 mb-3 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg"><ArrowLeft className="w-4 h-4" />My Organisations</PageLink>
-        <div className="flex items-center gap-3 p-3 mb-5 rounded-xl bg-slate-50 border border-slate-200">
-          <OrganisationImage src={user?.activeOrganisation?.logoUrl} alt="" className="w-10 h-10 rounded-lg border border-slate-200 shrink-0" />
-          <div className="min-w-0"><p className="text-xs font-bold text-slate-900 break-words">{user?.activeOrganisation?.name || 'My account'}</p><p className="text-[10px] text-slate-500 mt-1">{isAdmin ? 'Admin Portal' : 'Member Portal'}</p></div>
+      <aside className="sidebar">
+        <PageLink page="account-organisations" onNavigate={onNavigate} className="sidebar-back-link"><ArrowLeft className="sidebar-back-icon" />My Organisations</PageLink>
+        <div className="sidebar-organisation">
+          <OrganisationImage src={user?.activeOrganisation?.logoUrl} alt="" className="sidebar-organisation-logo" />
+          <div className="sidebar-organisation-details"><p className="sidebar-organisation-name">{user?.activeOrganisation?.name || 'My account'}</p><p className="sidebar-portal-name">{isAdmin ? 'Admin Portal' : 'Member Portal'}</p></div>
         </div>
-        <nav aria-label={isAdmin ? 'Admin portal navigation' : 'Member portal navigation'} className="space-y-5">
+        <nav aria-label={isAdmin ? 'Admin portal navigation' : 'Member portal navigation'} className="sidebar-groups">
           {groups.map(group => (
             <div key={group.label}>
-              <p className="px-3 mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">{group.label}</p>
-              <div className="space-y-1">
+              <p className="sidebar-group-label">{group.label}</p>
+              <div className="sidebar-group-links">
                 {group.links.map(link => link.children ? (
                   <div key={link.id}>
-                    <button type="button" onClick={() => setCommunicationOpen(open => !open)} aria-expanded={communicationOpen} aria-controls="admin-communication-links" className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs font-semibold text-left transition-colors ${communicationSelected ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}>
-                      <Megaphone className="w-4 h-4 shrink-0 text-slate-500" aria-hidden="true" /><span className="flex-1">Communication</span><ChevronDown className={`w-3.5 h-3.5 transition-transform ${communicationOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
+                    <button type="button" onClick={() => setCommunicationOpen(open => !open)} aria-expanded={communicationOpen} aria-controls="admin-communication-links" className={`sidebar-communication-button ${communicationSelected ? 'sidebar-communication-active' : 'sidebar-link-idle'}`}>
+                      <Megaphone className="sidebar-communication-icon" aria-hidden="true" /><span className="sidebar-communication-label">Communication</span><ChevronDown className={`sidebar-communication-chevron ${communicationOpen ? 'sidebar-communication-open' : ''}`} aria-hidden="true" />
                     </button>
-                    {communicationOpen && <div id="admin-communication-links" className="ml-5 mt-1 pl-2 border-l border-slate-200 space-y-1">{link.children.map(child => renderLink(child, true))}</div>}
+                    {communicationOpen && <div id="admin-communication-links" className="sidebar-nested-links">{link.children.map(child => renderLink(child, true))}</div>}
                   </div>
                 ) : renderLink(link))}
               </div>
             </div>
           ))}
         </nav>
-        <div className="mt-auto pt-6"><p className="rounded-lg bg-slate-50 border border-slate-200 px-3 py-3 text-[11px] text-slate-500 leading-relaxed">{isAdmin ? 'Manage members, share updates and keep your community connected.' : 'Your membership, organisation updates and upcoming events, together.'}</p></div>
+        <div className="sidebar-footer"><p className="sidebar-help-text">{isAdmin ? 'Manage members, share updates and keep your community connected.' : 'Your membership, organisation updates and upcoming events, together.'}</p></div>
       </aside>
     </>
   );
