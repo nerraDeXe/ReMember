@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>IT-01 - Email Verification</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#fff;color:#18212f;font:16px/1.45 Arial,sans-serif}.page{max-width:1400px;margin:auto;padding:30px 36px 28px}header{display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #d7dfe8;padding-bottom:15px;margin-bottom:14px}h1{font-size:27px;line-height:1.2;margin:3px 0 0}.eyebrow{font-size:13px;color:#536174;letter-spacing:1px}.status{font-weight:bold;font-size:22px;padding:9px 20px;border:2px solid #167149;color:#167149;border-radius:5px}.scope{font-size:14px;color:#536174;margin:10px 0}.label{font-size:14px;font-weight:bold;margin:14px 0 6px}.command,pre{white-space:pre-wrap;overflow-wrap:anywhere;margin:0;font:14px/1.45 Consolas,monospace}.command{padding:10px 12px;background:#f4f6f8;border:1px solid #dde3e9}.source{background:#f8fafc;border:1px solid #d9e0e8;padding:10px 0}.source-line{display:flex;font:15px/1.42 Consolas,monospace;min-height:21px}.line-number{flex:0 0 48px;padding-right:10px;text-align:right;color:#7b8795;user-select:none}.source-line code{font:inherit;white-space:pre-wrap;overflow-wrap:anywhere;min-width:0;flex:1;padding-right:10px}.result{border:1px solid #d9e0e8;background:#fcfdfd;padding:12px}.result-grid{display:grid;grid-template-columns:1fr 245px;gap:22px}.note{font-size:13px;color:#536174;margin:8px 0 0}a{color:#175caa}.outcome{margin-top:16px;font-size:16px}.timestamp{font-size:12px;color:#68778a;margin-top:12px}
+</style></head><body><main class="page">
+<header><div><div class="eyebrow">ReMember · Integration Test IT-01</div><h1>Email Verification</h1></div><div class="status">PASS</div></header>
+<p class="scope">Real HTTP, authentication router, JWT middleware, validation and verification logic; database and email delivery mocked.</p>
+<div class="label">Executed command</div><div class="command">node --test --test-reporter=tap --test-name-pattern=&quot;^a delivered code confirms email, removes its hash, and permits verified actions$&quot; backend/tests/auth.test.js</div>
+<div class="label">Exact test code · backend/tests/auth.test.js:360–375</div>
+<div class="source"><div class="source-line"><span class="line-number">360</span><code>test('a delivered code confirms email, removes its hash, and permits verified actions', async () =&gt; {</code></div>
+<div class="source-line"><span class="line-number">361</span><code>  const registration = await request('/api/auth/register', { body: validAccount });</code></div>
+<div class="source-line"><span class="line-number">362</span><code>  const token = registration.body.token;</code></div>
+<div class="source-line"><span class="line-number">363</span><code>  assert.equal((await request('/verified-action', { token })).status, 403);</code></div>
+<div class="source-line"><span class="line-number">364</span><code>  const verification = await request('/api/auth/verify-email', { token, body: { code: deliveredCode() } });</code></div>
+<div class="source-line"><span class="line-number">365</span><code>  assert.equal(verification.status, 200);</code></div>
+<div class="source-line"><span class="line-number">366</span><code>  assert.equal(verification.body.user.emailVerified, true);</code></div>
+<div class="source-line"><span class="line-number">367</span><code>  assert.equal(verification.body.user.onboardingCompleted, false);</code></div>
+<div class="source-line"><span class="line-number">368</span><code>  assert.equal(users[0].emailVerificationHash, undefined);</code></div>
+<div class="source-line"><span class="line-number">369</span><code>  assert.equal(users[0].emailVerificationExpiresAt, undefined);</code></div>
+<div class="source-line"><span class="line-number">370</span><code>  assertNoSecrets(verification.body.user);</code></div>
+<div class="source-line"><span class="line-number">371</span><code>  assert.equal((await request('/verified-action', { token: verification.body.token })).status, 200);</code></div>
+<div class="source-line"><span class="line-number">372</span><code>  const me = await request('/api/auth/me', { token });</code></div>
+<div class="source-line"><span class="line-number">373</span><code>  assert.equal(me.body.user.emailVerified, true);</code></div>
+<div class="source-line"><span class="line-number">374</span><code>  assertNoSecrets(me.body.user);</code></div>
+<div class="source-line"><span class="line-number">375</span><code>});</code></div></div>
+<div class="label">Actual test output · Node v20.18.0 · Exit 0</div>
+<div class="result"><div class="result-grid"><pre># Subtest: a delivered code confirms email, removes its hash, and permits verified actions
+ok 11 - a delivered code confirms email, removes its hash, and permits verified actions
+  ---
+  duration_ms: 282.0596
+  ...</pre><pre># tests 18
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 17
+# todo 0
+# duration_ms 2447.6581</pre></div><p class="note">Only the named test was selected; unrelated tests were skipped. <a href="IT-01.txt">Full raw stdout and stderr</a></p></div>
+<p class="outcome"><strong>Expected outcome:</strong> A valid email code verifies the account and permits protected actions.</p>
+<div class="timestamp">Executed 2026-11-04T05:12:35.369Z · Mocked storage and email; no live database or external delivery was tested.</div>
+</main></body></html>

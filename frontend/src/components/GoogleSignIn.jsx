@@ -69,10 +69,10 @@ export default function GoogleSignIn({ intent = 'login', rememberMe = false, dis
 
   return (
     <div className="content-stack">
-      <div className={`google-signin-button-mount ${busy || disabled ? "google-signin-disabled" : ''}`} ref={target} />
-      {!ready && !error && <p className="google-signin-loading">Loading Google sign-in…</p>}
-      {busy && <p role="status" className="google-signin-status">Signing in with Google…</p>}
-      {error && <div role="alert" className="google-signin-error"><p>{error}</p>{existingEmail ? <button type="button" onClick={() => onNavigate('login', { email: existingEmail })} className="google-signin-recovery-action">Sign in to your existing account</button> : !ready && <button type="button" onClick={() => setRetry(value => value + 1)} className="google-signin-recovery-action">Try again</button>}</div>}
+      <div className={`flex justify-center ${busy || disabled ? "google-signin-disabled" : ''}`} ref={target} />
+      {!ready && !error && <p className="text-caption text-center">Loading Google sign-in…</p>}
+      {busy && <p role="status" className="google-signin-help">Signing in with Google…</p>}
+      {error && <div role="alert" className="google-signin-notice"><p>{error}</p>{existingEmail ? <button type="button" onClick={() => onNavigate('login', { email: existingEmail })} className="link-underlined mt-2">Sign in to your existing account</button> : !ready && <button type="button" onClick={() => setRetry(value => value + 1)} className="link-underlined mt-2">Try again</button>}</div>}
     </div>
   );
 }

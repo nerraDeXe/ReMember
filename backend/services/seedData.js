@@ -46,7 +46,7 @@ export async function seedDatabase() {
         description: 'Essential access for community newcomers and casual event attendees.',
         perks: [
           'Access to monthly community meetups',
-          'Digital membership pass in Google Wallet',
+          'Digital membership card',
           'Standard member directory listing',
           'Community discussion board access'
         ],

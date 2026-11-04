@@ -1,0 +1,148 @@
+/* Component-specific presentation. Shared patterns live in interface.css and controls.css. */
+@layer components {
+  .account-shell { @apply min-h-screen bg-slate-50 px-4 py-10 sm:py-14; }
+  .communication-context { @apply self-start px-3 py-2 text-xs font-semibold text-slate-600 max-w-full sm:max-w-48; }
+  .communication-tabs { @apply flex gap-5 px-5 sm:px-6 border-t border-slate-100; }
+  .communication-tab { @apply py-3.5 border-b-2 text-xs font-bold transition-colors; }
+  .email-template-token { @apply rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 hover:border-brand-primary hover:bg-brand-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary disabled:opacity-50; }
+  .location-input { @apply pl-9 pr-3 py-2.5 text-sm disabled:bg-slate-50; }
+  .location-search-button { @apply rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50; }
+  .location-confirmed { @apply rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-[11px] font-semibold text-emerald-800; }
+  .location-result { @apply flex items-start gap-2.5 p-3 leading-relaxed text-slate-700 hover:bg-slate-50 focus:bg-slate-50 focus:ring-inset disabled:opacity-50; }
+  /* Overlays must ignore spacing inherited from their page's sibling stack. */
+  .event-editor-overlay { @apply fixed inset-0 z-50 flex items-start justify-center overflow-clip bg-brand-muted/40 p-3 sm:p-5; margin: 0 !important; }
+  .event-editor-dialog { @apply flex max-h-[calc(100dvh-1.5rem)] w-full max-w-2xl flex-col overflow-hidden shadow-2xl sm:max-h-[calc(100dvh-2.5rem)]; }
+  .event-editor-header { @apply shrink-0 justify-between border-b border-slate-200 bg-slate-50 p-4 sm:px-6 sm:py-5; }
+  .event-editor-icon { @apply hidden rounded-lg bg-brand-primary p-2 text-brand-ink sm:block; }
+  .event-day-label { @apply flex cursor-pointer items-start gap-2.5 text-sm text-slate-700; }
+  .event-day-badge { @apply rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700; }
+  .event-editor-error { @apply mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800; }
+  .event-editor-actions { @apply mt-6 flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:justify-end; }
+  .event-editor-back { @apply px-4 py-2.5 text-slate-600 hover:bg-slate-50 disabled:opacity-50; }
+  .event-editor-save { @apply px-5 py-2.5 text-sm shadow-sm transition-colors disabled:cursor-wait disabled:opacity-60; }
+  .google-signin-notice { @apply rounded-lg border border-brand-accent bg-brand-50 p-3 text-sm text-slate-800; }
+  .image-upload-button { @apply px-3 py-2 rounded-lg bg-brand-primary text-brand-ink text-xs font-semibold focus-within:ring-2 focus-within:ring-brand-muted; }
+  .image-remove-button { @apply px-2 py-2 text-xs text-slate-600 hover:bg-slate-100 rounded-lg disabled:opacity-60; }
+  .dialog-close-button { @apply p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded transition-colors; }
+  .membership-card { @apply w-full max-w-md mx-auto rounded-xl p-6 border border-brand-muted/30; }
+  .membership-card-avatar { @apply w-14 h-14 shrink-0 rounded-full border-2 border-white/50; }
+  .membership-card-tier { @apply inline-block mt-2 px-2 py-0.5 rounded text-[11px] font-semibold border border-brand-muted/30; }
+  .checkout-summary { @apply rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm space-y-2; }
+  .checkout-summary-total { @apply flex justify-between gap-3 border-t border-slate-200 pt-2; }
+  .checkout-header { @apply p-5 sm:p-6 border-b border-slate-200 justify-between; }
+  .checkout-demo-banner { @apply px-5 sm:px-6 py-3 border-b border-amber-200 bg-amber-50 text-xs font-semibold text-amber-950; }
+  .checkout-progress { @apply px-5 sm:px-6 pt-5 text-xs text-slate-400; }
+  .checkout-step-number { @apply border border-current rounded-full shrink-0; }
+  .checkout-error { @apply flex gap-2 text-sm text-red-800 rounded-lg border border-red-200 bg-red-50 p-3; }
+  .checkout-authorization { @apply rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3 text-sm; }
+  .checkout-authorization-total { @apply border-t border-slate-200 pt-3 flex justify-between font-bold; }
+  .checkout-sample-account { @apply w-full mt-2 border border-slate-300 rounded-lg bg-white p-3 text-sm font-normal; }
+  .checkout-otp-input { @apply w-full rounded-lg border border-slate-300 px-4 py-3 text-center tracking-[0.5em] font-mono text-lg; }
+  .checkout-account-select { @apply block w-full mt-2 p-2.5 text-sm text-slate-700; }
+  .phone-control { @apply flex rounded-lg border border-slate-300 bg-white overflow-hidden focus-within:border-brand-primary; }
+  .phone-number { @apply w-full min-w-0 text-slate-900 bg-white disabled:bg-slate-50 focus:outline-none; }
+  .post-card { @apply min-w-0 rounded-2xl border bg-white overflow-hidden shadow-sm; }
+  .post-featured-banner { @apply border-b border-brand-primary/50 bg-brand-primary/15 px-5 py-3 text-xs font-bold text-brand-ink sm:px-6; }
+  .post-meta { @apply mb-3 flex flex-wrap items-center gap-x-3 gap-y-1; }
+  .post-featured-badge { @apply ml-auto rounded-full bg-slate-100 px-2 py-1 font-semibold text-slate-600; }
+  .post-description-fade { @apply pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-white to-transparent; }
+  .post-expand-button { @apply mt-3 rounded text-xs font-bold text-slate-700 underline decoration-brand-primary decoration-2 underline-offset-4; }
+  .post-delete-button { @apply rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50; }
+  .post-edit-button { @apply rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-50; }
+  .post-cancel-button { @apply rounded-lg px-2.5 py-2 text-xs font-semibold text-slate-600 hover:bg-white disabled:opacity-50; }
+  .post-confirm-delete { @apply rounded-lg px-2.5 py-2 text-xs font-semibold text-slate-600 hover:bg-red-50 hover:text-red-700 disabled:opacity-50; }
+  .editor-frame { @apply overflow-hidden rounded-lg border bg-white focus-within:ring-2 focus-within:ring-brand-primary; }
+  .editor-toolbar { @apply flex-wrap border-b border-slate-200 bg-slate-50 px-2 py-2; }
+  .editor-tool { @apply inline-flex h-8 w-8 items-center justify-center rounded text-slate-700 transition-colors disabled:opacity-40; }
+  .editor-image-button { @apply h-8 rounded px-2 text-xs font-semibold text-slate-700 hover:bg-slate-200 disabled:opacity-40; }
+  .editor-history-button { @apply inline-flex h-8 w-8 items-center justify-center rounded text-slate-600 hover:bg-slate-200 disabled:opacity-30; }
+  .tier-dialog { @apply relative w-full max-w-lg overflow-hidden shadow-2xl; }
+  /* Additional component details compose with shared layout and controls. */
+  .app-missing-page { @apply min-h-screen flex-col gap-4 bg-slate-50; }
+  .account-logo-row { @apply mb-7 flex justify-center; }
+  .account-home-link { @apply inline-flex items-center gap-2.5 text-slate-900; }
+  .account-logo { @apply h-24 w-auto object-contain; }
+  .account-panel { @apply p-6 sm:p-8 shadow-sm; }
+  .communication-header { @apply px-5 py-5 sm:px-6 sm:py-6; }
+  .communication-heading { @apply flex items-start gap-3.5; }
+  .communication-description { @apply text-xs text-slate-600 mt-1.5 leading-relaxed; }
+  .communication-tab-active { @apply border-brand-primary text-slate-900; }
+  .communication-tab-idle { @apply border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300; }
+  .location-confirmation { @apply p-3 text-xs leading-relaxed text-slate-700; }
+  .location-results { @apply max-h-56 divide-y divide-slate-200 overflow-y-auto; }
+  .location-links { @apply flex flex-wrap gap-x-4 gap-y-2; }
+  .location-link { @apply text-xs text-slate-600 underline-offset-4; }
+  .event-editor-close { @apply rounded-lg p-2 text-slate-500 hover:bg-slate-200 disabled:opacity-40; }
+  .event-editor-form { @apply min-h-0 overflow-y-auto p-4 sm:p-6; }
+  .event-editor-section { @apply rounded-xl border border-slate-200 bg-slate-50/70 p-4; }
+  .event-date-grid { @apply grid grid-cols-1 gap-4 min-[360px]:grid-cols-2; }
+  .event-day-fieldset { @apply min-w-0 px-3 pb-3; }
+  .event-day-legend { @apply px-1 pt-2 text-xs font-semibold text-slate-800; }
+  .event-time-grid { @apply mt-2 gap-3; }
+  .event-access-label { @apply flex items-start gap-2.5 text-sm; }
+  .event-eligible-tiers { @apply mt-4 border-t border-slate-200 pt-3; }
+  .event-eligible-heading { @apply mb-2 font-semibold uppercase tracking-wide; }
+  .google-signin-help { @apply text-xs text-center text-slate-600; }
+  .image-upload-field { @apply rounded-xl border border-slate-200 p-4 space-y-3; }
+  .image-upload-label { @apply text-xs font-bold text-slate-700; }
+  .image-upload-preview { @apply rounded-lg border border-slate-200; }
+  .membership-card-icon { @apply w-8 h-8 shrink-0 rounded; }
+  .membership-card-organisation { @apply text-[10px] tracking-widest uppercase font-bold break-words; }
+  .membership-card-title { @apply text-sm font-extrabold tracking-tight; }
+  .membership-card-holder { @apply flex items-center gap-4 my-6; }
+  .membership-card-name { @apply text-lg font-bold leading-tight break-words; }
+  .membership-card-number { @apply text-xs font-mono tracking-wider mt-1 break-all; }
+  .membership-card-dates { @apply gap-3 p-3 rounded-lg; }
+  .membership-card-date-label { @apply text-[10px] uppercase opacity-75; }
+  .membership-card-panel-dark { @apply bg-black/20; }
+  .membership-card-panel-light { @apply bg-white/50; }
+  .checkout-line { @apply gap-3; }
+  .checkout-panel { @apply w-full overflow-hidden shadow-sm; }
+  .checkout-icon { @apply p-2.5 rounded-xl bg-brand-primary text-brand-ink; }
+  .checkout-close { @apply p-2 text-slate-500 hover:text-slate-900; }
+  .checkout-step-divider { @apply flex-1 h-px bg-slate-200; }
+  .checkout-notice { @apply p-3 text-sm text-slate-700; }
+  .checkout-success-icon { @apply w-12 h-12 mx-auto text-emerald-600; }
+  .checkout-success-title { @apply text-xl font-bold text-slate-900 mt-3; }
+  .checkout-success-description { @apply text-sm text-slate-500 mt-2; }
+  .checkout-receipt-line { @apply gap-4; }
+  .checkout-reference { @apply font-mono text-xs break-all text-right; }
+  .checkout-payment-summary { @apply rounded-xl border border-slate-200 bg-slate-50 p-4; }
+  .checkout-payment-total { @apply items-end gap-4 mt-2; }
+  .checkout-legend { @apply text-sm font-bold mb-3; }
+  .checkout-demo-card { @apply rounded-xl bg-slate-900 text-white p-5; }
+  .checkout-demo-card-heading { @apply text-xs text-slate-300; }
+  .checkout-demo-card-number { @apply font-mono text-lg tracking-widest; }
+  .checkout-price-period { @apply block text-right font-normal; }
+  .phone-prefix { @apply border-r border-slate-200 bg-slate-50 text-slate-700; }
+  .post-source-label { @apply ml-auto text-[10px] font-semibold uppercase tracking-wider; }
+  .post-image-featured { @apply max-h-80 md:h-full md:max-h-96; }
+  .post-title { @apply break-words font-bold leading-snug text-slate-900; }
+  .post-title-featured { @apply text-xl leading-snug sm:text-2xl; }
+  .post-title-standard { @apply text-lg leading-snug; }
+  .post-subtitle { @apply break-words font-medium leading-relaxed; }
+  .post-body { @apply mt-4 border-t border-slate-100 pt-4; }
+  .post-actions { @apply border-t border-slate-100 bg-slate-50/70 px-5 py-3; }
+  .post-delete-prompt { @apply text-xs font-medium leading-relaxed text-slate-700; }
+  .post-content-image { @apply my-3 max-h-80 max-w-full rounded-lg object-contain; }
+  .post-content-paragraph { @apply min-h-7 whitespace-pre-wrap break-words; }
+  .post-content-plain { @apply whitespace-pre-wrap break-words text-sm leading-7 text-slate-700; }
+  .post-content-rich { @apply break-words text-sm leading-7 text-slate-700; }
+  .editor-tool-divider { @apply mx-1 h-5 w-px bg-slate-300; }
+  .tier-dialog-header { @apply p-5 border-b border-slate-200 bg-white; }
+  .tier-dialog-icon { @apply p-2 rounded-lg bg-brand-primary text-brand-ink; }
+  .tier-dialog-save { @apply w-full py-3 transition-colors; }
+  .event-access-enabled { @apply cursor-pointer text-slate-700; }
+  .google-signin-disabled { @apply opacity-60 pointer-events-none; }
+  .image-upload-banner { @apply h-24 w-full; }
+  .image-upload-logo { @apply h-24 w-24; }
+  .image-upload-ready { @apply cursor-pointer hover:bg-brand-secondary; }
+  .post-featured-grid { @apply grid md:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]; }
+  .post-image-frame { @apply bg-slate-50 overflow-hidden; }
+  .post-image-frame-featured { @apply md:order-2 md:min-h-64; }
+  .post-image { @apply w-full object-contain; }
+  .post-body-featured { @apply sm:mt-5 sm:pt-5; }
+  .post-content-collapsed { @apply max-h-56 overflow-hidden; }
+  .editor-tool-active { @apply bg-brand-primary text-brand-ink; }
+  .editor-tool-idle { @apply hover:bg-slate-200; }
+}

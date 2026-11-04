@@ -72,10 +72,10 @@ export default function EventManagementPage() {
   return (
     <div className="page-stack">
       {/* Header */}
-      <div className="event-management-header">
+      <div className="page-header">
         <div>
           <h1 className="page-title">
-            <Calendar className="event-management-calendar-icon" />
+            <Calendar className="icon-brand-large" />
             Community Event Operations
           </h1>
           <p className="page-description">
@@ -83,12 +83,12 @@ export default function EventManagementPage() {
           </p>
         </div>
 
-        <div className="event-management-header-actions">
-        <button type="button" onClick={loadEvents} disabled={loading} className="event-management-refresh-button"><RefreshCw className={`icon-default ${loading ? "event-management-spinner" : ''}`} aria-hidden="true" />Refresh events</button>
+        <div className="row-wrap-wide self-start sm:self-auto">
+        <button type="button" onClick={loadEvents} disabled={loading} className="button-outline button-inline events-refresh"><RefreshCw className={`icon-default ${loading ? "animate-spin" : ''}`} aria-hidden="true" />Refresh events</button>
         <button
           onClick={() => updateQuery({ event: 'new', roster: null })}
           disabled={loading || Boolean(tiersError)}
-          className="event-management-create-button"
+          className="button-primary row-inline events-add-button"
         >
           <Plus className="icon-default" />
           <span>Create New Event</span>
@@ -96,9 +96,9 @@ export default function EventManagementPage() {
         </div>
       </div>
 
-      {tiersError && <div role="alert" className="event-management-tier-error">
+      {tiersError && <div role="alert" className="row-wrap-wide events-notice">
         <p>Membership access options could not be loaded. {tiersError}</p>
-        <button onClick={loadEvents} className="event-management-tier-retry">Retry</button>
+        <button onClick={loadEvents} className="link-underlined">Retry</button>
       </div>}
 
       {!loading && !loadError && <EventAnalytics key={organisationId} events={events} now={now} onInspectEvent={id => updateQuery({ roster: id, event: null })} />}
@@ -110,12 +110,12 @@ export default function EventManagementPage() {
             <RefreshCw className="loading-spinner" />
           </div>
         ) : loadError ? (
-          <div role="alert" className="event-management-load-error">
-            <p>{loadError}</p><button onClick={loadEvents} className="event-management-return-link">Retry</button>
+          <div role="alert" className="text-description p-8 text-center">
+            <p>{loadError}</p><button onClick={loadEvents} className="link-underlined mt-3">Retry</button>
           </div>
         ) : events.length === 0 ? (
-          <div className="event-management-empty">
-            <Calendar className="event-management-empty-icon" />
+          <div className="empty-state">
+            <Calendar className="empty-state-icon" />
             No events published yet.
           </div>
         ) : (
@@ -128,7 +128,7 @@ export default function EventManagementPage() {
                   <th className="data-table-cell">Location</th>
                   <th className="data-table-cell">RSVPs / Capacity</th>
                   <th className="data-table-cell">Allowed Tiers</th>
-                  <th className="event-management-actions-cell">Actions</th>
+                  <th className="data-table-cell text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="table-body">
@@ -140,28 +140,28 @@ export default function EventManagementPage() {
                     <tr key={evt._id} className="data-table-row">
                       <td className="data-table-cell">
                         <div className="panel-title">{evt.title}</div>
-                        <div className="event-management-event-description">
+                        <div className="text-note mt-0.5 line-clamp-1">
                           {evt.description}
                         </div>
-                        <div className="event-management-event-status"><EventStatusBadge status={getEventTiming(evt, now).status} /></div>
+                        <div className="mt-2"><EventStatusBadge status={getEventTiming(evt, now).status} /></div>
                       </td>
 
-                      <td className="event-management-schedule-cell">
+                      <td className="data-table-cell event-date-cell">
                         <EventSchedule event={evt} compact />
                       </td>
 
-                      <td className="event-management-location-cell">
+                      <td className="data-table-cell event-location-cell">
                         <EventLocation event={evt} />
                       </td>
 
                       <td className="data-table-cell">
-                        <div className="event-management-rsvp-summary">
-                          <span className="event-management-record-name">
+                        <div className="row-inline">
+                          <span className="text-bold">
                             {rsvpsCount} / {evt.capacity}
                           </span>
                           <button
                             onClick={() => updateQuery({ roster: evt._id, event: null })}
-                            className="event-management-attendees-button"
+                            className="row-icon badge-small event-category-action"
                             title="Inspect attendee list"
                           >
                             <Eye className="icon-tiny" />
@@ -171,12 +171,12 @@ export default function EventManagementPage() {
                       </td>
 
                       <td className="data-table-cell">
-                        <p className="event-management-access-label">{accessLabel}</p>
-                        <div className="event-management-allowed-tiers">
+                        <p className="events-access-label">{accessLabel}</p>
+                        <div className="event-access-tiers">
                           {(evt.tierAccess === 'minimum' ? eligibleTiers.map(tier => tier.name) : evt.allowedTiers || []).map((name, idx) => (
                               <span
                                 key={idx}
-                                className="event-management-tier-badge"
+                                className="badge-brand event-access-tier"
                               >
                                 {name}
                               </span>
@@ -184,11 +184,11 @@ export default function EventManagementPage() {
                         </div>
                       </td>
 
-                      <td className="event-management-actions-cell">
+                      <td className="data-table-cell text-right">
                         <button
                           onClick={() => handleDeleteEvent(evt)}
                           disabled={Boolean(deletingId)}
-                          className="event-management-delete-button"
+                          className="button-icon-brand p-1.5 disabled:opacity-40"
                           title="Delete Event"
                           aria-label={`Delete ${evt.title}`}
                         >
@@ -214,52 +214,52 @@ export default function EventManagementPage() {
       />
 
       {eventRoute === 'new' && !loading && tiersError && (
-        <div role="alert" className="event-management-detail-error">
+        <div role="alert" className="surface-card text-description p-5">
           <p>Membership access options are needed before creating an event. Retry loading the membership tiers above.</p>
-          <button onClick={() => closeQuery(['event'])} className="event-management-return-link">Return to events</button>
+          <button onClick={() => closeQuery(['event'])} className="link-underlined mt-3">Return to events</button>
         </div>
       )}
 
       {/* Attendee Roster Modal */}
       {eventRoute && eventRoute !== 'new' && (
-        <div role="alert" className="event-management-detail-error">
+        <div role="alert" className="surface-card text-description p-5">
           <p>This event page could not be found.</p>
-          <button onClick={() => closeQuery(['event'])} className="event-management-return-link">Return to events</button>
+          <button onClick={() => closeQuery(['event'])} className="link-underlined mt-3">Return to events</button>
         </div>
       )}
       {rosterId && (
-        <div className="event-management-attendees-overlay">
-          <div className="event-management-attendees-dialog">
-            <div className="event-management-attendees-header">
+        <div className="dialog-overlay overflow-y-auto">
+          <div className="dialog-panel form-stack event-attendees-dialog">
+            <div className="row-between admin-dialog-header">
               <div>
                 <h3 className="card-title">{inspectEvent?.title || 'Event attendees'}</h3>
                 {inspectEvent && <p className="text-caption">Attendee Guest List ({inspectEvent.rsvps?.length || 0} confirmed)</p>}
               </div>
               <button
                 onClick={() => closeQuery(['roster'])}
-                className="event-management-close-icon-button"
+                className="admin-dialog-close"
               >
                 <X className="icon-medium" />
               </button>
             </div>
 
-            <div className="event-management-attendees-list">
+            <div className="table-body max-h-72 overflow-y-auto">
               {loading ? (
-                <p role="status" className="event-management-attendees-loading">Loading event attendees...</p>
+                <p role="status" className="text-caption py-8 text-center">Loading event attendees...</p>
               ) : !inspectEvent ? (
-                <p role="alert" className="event-management-attendees-error">{loadError || 'This event could not be found. It may have been removed.'}</p>
+                <p role="alert" className="event-attendees-error">{loadError || 'This event could not be found. It may have been removed.'}</p>
               ) : (inspectEvent.rsvps || []).length === 0 ? (
-                <div className="event-management-attendees-empty">
+                <div className="event-attendees-empty">
                   No attendees have RSVP'd yet.
                 </div>
               ) : (
                 inspectEvent.rsvps.map((guest, i) => (
-                  <div key={i} className="event-management-attendee">
+                  <div key={i} className="row-between py-2.5 text-xs">
                     <div>
-                      <div className="event-management-record-name">{guest.userName}</div>
-                      <div className="event-management-attendee-email">{guest.userEmail}</div>
+                      <div className="text-bold">{guest.userName}</div>
+                      <div className="text-note">{guest.userEmail}</div>
                     </div>
-                    <div className="event-management-attendee-date">
+                    <div className="text-[11px] text-slate-400">
                       {new Date(guest.rsvpDate).toLocaleDateString()}
                     </div>
                   </div>
@@ -267,10 +267,10 @@ export default function EventManagementPage() {
               )}
             </div>
 
-            <div className="event-management-attendees-footer">
+            <div className="pt-2 text-right">
               <button
                 onClick={() => closeQuery(['roster'])}
-                className="event-management-close-button"
+                className="button-muted-bordered button-small transition-colors"
               >
                 Close
               </button>

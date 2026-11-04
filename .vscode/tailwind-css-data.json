@@ -1,0 +1,13 @@
+{
+  "version": 1.1,
+  "atDirectives": [
+    {
+      "name": "@apply",
+      "description": "Apply Tailwind CSS utility classes to a CSS rule."
+    },
+    {
+      "name": "@tailwind",
+      "description": "Insert Tailwind CSS base, component, or utility styles."
+    }
+  ]
+}

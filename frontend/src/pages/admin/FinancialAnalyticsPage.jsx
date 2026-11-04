@@ -43,9 +43,9 @@ export default function FinancialAnalyticsPage() {
     );
   }
 
-  if (error) return <div role="alert" className="financial-analytics-load-error">
+  if (error) return <div role="alert" className="financial-error">
     <p>{error}</p>
-    <button type="button" onClick={() => setRevision(value => value + 1)} className="financial-analytics-retry-button">Try again</button>
+    <button type="button" onClick={() => setRevision(value => value + 1)} className="link-underlined mt-3 text-xs">Try again</button>
   </div>;
 
   const metrics = data?.metrics || {};
@@ -63,7 +63,7 @@ export default function FinancialAnalyticsPage() {
       {/* Page Header */}
       <div>
         <h1 className="page-title">
-          <BarChart3 className="financial-analytics-bar-chart3-icon" />
+          <BarChart3 className="icon-brand-large" />
           Payment Activity & Revenue Summary
         </h1>
         <p className="page-description">
@@ -72,63 +72,63 @@ export default function FinancialAnalyticsPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="financial-analytics-metrics">
+      <div className="form-grid lg:grid-cols-4">
         <div className="panel-card">
-          <div className="financial-analytics-metric-heading">
-            <span className="financial-analytics-metric-label">Recorded Revenue</span>
-            <div className="financial-analytics-metric-icon">
+          <div className="row-between">
+            <span className="text-label-muted">Recorded Revenue</span>
+            <div className="surface-brand-icon">
               <DollarSign className="icon-default" />
             </div>
           </div>
-          <div className="financial-analytics-metric-value">
+          <div className="metric-total">
             MYR {(metrics.totalRevenue || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
           </div>
-          <div className="financial-analytics-revenue-description">
+          <div className="text-note mt-1">
             Across {metrics.totalTransactions || 0} total billing attempts
           </div>
         </div>
 
         <div className="panel-card">
-          <div className="financial-analytics-metric-heading">
-            <span className="financial-analytics-metric-label">Membership Revenue</span>
-            <div className="financial-analytics-metric-icon">
+          <div className="row-between">
+            <span className="text-label-muted">Membership Revenue</span>
+            <div className="surface-brand-icon">
               <Layers className="icon-default" />
             </div>
           </div>
-          <div className="financial-analytics-metric-value">
+          <div className="metric-total">
             MYR {subRev.toLocaleString('en-US', { minimumFractionDigits: 2 })}
           </div>
-          <div className="financial-analytics-revenue-share">
+          <div className="financial-share-note">
             {subPercent}% of total revenue
           </div>
         </div>
 
         <div className="panel-card">
-          <div className="financial-analytics-metric-heading">
-            <span className="financial-analytics-metric-label">Event Ticketing Revenue</span>
-            <div className="financial-analytics-metric-icon">
+          <div className="row-between">
+            <span className="text-label-muted">Event Ticketing Revenue</span>
+            <div className="surface-brand-icon">
               <Calendar className="icon-default" />
             </div>
           </div>
-          <div className="financial-analytics-metric-value">
+          <div className="metric-total">
             MYR {eventRev.toLocaleString('en-US', { minimumFractionDigits: 2 })}
           </div>
-          <div className="financial-analytics-revenue-share">
+          <div className="financial-share-note">
             {eventPercent}% of total revenue
           </div>
         </div>
 
         <div className="panel-card">
-          <div className="financial-analytics-metric-heading">
-            <span className="financial-analytics-metric-label">Monthly Membership Equivalent</span>
-            <div className="financial-analytics-metric-icon">
+          <div className="row-between">
+            <span className="text-label-muted">Monthly Membership Equivalent</span>
+            <div className="surface-brand-icon">
               <TrendingUp className="icon-default" />
             </div>
           </div>
-          <div className="financial-analytics-metric-value">
+          <div className="metric-total">
             MYR {(metrics.monthlyRecurringRevenue || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
           </div>
-          <div className="financial-analytics-monthly-description">
+          <div className="dashboard-equivalent-note">
             Annual equivalent: MYR {(metrics.annualRunRate || 0).toLocaleString()}
           </div>
         </div>
@@ -137,63 +137,63 @@ export default function FinancialAnalyticsPage() {
       <DashboardAnalytics organisationId={organisationId} financialOnly />
 
       {/* Revenue Source Visual Breakdown */}
-      <div className="financial-analytics-breakdowns">
+      <div className="financial-source-grid">
         {/* Subscriptions vs Ticketing Comparison */}
-        <div className="financial-analytics-breakdown-card">
+        <div className="panel-card space-y-6">
           <h2 className="card-title">Revenue Sources Distribution</h2>
 
           <div className="form-stack">
             <div>
-              <div className="financial-analytics-source-heading">
-                <span className="financial-analytics-source-label">
-                  <span className="financial-analytics-membership-dot" />
+              <div className="financial-source-summary">
+                <span className="row-inline-tight font-semibold text-slate-700">
+                  <span className="financial-source-dot-primary" />
                   Membership Payments
                 </span>
-                <span className="financial-analytics-source-value">
+                <span className="text-bold">
                   MYR {subRev.toFixed(2)} ({subPercent}%)
                 </span>
               </div>
-              <div className="financial-analytics-source-track">
+              <div className="financial-progress">
                 <div
-                  className="financial-analytics-membership-bar"
+                  className="financial-source-bar-primary"
                   style={{ width: `${subPercent}%` }}
                 />
               </div>
             </div>
 
             <div>
-              <div className="financial-analytics-source-heading">
-                <span className="financial-analytics-source-label">
-                  <span className="financial-analytics-event-dot" />
+              <div className="financial-source-summary">
+                <span className="row-inline-tight font-semibold text-slate-700">
+                  <span className="financial-source-dot-muted" />
                   Event Ticketing
                 </span>
-                <span className="financial-analytics-source-value">
+                <span className="text-bold">
                   MYR {eventRev.toFixed(2)} ({eventPercent}%)
                 </span>
               </div>
-              <div className="financial-analytics-source-track">
+              <div className="financial-progress">
                 <div
-                  className="financial-analytics-event-bar"
+                  className="financial-source-bar-muted"
                   style={{ width: `${eventPercent}%` }}
                 />
               </div>
             </div>
           </div>
 
-          <div className="financial-analytics-invoice-summary">
-            <div className="financial-analytics-invoice-summary-row">
+          <div className="detail-card detail-stack financial-payment-summary">
+            <div className="flex justify-between">
               <span>Successful Payments:</span>
-              <strong className="financial-analytics-paid-count">{metrics.paidInvoicesCount || 0} invoices</strong>
+              <strong className="text-slate-900">{metrics.paidInvoicesCount || 0} invoices</strong>
             </div>
-            <div className="financial-analytics-invoice-summary-row">
+            <div className="flex justify-between">
               <span>Payment Gateway Failures Tracked:</span>
-              <strong className="financial-analytics-declined-count">{metrics.failedInvoicesCount || 0} declined</strong>
+              <strong className="text-brand-ink">{metrics.failedInvoicesCount || 0} declined</strong>
             </div>
           </div>
         </div>
 
         {/* Revenue By Membership Tier */}
-        <div className="financial-analytics-breakdown-card">
+        <div className="panel-card space-y-6">
           <h2 className="card-title">Revenue by Membership Tier</h2>
 
           <div className="content-stack">
@@ -203,16 +203,16 @@ export default function FinancialAnalyticsPage() {
               const barColor = colors[idx % colors.length];
 
               return (
-                <div key={tierName} className="financial-analytics-tier-card">
-                  <div className="financial-analytics-tier-heading">
-                    <span className="financial-analytics-tier-name">{tierName}</span>
-                    <span className="financial-analytics-tier-revenue">
+                <div key={tierName} className="surface-muted p-3">
+                  <div className="financial-tier-summary">
+                    <span className="text-strong">{tierName}</span>
+                    <span className="font-bold text-brand-ink">
                       MYR {Number(amount).toFixed(2)} ({tierShare}%)
                     </span>
                   </div>
-                  <div className="financial-analytics-tier-track">
+                  <div className="progress-track">
                     <div
-                      className={`financial-analytics-tier-bar ${barColor}`}
+                      className={`h-full rounded-full ${barColor}`}
                       style={{ width: `${tierShare}%` }}
                     />
                   </div>
@@ -225,7 +225,7 @@ export default function FinancialAnalyticsPage() {
 
       {/* Recent Transactions Ledger */}
       <div className="table-frame">
-        <div className="financial-analytics-ledger-header">
+        <div className="row-between financial-ledger-header">
           <h3 className="panel-title">Recent Transactions Ledger</h3>
           <span className="text-caption">Latest 10 Invoices Processed</span>
         </div>
@@ -240,7 +240,7 @@ export default function FinancialAnalyticsPage() {
                 <th className="data-table-cell">Payment Method</th>
                 <th className="data-table-cell">Amount</th>
                 <th className="data-table-cell">Status</th>
-                <th className="financial-analytics-date-heading">Date</th>
+                <th className="data-table-cell text-right">Date</th>
               </tr>
             </thead>
             <tbody className="table-body">
@@ -248,24 +248,24 @@ export default function FinancialAnalyticsPage() {
                 const isPaid = tx.paymentStatus === 'paid';
                 return (
                   <tr key={tx._id} className="data-table-row">
-                    <td className="financial-analytics-invoice-number-cell">{tx.invoiceNumber}</td>
-                    <td className="financial-analytics-member-cell">{tx.userName}</td>
-                    <td className="financial-analytics-tier-cell">{tx.tierName}</td>
-                    <td className="financial-analytics-method-cell">{tx.paymentMethod}</td>
-                    <td className="financial-analytics-amount-cell">MYR {Number(tx.amount).toFixed(2)}</td>
+                    <td className="data-table-cell text-identifier">{tx.invoiceNumber}</td>
+                    <td className="data-table-cell text-strong">{tx.userName}</td>
+                    <td className="data-table-cell text-slate-700">{tx.tierName}</td>
+                    <td className="text-note data-table-cell font-mono">{tx.paymentMethod}</td>
+                    <td className="data-table-cell text-bold">MYR {Number(tx.amount).toFixed(2)}</td>
                     <td className="data-table-cell">
                       <span
-                        className={`financial-analytics-status-badge ${
+                        className={`badge-uppercase ${
                           isPaid
-                            ? "financial-analytics-status-paid"
-                            : "financial-analytics-status-declined"
+                            ? "admin-state-brand"
+                            : "state-muted-brand"
                         }`}
                       >
                         {isPaid ? <CheckCircle2 className="icon-tiny" /> : <AlertCircle className="icon-tiny" />}
                         {tx.paymentStatus}
                       </span>
                     </td>
-                    <td className="financial-analytics-date-cell">
+                    <td className="data-table-cell financial-date-cell">
                       {new Date(tx.createdAt || tx.paidAt).toLocaleDateString()}
                     </td>
                   </tr>

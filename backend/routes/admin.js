@@ -4,10 +4,10 @@ import { authenticateToken, requireVerifiedEmail } from '../middleware/auth.js';
 import { requireOrganisationOwner } from '../middleware/organisationAccess.js';
 import { updateOrgMemberCount } from '../services/organisationAccess.js';
 import { membershipView } from '../services/membershipContext.js';
-import { walletService } from '../services/walletService.js';
 import { billingRevisionFilter } from '../services/scheduledDowngrade.js';
 import { adminMembershipStatus } from '../services/membershipState.js';
 import { buildDashboardAnalytics, dashboardPeriod } from '../services/dashboardAnalytics.js';
+import { notifyMembershipChange } from '../services/notifications.js';
 
 const router = express.Router();
 router.use(authenticateToken, requireVerifiedEmail, requireOrganisationOwner);
@@ -76,6 +76,7 @@ router.put('/members/:id/status', async (req, res, next) => {
     const account = membership && await User.findById(req.params.id);
     if (!account) return res.status(404).json({ success: false, message: 'Member not found in this organisation.' });
     const previousStatus = membership.status;
+    const previousMembership = membership.toObject ? membership.toObject() : { ...membership };
     if (status === 'active' && adminMembershipStatus(membership) === 'cancelled') {
       return res.status(409).json({ success: false, message: 'This member cancelled their subscription. They can undo a scheduled cancellation or renew through Manage Membership.' });
     }
@@ -90,9 +91,9 @@ router.put('/members/:id/status', async (req, res, next) => {
       ...(status !== previousStatus ? { $unset: { scheduledTierId: '', scheduledTierEffectiveAt: '', scheduledTierRequestedAt: '' } } : {})
     }, { new: true, runValidators: true });
     if (!membership) return res.status(409).json({ success: false, message: 'This membership changed. Reload it before changing its status.' });
+    await notifyMembershipChange(previousMembership, membership, { organisation: req.organisation }).catch(() => console.error('Could not record membership status notification.'));
     await updateOrgMemberCount(req.organisationId);
     const member = membershipView(account, membership, req.organisation);
-    await walletService.updateWalletObject(member, req.user.name);
     await ActivityLog.create({ organisationId: req.organisationId, action: 'STATUS_UPDATED', userId: member._id, userName: member.name, userEmail: member.email, actorRole: 'admin', details: { previousStatus, newStatus: status, reason: String(reason || 'Administrative review'), adminId: req.user._id } });
     res.json({ success: true, message: 'Organisation membership status updated.', member: adminMemberView(account, membership, req.organisation) });
   } catch (err) { next(err); }
@@ -106,6 +107,7 @@ router.put('/members/:id/tier', async (req, res, next) => {
     const tier = await Tier.findOne({ _id: req.body.tierId, organisationId: req.organisationId, isActive: true });
     if (!tier) return res.status(404).json({ success: false, message: 'Tier not found in this organisation.' });
     const previousTier = membership.tierName;
+    const previousMembership = membership.toObject ? membership.toObject() : { ...membership };
     membership = await OrganisationMembership.findOneAndUpdate({ _id: membership._id, organisationId: req.organisationId, role: 'member',
       status: membership.status, ...billingRevisionFilter(membership)
     }, {
@@ -113,10 +115,10 @@ router.put('/members/:id/tier', async (req, res, next) => {
       ...(String(membership.tierId) !== String(tier._id) ? { $unset: { scheduledTierId: '', scheduledTierEffectiveAt: '', scheduledTierRequestedAt: '' } } : {})
     }, { new: true, runValidators: true });
     if (!membership) return res.status(409).json({ success: false, message: 'This membership changed. Reload it before changing its tier.' });
+    await notifyMembershipChange(previousMembership, membership, { organisation: req.organisation }).catch(() => console.error('Could not record membership tier notification.'));
     const member = membershipView(account, membership, req.organisation);
-    const walletSync = await walletService.updateWalletObject(member, req.user.name);
     await ActivityLog.create({ organisationId: req.organisationId, action: 'TIER_CHANGED', userId: member._id, userName: member.name, userEmail: member.email, actorRole: 'admin', details: { previousTier, newTier: tier.name, adminId: req.user._id } });
-    res.json({ success: true, message: 'Organisation membership tier updated.', member: adminMemberView(account, membership, req.organisation), walletSync });
+    res.json({ success: true, message: 'Organisation membership tier updated.', member: adminMemberView(account, membership, req.organisation) });
   } catch (err) { next(err); }
 });
 

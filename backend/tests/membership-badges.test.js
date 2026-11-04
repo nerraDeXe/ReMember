@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { DEFAULT_MEMBERSHIP_BADGE_COLOR, getBadgeTextColor, getOrganisationBadgeColor, isBadgeColor } from '../../shared/membershipBadges.js';
 import { membershipView } from '../services/membershipContext.js';
-import { walletService } from '../services/walletService.js';
 
 test('Organisation accents accept complete hex colours and safely default missing or invalid data', () => {
   for (const value of ['#FFD700', '#abcdef', '#010203']) assert.equal(isBadgeColor(value), true);
@@ -27,16 +26,15 @@ test('Every tier in an organisation generates the same badge accent, scoped inde
   const organisation = { _id: 'org-a', name: 'Community A', badgeColor: '#123456' };
   for (const tierName of ['Bronze Explorer', 'Silver Patron', 'Gold VIP', 'Platinum Elite', 'Custom tier']) {
     const member = membershipView(account, { organisationId: 'org-a', tierName, status: 'active' }, organisation);
-    const { genericObject } = walletService.createPassObject(member);
     assert.equal(member.organisation.name, 'Community A');
-    assert.equal(genericObject.hexBackgroundColor, '#123456');
-    assert.equal(genericObject.textModulesData.find(item => item.id === 'tier').body, tierName);
+    assert.equal(getOrganisationBadgeColor(member.organisation), '#123456');
+    assert.equal(member.tierName, tierName);
   }
   const other = membershipView(account, { organisationId: 'org-b', status: 'active' }, { _id: 'org-b', badgeColor: '#abcdef' });
-  assert.equal(walletService.createPassObject(other).genericObject.hexBackgroundColor, '#abcdef');
+  assert.equal(getOrganisationBadgeColor(other.organisation), '#abcdef');
 });
 
-test('Legacy tier colours do not affect generated wallet badge colours', () => {
-  const { genericObject } = walletService.createPassObject({ _id: 'person', tierName: 'Silver Patron', badgeColor: '#ff0000', tier: { badgeColor: '#00ff00' } });
-  assert.equal(genericObject.hexBackgroundColor, DEFAULT_MEMBERSHIP_BADGE_COLOR);
+test('Legacy tier colours do not affect membership card colours', () => {
+  const member = membershipView({ _id: 'person', badgeColor: '#ff0000' }, { organisationId: 'org-a', tierName: 'Silver Patron', badgeColor: '#00ff00' }, { _id: 'org-a' });
+  assert.equal(getOrganisationBadgeColor(member.organisation), DEFAULT_MEMBERSHIP_BADGE_COLOR);
 });

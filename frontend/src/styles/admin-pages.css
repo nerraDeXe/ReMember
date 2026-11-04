@@ -1,0 +1,101 @@
+/* Administration presentation. Shared patterns live in interface.css and controls.css. */
+@layer components {
+  .activity-badge { @apply px-2.5 py-1 rounded text-[11px] font-semibold border; }
+  .activity-details { @apply text-[11px] text-slate-700 font-mono p-2 truncate; }
+  .dashboard-action, .member-dashboard-action { @apply py-2.5 px-4 text-xs transition-colors; }
+  .email-settings-panel { @apply rounded-xl border border-slate-300 bg-white p-5 space-y-3; }
+  .email-toggle-label { @apply text-xs font-semibold text-slate-700 shrink-0 pt-1; }
+  .email-disconnect { @apply mt-4 text-xs text-slate-700 underline-offset-4; }
+  .email-template-tab { @apply px-3 py-2 rounded-lg text-xs font-semibold border; }
+  .email-template-note { @apply text-xs text-slate-600 mb-4 rounded-lg bg-slate-100 px-3 py-2; }
+  .email-preview-title { @apply text-sm font-bold break-words border-b border-slate-100 pb-4; }
+  .email-preview-content { @apply text-sm text-slate-700 whitespace-pre-wrap break-words leading-relaxed mt-4; }
+  .email-error { @apply rounded-lg border border-red-200 bg-red-50 px-4 py-3; }
+  .email-save { @apply px-5 py-2.5 text-sm disabled:opacity-50 disabled:cursor-not-allowed; }
+  .events-add-button { @apply py-2.5 px-4 text-xs transition-colors self-start sm:self-auto shadow-sm disabled:opacity-50; }
+  .events-notice { @apply justify-between rounded-xl border border-slate-300 bg-white p-4 text-sm text-slate-700; }
+  .event-category-action { @apply rounded bg-slate-100 hover:bg-slate-200 border border-slate-200 text-brand-ink font-semibold transition-colors; }
+  .financial-error { @apply rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-800; }
+  .financial-progress { @apply w-full h-3 bg-slate-100 rounded-full overflow-hidden p-0.5 border border-slate-200; }
+  .members-refresh { @apply hover:bg-slate-50 text-slate-700 font-semibold disabled:opacity-50; }
+  .members-invite { @apply hover:bg-slate-50 text-slate-700 font-semibold transition-colors self-start sm:self-auto shadow-sm; }
+  .members-toolbar { @apply p-4 shadow-sm flex flex-col md:flex-row gap-3; }
+  .members-search { @apply pl-9 pr-4 py-2 text-xs; }
+  .member-avatar { @apply w-9 h-9 rounded-full border border-slate-200 bg-slate-50; }
+  .member-tier-action { @apply px-2 py-1 hover:bg-brand-100 text-[10px] font-semibold transition-colors; }
+  .member-renew-action { @apply px-2 py-1 rounded bg-brand-50 hover:bg-brand-100 border border-brand-accent/50 text-brand-ink text-[10px] font-semibold transition-colors; }
+  .member-remove-action { @apply px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 border border-brand-silver text-brand-ink text-[10px] font-semibold transition-colors; }
+  .members-pagination { @apply p-4 border-t border-slate-200 bg-slate-50 text-xs text-slate-600; }
+  .members-page-button { @apply p-1.5 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-slate-700 shadow-sm; }
+  .member-tier-dialog { @apply relative w-full max-w-md p-6 space-y-5 shadow-2xl; }
+  .member-tier-choice { @apply w-full p-3 rounded-lg border text-left transition-all; }
+  .member-tier-notice { @apply p-3 rounded-lg bg-brand-50 border border-brand-accent/50 text-[11px] text-slate-700 flex items-start gap-2; }
+  .member-tier-save { @apply px-5 py-2 text-xs transition-colors shadow-sm active:scale-[0.99]; }
+  .gateway-notice { @apply rounded-xl border border-amber-200 bg-amber-50 p-5; }
+  .tiers-add-button { @apply py-2.5 px-4 text-xs transition-colors self-start sm:self-auto shadow-sm; }
+  .tiers-accent-layout { @apply flex flex-col sm:flex-row sm:items-end justify-between gap-5; }
+  .tiers-color-picker { @apply h-10 w-14 shrink-0 rounded cursor-pointer bg-white border border-slate-300 p-1; }
+  .tiers-color-input { @apply w-36 px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 font-mono; }
+  .tiers-accent-save { @apply self-start sm:self-auto justify-center px-4 py-2.5 text-xs disabled:opacity-50; }
+  .tier-card { @apply flex flex-col justify-between hover:border-slate-300 transition-colors relative; }
+  .tier-actions { @apply pt-6 border-t border-slate-100 mt-6 justify-end; }
+
+  /* Page details and states compose with the shared controls and layouts. */
+  .dashboard-heading { @apply text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1; }
+  .dashboard-metric-note { @apply text-[11px] text-brand-ink font-medium mt-1; }
+  .dashboard-equivalent-note { @apply text-[11px] text-slate-600 mt-1; }
+  .financial-share-note { @apply text-[11px] text-brand-ink mt-1 font-semibold; }
+  .admin-state-brand { @apply bg-brand-50 text-brand-ink border-brand-primary/30; }
+  .activity-state-tier { @apply bg-brand-50 text-brand-ink border-brand-accent/50; }
+  .activity-state-neutral { @apply bg-slate-100 text-slate-700 border-slate-200; }
+  .activity-ip { @apply text-right font-mono; }
+  .email-editing-help { @apply p-4 text-xs text-slate-600 leading-relaxed; }
+  .email-editor-layout { @apply grid xl:grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)] gap-6 items-start; }
+  .email-reminder-label { @apply block text-xs font-semibold text-slate-700 mb-2; }
+  .email-preview-header { @apply px-5 py-4 bg-slate-50 border-b border-slate-200; }
+  .email-preview-tabs { @apply flex gap-2 mt-3; }
+  .email-tab-selected { @apply bg-brand-primary text-brand-ink border-brand-primary; }
+  .email-tab-idle { @apply border-slate-300 bg-white text-slate-600; }
+  .email-settings-actions { @apply justify-end border-t border-slate-200 pt-5; }
+  .email-preview-aside { @apply xl:sticky xl:top-24; }
+  .events-refresh { @apply px-3 py-2.5 disabled:opacity-50; }
+  .event-date-cell { @apply min-w-[215px] text-slate-600; }
+  .event-location-cell { @apply min-w-[170px] max-w-[230px] text-slate-600; }
+  .events-access-label { @apply mb-1.5 text-xs font-semibold text-slate-700; }
+  .event-access-tiers { @apply flex flex-wrap gap-1; }
+  .event-access-tier { @apply text-[10px] px-1.5 py-0.5 font-medium; }
+  .event-attendees-dialog { @apply relative shadow-2xl; }
+  .admin-dialog-header { @apply pb-3 border-b border-slate-200; }
+  .event-attendees-error { @apply py-8 text-center text-xs text-slate-600; }
+  .event-attendees-empty { @apply py-8 text-center text-xs text-slate-400; }
+  .admin-dialog-close { @apply text-slate-400 hover:text-slate-700; }
+  .financial-source-grid { @apply grid grid-cols-1 lg:grid-cols-2 gap-6; }
+  .financial-source-summary { @apply flex justify-between text-xs mb-1.5; }
+  .financial-tier-summary { @apply flex justify-between text-xs mb-1; }
+  .financial-source-dot-primary { @apply w-2.5 h-2.5 rounded-full bg-brand-primary; }
+  .financial-source-dot-muted { @apply w-2.5 h-2.5 rounded-full bg-brand-muted; }
+  .financial-source-bar-primary { @apply h-full rounded-full bg-brand-primary transition-all duration-500; }
+  .financial-source-bar-muted { @apply h-full rounded-full bg-brand-muted transition-all duration-500; }
+  .financial-payment-summary { @apply bg-slate-50 text-xs text-slate-600; }
+  .financial-ledger-header { @apply p-5 border-b border-slate-200 bg-slate-50; }
+  .financial-date-cell { @apply text-right text-slate-500; }
+  .members-header-actions { @apply flex flex-wrap gap-2 self-start sm:self-auto; }
+  .member-name { @apply font-bold text-slate-900 leading-tight; }
+  .member-cancellation-access { @apply mt-1.5 text-[10px] text-slate-500; }
+  .member-cancellation-date { @apply mt-1 text-[10px] text-slate-500; }
+  .member-tier-idle { @apply bg-slate-50 border-slate-200 hover:border-slate-300; }
+  .member-tier-price { @apply text-[11px] text-brand-ink font-semibold; }
+  .member-tier-actions { @apply flex justify-end gap-2 pt-2; }
+  .members-search-icon { @apply text-slate-400 absolute left-3 top-2.5; }
+  .gateway-description { @apply text-sm text-amber-900 mt-1; }
+  .gateway-methods { @apply grid sm:grid-cols-3 gap-3; }
+  .tiers-accent-error { @apply mt-3 text-xs text-red-700; }
+  .tiers-accent-message { @apply mt-3 text-xs text-green-700; }
+  .tiers-grid { @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6; }
+  .tier-price { @apply text-3xl font-black text-slate-900; }
+  .tier-description { @apply text-xs text-slate-600 mb-5 leading-relaxed min-h-[36px]; }
+  .tier-perks { @apply pt-4 border-t border-slate-100 text-xs; }
+  .tier-perk { @apply flex items-start gap-2; }
+  .tier-edit-button { @apply p-2 text-xs transition-colors; }
+  .tier-delete-button { @apply p-2 text-xs font-semibold; }
+}

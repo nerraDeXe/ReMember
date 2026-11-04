@@ -325,6 +325,8 @@ function request(path, { userId = 'member', body = {} } = {}) {
 }
 
 test('downgrade endpoints require authentication, verified email, selected organisation, and member ownership', async () => {
+  // Keep the membership active so this test reaches the permission and tier checks.
+  membership().expirationDate = '2099-11-01T12:00:00Z';
   const body = { organisationId: 'A', tierId: 'basic' };
   assert.equal((await request('/membership/downgrade', { userId: null, body })).status, 401);
   records.User[0].emailVerified = false;

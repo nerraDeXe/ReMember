@@ -27,7 +27,7 @@ function ChartLoading({ financialOnly = false }) {
     <div className="analytics-grid" role="status" aria-label={financialOnly ? 'Loading financial analytics' : 'Loading dashboard analytics'}>
       {(financialOnly ? [0, 1] : [0, 1, 2, 3]).map((item) => (
         <div key={item} className={chartCard} aria-hidden="true">
-          <div className="analytics-skeleton-title" />
+          <div className="analytics-skeleton-label" />
           <div className="analytics-skeleton-value" />
           <div className="analytics-skeleton-chart" />
         </div>
@@ -98,30 +98,30 @@ export default function DashboardAnalytics({ organisationId, onNavigate, financi
       <div className="analytics-header">
         <div>
           <h2 id={financialOnly ? 'financial-analytics-title' : 'dashboard-analytics-title'} className="analytics-title">
-            <BarChart3 className="analytics-title-icon" aria-hidden="true" />
+            <BarChart3 className="icon-brand-medium" aria-hidden="true" />
             {financialOnly ? 'Revenue & payment trends' : 'Analytics overview'}
           </h2>
           <p className="page-description">{periodLabel} · Monthly totals in UTC{endMonth === currentMonth ? ' · Current month to date' : ''}</p>
         </div>
         <div>
-          <form onSubmit={applyRange} noValidate className="analytics-range-form" aria-label="Analytics month range">
-            <label htmlFor="dashboard-analytics-start" className="analytics-range-label">
+          <form onSubmit={applyRange} noValidate className="analytics-range" aria-label="Analytics month range">
+            <label htmlFor="dashboard-analytics-start" className="analytics-date-label">
               From
               <input id="dashboard-analytics-start" type="month" required min="0001-01" max={currentMonth} value={draftRange.startMonth}
                 onChange={(event) => setDraftRange((value) => ({ ...value, startMonth: event.target.value }))}
                 aria-invalid={Boolean(rangeError)} aria-describedby={rangeError ? 'dashboard-analytics-range-error' : undefined}
-                className="analytics-month-input" />
+                className="control-analytics analytics-date-input" />
             </label>
-            <label htmlFor="dashboard-analytics-end" className="analytics-range-label">
+            <label htmlFor="dashboard-analytics-end" className="analytics-date-label">
               To
               <input id="dashboard-analytics-end" type="month" required min="0001-01" max={currentMonth} value={draftRange.endMonth}
                 onChange={(event) => setDraftRange((value) => ({ ...value, endMonth: event.target.value }))}
                 aria-invalid={Boolean(rangeError)} aria-describedby={rangeError ? 'dashboard-analytics-range-error' : undefined}
-                className="analytics-month-input" />
+                className="control-analytics analytics-date-input" />
             </label>
             <button type="submit" disabled={Boolean(rangeError) || (loading && draftRange.startMonth === startMonth && draftRange.endMonth === endMonth)}
-              className="analytics-apply-range">
-              {loading && <RefreshCw className="analytics-range-spinner" aria-hidden="true" />}
+              className="row-inline analytics-apply-button">
+              {loading && <RefreshCw className="icon-small motion-safe:animate-spin" aria-hidden="true" />}
               Apply range
             </button>
           </form>
@@ -131,69 +131,69 @@ export default function DashboardAnalytics({ organisationId, onNavigate, financi
 
       {loading ? <ChartLoading financialOnly={financialOnly} /> : error ? (
         <div role="alert" className="analytics-load-error">
-          <p className="analytics-error-heading"><AlertCircle className="analytics-error-icon" aria-hidden="true" />Analytics could not be loaded</p>
-          <p className="analytics-error-message">{error}</p>
-          <button type="button" onClick={() => setRevision((value) => value + 1)} className="analytics-retry">Try again</button>
+          <p className="row-inline font-semibold"><AlertCircle className="icon-default shrink-0" aria-hidden="true" />Analytics could not be loaded</p>
+          <p className="mt-1 text-xs">{error}</p>
+          <button type="button" onClick={() => setRevision((value) => value + 1)} className="analytics-retry-button">Try again</button>
         </div>
       ) : data && (
         <div className="analytics-grid">
           {!financialOnly && <>
           <article className={chartCard}>
-            <div className="analytics-card-header">
+            <div className="row-summary">
               <div>
                 <h3 className="panel-title">Membership growth</h3>
                 <p className="analytics-metric">{number(membershipMetric === 'newMembers' ? summary.newMembers : totalJoined)}</p>
-                <p className="analytics-metric-caption">{membershipMetric === 'newMembers' ? 'new members in this period' : 'joined by the end of this period'}</p>
+                <p className="text-caption mt-0.5">{membershipMetric === 'newMembers' ? 'new members in this period' : 'joined by the end of this period'}</p>
               </div>
-              <div className="analytics-metric-options" role="group" aria-label="Membership chart measure">
+              <div className="analytics-measure-tabs" role="group" aria-label="Membership chart measure">
                 {Object.entries({ newMembers: 'New joins', totalMembers: 'Total joined' }).map(([key, label]) => (
                   <button key={key} type="button" aria-pressed={membershipMetric === key} onClick={() => setMembershipMetric(key)}
-                    className={`analytics-metric-option ${membershipMetric === key ? "analytics-metric-active" : "analytics-metric-idle"}`}>{label}</button>
+                    className={`analytics-measure-tab ${membershipMetric === key ? "analytics-measure-active" : "analytics-measure-idle"}`}>{label}</button>
                 ))}
               </div>
             </div>
             <div className="analytics-chart"><TrendChart title="Membership growth" data={data.membershipTrend} series={membershipSeries[membershipMetric]} valueFormatter={number} emptyMessage="No members joined in this period." /></div>
-            <p className="analytics-chart-note">Uses organisation join dates for members on the current roster, across all statuses. Total joined includes earlier joins; it does not track historical active membership.</p>
+            <p className="text-fine-print">Uses organisation join dates for members on the current roster, across all statuses. Total joined includes earlier joins; it does not track historical active membership.</p>
           </article>
 
           <article className={chartCard}>
-            <div className="analytics-card-header">
+            <div className="row-summary">
               <div>
                 <h3 className="panel-title">Member composition</h3>
                 <p className="page-description">{number(memberTotal)} members · Current snapshot</p>
               </div>
-              <label className="analytics-breakdown-label">
+              <label className="row-inline text-caption">
                 <span className="sr-only">Break down members by</span>
-                <select value={demographic} onChange={(event) => setDemographic(event.target.value)} className="analytics-breakdown-select">
+                <select value={demographic} onChange={(event) => setDemographic(event.target.value)} className="control-analytics">
                   <option value="countries">Country</option><option value="tiers">Membership tier</option><option value="statuses">Membership status</option>
                 </select>
               </label>
             </div>
             <div className="analytics-chart"><DonutChart title="Member composition" data={members} emptyMessage="Member demographics will appear when members join." /></div>
-            <p className="analytics-chart-note">Includes all current members, regardless of the selected time range. Missing profile information appears as “Not provided”.</p>
+            <p className="text-fine-print">Includes all current members, regardless of the selected time range. Missing profile information appears as “Not provided”.</p>
           </article>
 
           </>}
 
           <article className={chartCard}>
-            <div className="analytics-revenue-header">
+            <div className="row-between-start">
               <div>
                 <h3 className="panel-title">Revenue received</h3>
                 <p className="analytics-metric">{money(summary.revenue)}</p>
-                <p className="analytics-metric-caption">MYR collected in this period</p>
+                <p className="text-caption mt-0.5">MYR collected in this period</p>
               </div>
-              {!financialOnly && <button type="button" onClick={() => onNavigate('admin-finances')} className="analytics-revenue-details">Details<ArrowRight className="icon-small" aria-hidden="true" /></button>}
+              {!financialOnly && <button type="button" onClick={() => onNavigate('admin-finances')} className="row-icon analytics-details-link">Details<ArrowRight className="icon-small" aria-hidden="true" /></button>}
             </div>
             <div className="analytics-chart"><TrendChart title="Revenue received in MYR" data={data.paymentTrend} series={revenueSeries} valueFormatter={money} axisFormatter={compactMoney} allowDecimals emptyMessage="No MYR revenue received in this period." /></div>
-            <p className="analytics-chart-note">Paid MYR invoices only, grouped by payment date (invoice date when unavailable). Pending and failed invoices are excluded.{data.excludedCurrencyPayments > 0 && ` ${number(data.excludedCurrencyPayments)} payments in other currencies appear in payment counts only.`}</p>
+            <p className="text-fine-print">Paid MYR invoices only, grouped by payment date (invoice date when unavailable). Pending and failed invoices are excluded.{data.excludedCurrencyPayments > 0 && ` ${number(data.excludedCurrencyPayments)} payments in other currencies appear in payment counts only.`}</p>
           </article>
 
           <article className={chartCard}>
             <h3 className="panel-title">Payment activity</h3>
             <p className="analytics-metric">{number(summary.paidPayments)}</p>
-            <p className="analytics-metric-caption">successful payments in this period</p>
+            <p className="text-caption mt-0.5">successful payments in this period</p>
             <div className="analytics-chart"><TrendChart title="Successful and failed payments" data={data.paymentTrend} series={paymentSeries} valueFormatter={number} emptyMessage="No payment activity in this period." /></div>
-            <p className="analytics-chart-note">Counts invoices across all currencies. Successful payments use the payment date, falling back to the invoice date; failures use the invoice date.</p>
+            <p className="text-fine-print">Counts invoices across all currencies. Successful payments use the payment date, falling back to the invoice date; failures use the invoice date.</p>
           </article>
         </div>
       )}

@@ -9,7 +9,7 @@ const tagNames = {
   expiryDate: 'Expiry date',
   renewalDays: 'Reminder days',
 };
-const inputClass = "email-template-input";
+const inputClass = "control control-ring-strong control-editor disabled:bg-slate-50";
 
 export default function EmailTemplateField({ id, label, templateTitle, value, onChange, maxLength, multiline = false }) {
   const fieldRef = useRef(null);
@@ -50,26 +50,26 @@ export default function EmailTemplateField({ id, label, templateTitle, value, on
     id, ref: fieldRef, required: true, maxLength, value,
     'aria-describedby': `${id}-tags-help${message ? ` ${id}-tag-status` : ''}`,
     onChange: event => { setMessage(''); onChange(event.target.value); },
-    className: `${inputClass} ${multiline ? 'email-template-multiline' : ''}`,
+    className: `${inputClass} ${multiline ? 'resize-y' : ''}`,
   };
 
   return <div className="detail-stack">
-    <div className="email-template-heading">
-      <label htmlFor={id} className="email-template-field-label">{label}</label>
-      <span className="email-template-character-count">{value.length.toLocaleString()} / {maxLength.toLocaleString()}</span>
+    <div className="row-inline-wide justify-between">
+      <label htmlFor={id} className="field-heading">{label}</label>
+      <span className="text-note tabular-nums">{value.length.toLocaleString()} / {maxLength.toLocaleString()}</span>
     </div>
     {multiline ? <textarea {...fieldProps} rows={7} /> : <input {...fieldProps} type="text" />}
-    <div className="email-template-tags" role="group" aria-label={`${templateTitle} ${target} tags`}>
-      <span id={`${id}-tags-help`} className="email-template-tags-label">Add a tag:</span>
+    <div className="row-inline-tight flex-wrap" role="group" aria-label={`${templateTitle} ${target} tags`}>
+      <span id={`${id}-tags-help`} className="text-note mr-1">Add a tag:</span>
       {EMAIL_TEMPLATE_TOKENS.map(token => <button key={token} type="button"
         aria-label={`Insert ${tagNames[token].toLowerCase()} into ${templateTitle.toLowerCase()} ${target}`}
         title={`Insert {${token}}`}
         onMouseDown={event => event.preventDefault()}
         onClick={() => insertTag(token)}
-        className="email-template-insert-tag">
+        className="row-icon-tight email-template-token">
         <Plus className="icon-tiny" aria-hidden="true" />{tagNames[token]}
       </button>)}
     </div>
-    {message && <p id={`${id}-tag-status`} role="status" className="email-template-tag-status">{message}</p>}
+    {message && <p id={`${id}-tag-status`} role="status" className="text-xs text-amber-800">{message}</p>}
   </div>;
 }

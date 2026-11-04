@@ -2,7 +2,7 @@
 
 ReMember can send verification, password reset, RSVP, payment, welcome and renewal emails through the Gmail API over HTTPS. This works with Render Free's network restrictions; [Render blocks outbound SMTP ports 25, 465 and 587 on Free web services](https://render.com/docs/free). Your Gmail or Google Workspace sending limits still apply.
 
-Only the app's sending mailbox needs to authorize Gmail access. Members do not need to connect their own mailboxes. This authorization is separate from member Google sign-in (`GOOGLE_CLIENT_ID`) and Google Wallet. Keep their existing settings.
+Only the app's sending mailbox needs to authorize Gmail access. Members do not need to connect their own mailboxes. This authorization is separate from member Google sign-in (`GOOGLE_CLIENT_ID`); keep its existing settings.
 
 ## 1. Configure Google Cloud
 

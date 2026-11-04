@@ -3,13 +3,13 @@
   /* Navbar */
   .navbar { @apply sticky top-0 z-40 w-full border-b border-slate-200 bg-white; }
   .navbar-content { @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between; }
-  .navbar-brand { @apply flex items-center gap-3 cursor-pointer; }
+  .navbar-brand { @apply flex items-center gap-3 min-w-0 cursor-pointer; }
   .navbar-brand-row { @apply flex items-center gap-2; }
-  .navbar-logo { @apply h-12 w-auto object-contain; }
-  .navbar-portal-badge { @apply text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border; }
+  .navbar-logo { @apply h-12 w-auto max-w-[38vw] sm:max-w-none object-contain; }
+  .navbar-portal-badge { @apply hidden sm:inline-flex whitespace-nowrap text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border; }
   .navbar-portal-admin { @apply bg-brand-primary/10 text-brand-ink border-brand-primary/30; }
   .navbar-portal-member { @apply bg-brand-accent/20 text-slate-800 border-brand-accent/40 font-semibold; }
-  .navbar-tools { @apply flex items-center gap-3; }
+  .navbar-tools { @apply flex items-center shrink-0 gap-2 sm:gap-3; }
   .navbar-organisations { @apply flex items-center gap-1.5 px-2 sm:px-3 py-2 rounded-lg text-xs font-semibold border; }
   .navbar-organisations-active { @apply bg-brand-primary border-brand-primary text-brand-ink; }
   .navbar-organisations-idle { @apply bg-white border-slate-200 text-slate-700 hover:bg-slate-100; }

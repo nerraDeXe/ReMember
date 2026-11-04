@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { CalendarDays, CheckCircle2, Clock, CreditCard, RefreshCw, ShieldCheck, Wallet } from 'lucide-react';
+import { CalendarDays, CheckCircle2, Clock, CreditCard, RefreshCw, ShieldCheck, IdCard } from 'lucide-react';
 import { api } from '../../api.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useToast } from '../../context/ToastContext.jsx';
 import { useNavigation } from '../../routing.jsx';
-import GoogleWalletPass from '../../components/GoogleWalletPass.jsx';
+import MembershipCard from '../../components/MembershipCard.jsx';
 import PaymentModal from '../../components/PaymentModal.jsx';
 
 const DAY_MS = 86_400_000;
@@ -42,8 +42,6 @@ export default function MembershipPage({ onNavigate }) {
   const [record, setRecord] = useState(null);
   const [loadError, setLoadError] = useState('');
   const [revision, setRevision] = useState(0);
-  const [wallet, setWallet] = useState(null);
-  const [walletError, setWalletError] = useState('');
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState('');
   const [now, setNow] = useState(() => Date.now());
@@ -85,17 +83,6 @@ export default function MembershipPage({ onNavigate }) {
     }).catch(error => { if (!cancelled) setLoadError(error.message || 'Could not load your membership.'); });
     return () => { cancelled = true; };
   }, [organisationId, revision]);
-
-  useEffect(() => {
-    let cancelled = false;
-    setWallet(null);
-    setWalletError('');
-    if (active) api.getWalletPass().then(response => {
-      if (!response.success) throw new Error(response.message || 'Your membership pass is unavailable.');
-      if (!cancelled) setWallet(response);
-    }).catch(error => { if (!cancelled) setWalletError(error.message || 'Could not load your membership pass.'); });
-    return () => { cancelled = true; };
-  }, [organisationId, active, revision]);
 
   useEffect(() => {
     if (!actionOpen) return;
@@ -142,8 +129,8 @@ export default function MembershipPage({ onNavigate }) {
     { errorMessage: 'Could not update your scheduled membership change.', queryKeys: ['membershipAction', 'downgradeTier'] },
   );
 
-  if (loading) return <div role="status" className="membership-loading"><RefreshCw className="membership-spinner" />Loading your membership…</div>;
-  if (loadError) return <div className="content-stack"><h1 className="membership-error-title">Manage Membership</h1><p role="alert" className="membership-load-error">{loadError}</p><button type="button" onClick={() => setRevision(value => value + 1)} className="membership-retry-button">Retry</button></div>;
+  if (loading) return <div role="status" className="row-inline-wide text-description membership-loading"><RefreshCw className="icon-medium-spinner" />Loading your membership…</div>;
+  if (loadError) return <div className="content-stack"><h1 className="text-2xl font-bold">Manage Membership</h1><p role="alert" className="text-error">{loadError}</p><button type="button" onClick={() => setRevision(value => value + 1)} className="link-underlined text-sm">Retry</button></div>;
 
   const firstSubscribedAt = membership.firstSubscribedAt;
   const periodStart = membership.currentPeriodStart;
@@ -157,86 +144,82 @@ export default function MembershipPage({ onNavigate }) {
   const statusLabel = cancellingAtEnd ? 'Cancellation scheduled' : ({ active: 'Active', pending: 'Pending payment', expired: 'Expired', suspended: 'Suspended', revoked: 'Revoked', cancelled: 'Cancelled' }[status] || status);
 
   return <div className="page-stack">
-    <div><h1 className="membership-page-title">Manage Membership</h1><p className="membership-section-description">Your membership details, digital pass and subscription options in one place.</p></div>
+    <div><h1 className="heading-large">Manage Membership</h1><p className="text-intro">Your membership card, details and subscription options in one place.</p></div>
 
-    <section aria-labelledby="membership-overview-title" className="membership-section-card">
-      <div className="membership-overview-heading">
-        <div><h2 id="membership-overview-title" className="membership-heading">Membership overview</h2><p className="membership-organisation-name">{membership.organisation?.name || user.activeOrganisation?.name}</p></div>
-        <span className={`membership-status-badge ${active ? "membership-status-active" : "membership-status-inactive"}`}>{statusLabel}</span>
+    <section aria-labelledby="membership-overview-title" className="panel-responsive">
+      <div className="row-header">
+        <div><h2 id="membership-overview-title" className="text-lg font-bold">Membership overview</h2><p className="text-description mt-1">{membership.organisation?.name || user.activeOrganisation?.name}</p></div>
+        <span className={`badge-label ${active ? "choice-selected member-status-active" : "state-inactive"}`}>{statusLabel}</span>
       </div>
-      <div className="membership-summary">
-        <div><p className="membership-current-label">Current membership</p><h3 className="membership-current-tier">{currentTier?.name || membership.tierName || 'Membership'}</h3><p className="membership-member-detail">Member ID: <span className="membership-member-number">{membership.membershipNumber || user.membershipNumber}</span></p><p className="membership-member-detail">Member since: {dateLabel(membership.joinedDate)}</p></div>
-        <p className="membership-current-price">{Number(currentTier?.price) > 0 ? <>{money(currentTier.price)} <span className="membership-current-interval">/ {yearly(currentTier) ? 'year' : 'month'}</span></> : 'Free membership'}</p>
+      <div className="detail-card row-between membership-current">
+        <div><p className="text-label-muted">Current membership</p><h3 className="membership-tier-title">{currentTier?.name || membership.tierName || 'Membership'}</h3><p className="text-help">Member ID: <span className="font-mono">{membership.membershipNumber || user.membershipNumber}</span></p><p className="text-help">Member since: {dateLabel(membership.joinedDate)}</p></div>
+        <p className="text-strong">{Number(currentTier?.price) > 0 ? <>{money(currentTier.price)} <span className="membership-price-period">/ {yearly(currentTier) ? 'year' : 'month'}</span></> : 'Free membership'}</p>
       </div>
-      <dl className="membership-dates">
-        <div><dt className="membership-stat-label"><CalendarDays className="icon-small" />First subscribed</dt><dd className="membership-stat-value">{dateLabel(firstSubscribedAt)}</dd></div>
-        <div><dt className="membership-stat-label"><CalendarDays className="icon-small" />Current period started</dt><dd className="membership-stat-value">{periodStart ? dateLabel(periodStart) : 'Not recorded'}</dd></div>
-        <div><dt className="membership-stat-label"><CalendarDays className="icon-small" />{cancellingAtEnd ? 'Access ends' : 'Renewal date'}</dt><dd className="membership-stat-value">{membership.expirationDate ? dateLabel(membership.expirationDate) : 'No renewal required'}</dd></div>
-        <div><dt className="membership-stat-label"><Clock className="icon-small" />Days remaining</dt><dd className="membership-stat-value">{daysRemaining === null ? 'No expiry' : `${daysRemaining} ${daysRemaining === 1 ? 'day' : 'days'}`}</dd></div>
+      <dl className="form-grid membership-dates">
+        <div><dt className="row-inline-tight text-label-muted"><CalendarDays className="icon-small" />First subscribed</dt><dd className="membership-date-value">{dateLabel(firstSubscribedAt)}</dd></div>
+        <div><dt className="row-inline-tight text-label-muted"><CalendarDays className="icon-small" />Current period started</dt><dd className="membership-date-value">{periodStart ? dateLabel(periodStart) : 'Not recorded'}</dd></div>
+        <div><dt className="row-inline-tight text-label-muted"><CalendarDays className="icon-small" />{cancellingAtEnd ? 'Access ends' : 'Renewal date'}</dt><dd className="membership-date-value">{membership.expirationDate ? dateLabel(membership.expirationDate) : 'No renewal required'}</dd></div>
+        <div><dt className="row-inline-tight text-label-muted"><Clock className="icon-small" />Days remaining</dt><dd className="membership-date-value">{daysRemaining === null ? 'No expiry' : `${daysRemaining} ${daysRemaining === 1 ? 'day' : 'days'}`}</dd></div>
       </dl>
-      {Number(membership.creditBalanceCents) > 0 && <p className="membership-credit-notice">Membership credit: <strong>{money(membership.creditBalanceCents / 100)}</strong>. Available credit is applied to your next membership payment.</p>}
-      {cancellingAtEnd && <p role="status" className="membership-cancellation-notice">Your subscription is cancelled for renewal. Your digital pass and member access remain available until {dateLabel(membership.expirationDate)}.</p>}
-      {hasScheduledDowngrade && <div role="status" aria-label="Scheduled membership downgrade" className="membership-scheduled-downgrade">
-        <h3 className="membership-scheduled-downgrade-title">{scheduledUnavailable ? 'Scheduled tier unavailable' : 'Downgrade scheduled'}</h3>
-        {scheduledUnavailable ? <p className="membership-scheduled-downgrade-detail">The membership tier selected for your next renewal is no longer available. Cancel this scheduled change to renew your current tier or choose another available tier.</p> : <><p className="membership-scheduled-downgrade-detail">Next membership: <strong>{scheduledTier.name}</strong> — {Number(scheduledTier.price) > 0 ? `${money(scheduledTier.price)} / ${yearly(scheduledTier) ? 'year' : 'month'}` : 'Free membership'}.</p><p className="membership-scheduled-downgrade-detail">{scheduledDue ? `Your previous paid period ended on ${dateLabel(membership.scheduledTierEffectiveAt)}. Renew with ${scheduledTier.name} to start your next billing period.` : `Your current membership and pass stay unchanged until ${dateLabel(membership.scheduledTierEffectiveAt)}. ${Number(scheduledTier.price) > 0 ? 'No payment is taken now. Complete payment for the cheaper tier when your current period ends.' : 'Your free membership will begin after your current paid period ends, with no payment required.'}`}</p></>}
-        <button type="button" disabled={busy} onClick={() => changeDowngrade(null)} className="membership-cancel-downgrade-button">Cancel scheduled downgrade</button>
+      {Number(membership.creditBalanceCents) > 0 && <p className="text-description mt-4">Membership credit: <strong>{money(membership.creditBalanceCents / 100)}</strong>. Available credit is applied to your next membership payment.</p>}
+      {cancellingAtEnd && <p role="status" className="membership-cancellation-notice">Your subscription is cancelled for renewal. Your membership card and member access remain available until {dateLabel(membership.expirationDate)}.</p>}
+      {hasScheduledDowngrade && <div role="status" aria-label="Scheduled membership downgrade" className="membership-downgrade-notice">
+        <h3 className="font-bold">{scheduledUnavailable ? 'Scheduled tier unavailable' : 'Downgrade scheduled'}</h3>
+        {scheduledUnavailable ? <p className="mt-2">The membership tier selected for your next renewal is no longer available. Cancel this scheduled change to renew your current tier or choose another available tier.</p> : <><p className="mt-2">Next membership: <strong>{scheduledTier.name}</strong> — {Number(scheduledTier.price) > 0 ? `${money(scheduledTier.price)} / ${yearly(scheduledTier) ? 'year' : 'month'}` : 'Free membership'}.</p><p className="mt-2">{scheduledDue ? `Your previous paid period ended on ${dateLabel(membership.scheduledTierEffectiveAt)}. Renew with ${scheduledTier.name} to start your next billing period.` : `Your current membership and pass stay unchanged until ${dateLabel(membership.scheduledTierEffectiveAt)}. ${Number(scheduledTier.price) > 0 ? 'No payment is taken now. Complete payment for the cheaper tier when your current period ends.' : 'Your free membership will begin after your current paid period ends, with no payment required.'}`}</p></>}
+        <button type="button" disabled={busy} onClick={() => changeDowngrade(null)} className="membership-downgrade-cancel">Cancel scheduled downgrade</button>
       </div>}
-      {!active && <p className="membership-inactive-notice">Your digital pass and member features are available with an active membership.</p>}
-      {canRenew && <button type="button" onClick={() => onNavigate('member-checkout', { query: { intent: 'renew', tier: renewalTier?._id || membership.tierId } })} className="membership-renew-button">{hasScheduledDowngrade ? `Renew with ${renewalTier.name}` : 'Renew membership'}</button>}
-      {status === 'cancelled' && Number(currentTier?.price) === 0 && <button type="button" onClick={() => onNavigate('account-memberships')} className="membership-renew-button">Rejoin membership</button>}
+      {!active && <p className="text-description mt-5">Your membership card and member features are available with an active membership.</p>}
+      {canRenew && <button type="button" onClick={() => onNavigate('member-checkout', { query: { intent: 'renew', tier: renewalTier?._id || membership.tierId } })} className="button-accent button-standard mt-4">{hasScheduledDowngrade ? `Renew with ${renewalTier.name}` : 'Renew membership'}</button>}
+      {status === 'cancelled' && Number(currentTier?.price) === 0 && <button type="button" onClick={() => onNavigate('account-memberships')} className="button-accent button-standard mt-4">Rejoin membership</button>}
     </section>
 
-    <div className="membership-management-columns">
-      <section aria-labelledby="membership-pass-title" className="membership-section-card">
-        <h2 id="membership-pass-title" className="membership-icon-heading"><Wallet className="membership-heading-icon" />Digital membership pass</h2>
-        <p className="membership-pass-description">Keep your membership details with you in Google Wallet.</p>
-        {active ? wallet ? <GoogleWalletPass user={{ ...user, ...membership, status: 'active', tierName: currentTier?.name || membership.tierName }} walletData={wallet} onSync={async () => {
-          await api.syncWalletObject(user._id);
-          const response = await api.getWalletPass();
-          if (mounted.current && getCurrentUser()?.activeOrganisationId === organisationId) setWallet(response);
-        }} /> : <p role={walletError ? 'alert' : 'status'} className="text-description">{walletError || 'Loading your membership pass…'}</p> : <div className="membership-pass-unavailable"><ShieldCheck className="membership-pass-unavailable-icon" />Your pass will be available when your membership is active.</div>}
+    <div className="membership-layout">
+      <section aria-labelledby="membership-pass-title" className="panel-responsive">
+        <h2 id="membership-pass-title" className="row-inline membership-section-heading"><IdCard className="icon-brand" />Membership card</h2>
+        <p className="membership-card-description">Your current membership details, all in one place.</p>
+        {active ? <MembershipCard user={{ ...user, ...membership, status: 'active', tierName: currentTier?.name || membership.tierName }} /> : <div className="membership-card-empty"><ShieldCheck className="icon-large mx-auto mb-2" />Your card will be available when your membership is active.</div>}
       </section>
 
       <div className="page-stack">
-        <section aria-labelledby="membership-upgrades-title" className="membership-section-card">
-          <h2 id="membership-upgrades-title" className="membership-icon-heading"><CreditCard className="membership-heading-icon" />Upgrade your membership</h2>
-          <p className="membership-section-description">An upgrade starts a new billing period. The unused value of your current paid period is credited towards the new tier. Review the exact credit and total before you pay.</p>
-          {hasScheduledDowngrade && <p className="membership-upgrade-notice">Completing an upgrade will replace your scheduled downgrade.</p>}
-          {tiersLoading ? <p role="status" className="membership-tier-status">Loading membership tiers…</p> : tiersError ? <p role="alert" className="membership-tiers-error">{tiersError}</p> : !active ? <p className="membership-tier-status">An active membership is required to upgrade.</p> : !upgrades.length ? <p className="membership-tier-status">You already have the highest available membership tier.</p> : <div className="membership-tier-list">{upgrades.map(tier => <article key={tier._id} className="membership-tier-card">
-            <div className="membership-tier-heading"><h3 className="membership-tier-name">{tier.name}</h3><p className="membership-tier-price">{money(tier.price)} <span className="membership-tier-interval">/ {yearly(tier) ? 'year' : 'month'}</span></p></div>
+        <section aria-labelledby="membership-upgrades-title" className="panel-responsive">
+          <h2 id="membership-upgrades-title" className="row-inline membership-section-heading"><CreditCard className="icon-brand" />Upgrade your membership</h2>
+          <p className="text-intro">An upgrade starts a new billing period. The unused value of your current paid period is credited towards the new tier. Review the exact credit and total before you pay.</p>
+          {hasScheduledDowngrade && <p className="membership-upgrade-note">Completing an upgrade will replace your scheduled downgrade.</p>}
+          {tiersLoading ? <p role="status" className="text-pending">Loading membership tiers…</p> : tiersError ? <p role="alert" className="text-error mt-4">{tiersError}</p> : !active ? <p className="text-pending">An active membership is required to upgrade.</p> : !upgrades.length ? <p className="text-pending">You already have the highest available membership tier.</p> : <div className="content-stack mt-4">{upgrades.map(tier => <article key={tier._id} className="detail-card">
+            <div className="membership-tier-summary"><h3 className="text-sm font-bold">{tier.name}</h3><p className="text-sm font-semibold">{money(tier.price)} <span className="text-caption font-normal">/ {yearly(tier) ? 'year' : 'month'}</span></p></div>
             {!!tier.description && <p className="membership-tier-description">{tier.description}</p>}
-            {!!tier.perks?.length && <ul className="membership-tier-perks">{tier.perks.map((perk, index) => <li key={index} className="membership-tier-perk"><CheckCircle2 className="membership-tier-perk-icon" />{perk}</li>)}</ul>}
-            <button type="button" aria-label={`Upgrade to ${tier.name}`} onClick={() => onNavigate('member-checkout', { query: { intent: 'upgrade', tier: tier._id } })} className="membership-review-upgrade-button">Review upgrade</button>
+            {!!tier.perks?.length && <ul className="mt-3 space-y-1.5">{tier.perks.map((perk, index) => <li key={index} className="membership-tier-perk"><CheckCircle2 className="icon-brand-small shrink-0" />{perk}</li>)}</ul>}
+            <button type="button" aria-label={`Upgrade to ${tier.name}`} onClick={() => onNavigate('member-checkout', { query: { intent: 'upgrade', tier: tier._id } })} className="button-primary button-small mt-4">Review upgrade</button>
           </article>)}</div>}
         </section>
 
-        <section aria-labelledby="membership-downgrades-title" className="membership-section-card">
-          <h2 id="membership-downgrades-title" className="membership-section-title">Downgrade your membership</h2>
-          <p className="membership-section-description">Choose a cheaper tier for your next renewal. Keep your current membership until the end of its paid period. Scheduling a downgrade does not open checkout or charge you now.</p>
-          {tiersLoading ? <p role="status" className="membership-tier-status">Loading membership tiers…</p> : tiersError ? <p role="alert" className="membership-tiers-error">{tiersError}</p> : cancellingAtEnd ? <p className="membership-tier-status">Choose “Keep my membership” before scheduling a downgrade.</p> : !canScheduleDowngrade ? <p className="membership-tier-status">An active paid period is required to schedule a downgrade.</p> : !downgrades.length ? <p className="membership-tier-status">You already have the lowest available membership tier.</p> : <div className="membership-tier-list">{downgrades.map(tier => <article key={tier._id} className="membership-tier-card"><div className="membership-tier-heading"><h3 className="membership-tier-name">{tier.name}</h3><p className="membership-tier-price">{Number(tier.price) > 0 ? `${money(tier.price)} / ${yearly(tier) ? 'year' : 'month'}` : 'Free membership'}</p></div>{!!tier.description && <p className="membership-tier-description">{tier.description}</p>}<button type="button" aria-label={`Downgrade to ${tier.name}`} disabled={busy || membership.scheduledTierId === tier._id} onClick={() => { setActionError(''); updateQuery({ membershipAction: 'downgrade', downgradeTier: tier._id }); }} className="membership-schedule-downgrade-button">{membership.scheduledTierId === tier._id ? 'Scheduled for next renewal' : 'Schedule downgrade'}</button></article>)}</div>}
+        <section aria-labelledby="membership-downgrades-title" className="panel-responsive">
+          <h2 id="membership-downgrades-title" className="membership-section-heading">Downgrade your membership</h2>
+          <p className="text-intro">Choose a cheaper tier for your next renewal. Keep your current membership until the end of its paid period. Scheduling a downgrade does not open checkout or charge you now.</p>
+          {tiersLoading ? <p role="status" className="text-pending">Loading membership tiers…</p> : tiersError ? <p role="alert" className="text-error mt-4">{tiersError}</p> : cancellingAtEnd ? <p className="text-pending">Choose “Keep my membership” before scheduling a downgrade.</p> : !canScheduleDowngrade ? <p className="text-pending">An active paid period is required to schedule a downgrade.</p> : !downgrades.length ? <p className="text-pending">You already have the lowest available membership tier.</p> : <div className="content-stack mt-4">{downgrades.map(tier => <article key={tier._id} className="detail-card"><div className="membership-tier-summary"><h3 className="text-sm font-bold">{tier.name}</h3><p className="text-sm font-semibold">{Number(tier.price) > 0 ? `${money(tier.price)} / ${yearly(tier) ? 'year' : 'month'}` : 'Free membership'}</p></div>{!!tier.description && <p className="membership-tier-description">{tier.description}</p>}<button type="button" aria-label={`Downgrade to ${tier.name}`} disabled={busy || membership.scheduledTierId === tier._id} onClick={() => { setActionError(''); updateQuery({ membershipAction: 'downgrade', downgradeTier: tier._id }); }} className="button-small membership-downgrade-button">{membership.scheduledTierId === tier._id ? 'Scheduled for next renewal' : 'Schedule downgrade'}</button></article>)}</div>}
         </section>
 
-        <section aria-labelledby="membership-subscription-title" className="membership-section-card">
-          <h2 id="membership-subscription-title" className="membership-section-title">Subscription options</h2>
-          <p className="membership-section-description">Payments use the organisation's simulated payment gateway. No real charges or automatic debits are made.</p>
-          {actionError && !actionOpen && <p role="alert" className="membership-action-error">{actionError}</p>}
-          {cancellingAtEnd ? <button type="button" disabled={busy} onClick={() => changeCancellation(false)} className="membership-keep-button">{busy ? 'Saving…' : 'Keep my membership'}</button> : canCancel ? <button type="button" disabled={busy} onClick={() => { setActionError(''); updateQuery({ membershipAction: 'cancel' }); }} className="membership-cancel-button">Cancel subscription</button> : <p className="membership-tier-status">There is no active subscription to cancel.</p>}
+        <section aria-labelledby="membership-subscription-title" className="panel-responsive">
+          <h2 id="membership-subscription-title" className="membership-section-heading">Subscription options</h2>
+          <p className="text-intro">Payments use the organisation's simulated payment gateway. No real charges or automatic debits are made.</p>
+          {actionError && !actionOpen && <p role="alert" className="text-error mt-3">{actionError}</p>}
+          {cancellingAtEnd ? <button type="button" disabled={busy} onClick={() => changeCancellation(false)} className="button-secondary mt-4 membership-secondary-action">{busy ? 'Saving…' : 'Keep my membership'}</button> : canCancel ? <button type="button" disabled={busy} onClick={() => { setActionError(''); updateQuery({ membershipAction: 'cancel' }); }} className="button-standard membership-cancel-button">Cancel subscription</button> : <p className="text-pending">There is no active subscription to cancel.</p>}
         </section>
       </div>
     </div>
 
-    {cancelOpen && <div className="membership-action-overlay"><div ref={cancelDialog} role="dialog" aria-modal="true" aria-labelledby="cancel-membership-title" aria-describedby="cancel-membership-description" className="membership-action-dialog">
-      <h2 id="cancel-membership-title" className="membership-heading">Cancel membership subscription</h2>
-      <p id="cancel-membership-description" className="membership-action-description">{paidPeriod ? `Your subscription will end on ${dateLabel(membership.expirationDate)}. You can keep using your membership and digital pass until then. Cancelling does not issue a refund, and you can keep your membership before that date.` : 'Your membership and digital pass access will end immediately. You can join the organisation again later.'}</p>
-      {hasScheduledDowngrade && <p className="membership-cancel-downgrade-notice">Cancelling your subscription also removes the scheduled downgrade.</p>}
-      {actionError && <p role="alert" className="membership-action-error">{actionError}</p>}
-      <div className="membership-dialog-actions"><button ref={cancelBackButton} type="button" disabled={busy} onClick={() => closeQuery('membershipAction')} className="membership-back-button">Go back</button><button type="button" disabled={busy} onClick={() => changeCancellation(true)} className="membership-confirm-cancellation-button">{busy ? 'Cancelling…' : 'Confirm cancellation'}</button></div>
+    {cancelOpen && <div className="dialog-overlay-dark"><div ref={cancelDialog} role="dialog" aria-modal="true" aria-labelledby="cancel-membership-title" aria-describedby="cancel-membership-description" className="dialog-panel shadow-xl">
+      <h2 id="cancel-membership-title" className="text-lg font-bold">Cancel membership subscription</h2>
+      <p id="cancel-membership-description" className="text-description mt-3 leading-relaxed">{paidPeriod ? `Your subscription will end on ${dateLabel(membership.expirationDate)}. You can keep using your membership card and member benefits until then. Cancelling does not issue a refund, and you can keep your membership before that date.` : 'Your membership card and member access will end immediately. You can join the organisation again later.'}</p>
+      {hasScheduledDowngrade && <p className="membership-cancel-note">Cancelling your subscription also removes the scheduled downgrade.</p>}
+      {actionError && <p role="alert" className="text-error mt-3">{actionError}</p>}
+      <div className="dialog-actions"><button ref={cancelBackButton} type="button" disabled={busy} onClick={() => closeQuery('membershipAction')} className="button-secondary membership-secondary-action">Go back</button><button type="button" disabled={busy} onClick={() => changeCancellation(true)} className="button-danger button-standard disabled:opacity-50">{busy ? 'Cancelling…' : 'Confirm cancellation'}</button></div>
     </div></div>}
-    {downgradeOpen && <div className="membership-action-overlay"><div ref={cancelDialog} role="dialog" aria-modal="true" aria-labelledby="downgrade-membership-title" aria-describedby="downgrade-membership-description" className="membership-action-dialog">
-      <h2 id="downgrade-membership-title" className="membership-heading">Schedule membership downgrade</h2>
-      <p id="downgrade-membership-description" className="membership-action-description">{downgradeTier && canScheduleDowngrade ? `Keep ${currentTier?.name || 'your current tier'} and its benefits until ${dateLabel(membership.expirationDate)}. Your next membership will be ${downgradeTier.name} (${Number(downgradeTier.price) > 0 ? `${money(downgradeTier.price)} / ${yearly(downgradeTier) ? 'year' : 'month'}` : 'free'}). ${Number(downgradeTier.price) > 0 ? 'No charge is made now. When the current period ends, complete a simulated renewal payment to start the cheaper membership.' : 'The free membership begins when your paid period ends, without checkout.'} ${hasScheduledDowngrade ? 'This replaces your previously scheduled downgrade.' : 'You can cancel this scheduled change before renewing.'}` : 'This tier is unavailable for a scheduled downgrade. Close this dialog and review the available membership tiers.'}</p>
-      {actionError && <p role="alert" className="membership-action-error">{actionError}</p>}
-      <div className="membership-dialog-actions"><button ref={cancelBackButton} type="button" disabled={busy} onClick={closeAction} className="membership-back-button">Go back</button>{downgradeTier && canScheduleDowngrade && <button type="button" disabled={busy} onClick={() => changeDowngrade(downgradeTier._id)} className="membership-confirm-downgrade-button">{busy ? 'Scheduling…' : 'Confirm downgrade'}</button>}</div>
+    {downgradeOpen && <div className="dialog-overlay-dark"><div ref={cancelDialog} role="dialog" aria-modal="true" aria-labelledby="downgrade-membership-title" aria-describedby="downgrade-membership-description" className="dialog-panel shadow-xl">
+      <h2 id="downgrade-membership-title" className="text-lg font-bold">Schedule membership downgrade</h2>
+      <p id="downgrade-membership-description" className="text-description mt-3 leading-relaxed">{downgradeTier && canScheduleDowngrade ? `Keep ${currentTier?.name || 'your current tier'} and its benefits until ${dateLabel(membership.expirationDate)}. Your next membership will be ${downgradeTier.name} (${Number(downgradeTier.price) > 0 ? `${money(downgradeTier.price)} / ${yearly(downgradeTier) ? 'year' : 'month'}` : 'free'}). ${Number(downgradeTier.price) > 0 ? 'No charge is made now. When the current period ends, complete a simulated renewal payment to start the cheaper membership.' : 'The free membership begins when your paid period ends, without checkout.'} ${hasScheduledDowngrade ? 'This replaces your previously scheduled downgrade.' : 'You can cancel this scheduled change before renewing.'}` : 'This tier is unavailable for a scheduled downgrade. Close this dialog and review the available membership tiers.'}</p>
+      {actionError && <p role="alert" className="text-error mt-3">{actionError}</p>}
+      <div className="dialog-actions"><button ref={cancelBackButton} type="button" disabled={busy} onClick={closeAction} className="button-secondary membership-secondary-action">Go back</button>{downgradeTier && canScheduleDowngrade && <button type="button" disabled={busy} onClick={() => changeDowngrade(downgradeTier._id)} className="button-accent button-standard disabled:opacity-50">{busy ? 'Scheduling…' : 'Confirm downgrade'}</button>}</div>
     </div></div>}
   </div>;
 }
@@ -256,11 +239,11 @@ export function CheckoutPage({ onNavigate }) {
     if (!explicitCheckout) onNavigate('member-membership', { replace: true });
   }, [explicitCheckout, onNavigate]);
 
-  if (!explicitCheckout) return <p role="status" className="membership-checkout-redirect-status">Opening your membership…</p>;
+  if (!explicitCheckout) return <p role="status" className="text-sm text-slate-500">Opening your membership…</p>;
 
-  return <div className="membership-checkout-page">
-    <div><h1 className="membership-page-title">{joining ? 'Activate your membership' : intent === 'upgrade' ? 'Review membership upgrade' : 'Renew your membership'}</h1><p className="membership-section-description">{joining ? 'Complete your first demo payment to access your dashboard, events, and membership pass.' : intent === 'upgrade' ? 'Review your unused membership credit and the amount due before confirming. Your upgrade starts a new billing period.' : 'Review your membership renewal before confirming a demo payment.'}</p></div>
-    {tiersLoading ? <p role="status" className="text-description">Loading membership tiers…</p> : tiersError ? <p role="alert" className="membership-load-error">{tiersError}</p> : <PaymentModal key={`${user.activeOrganisationId}:${requestedTierId}:${intent}`} standalone user={user} tiers={tiers} requestedTierId={requestedTierId} intent={intent} onContinue={() => onNavigate(joining ? 'member-dashboard' : 'member-membership')} />}
-    <div className="membership-checkout-links">{joining ? <button type="button" onClick={() => onNavigate('account-memberships')} className="membership-checkout-back-link">Back to My Memberships</button> : <button type="button" onClick={() => onNavigate('member-membership')} className="membership-checkout-back-link">Back to Manage Membership</button>}</div>
+  return <div className="section-stack membership-checkout">
+    <div><h1 className="heading-large">{joining ? 'Activate your membership' : intent === 'upgrade' ? 'Review membership upgrade' : 'Renew your membership'}</h1><p className="text-intro">{joining ? 'Complete your first demo payment to access your dashboard, events, and membership card.' : intent === 'upgrade' ? 'Review your unused membership credit and the amount due before confirming. Your upgrade starts a new billing period.' : 'Review your membership renewal before confirming a demo payment.'}</p></div>
+    {tiersLoading ? <p role="status" className="text-description">Loading membership tiers…</p> : tiersError ? <p role="alert" className="text-error">{tiersError}</p> : <PaymentModal key={`${user.activeOrganisationId}:${requestedTierId}:${intent}`} standalone user={user} tiers={tiers} requestedTierId={requestedTierId} intent={intent} onContinue={() => onNavigate(joining ? 'member-dashboard' : 'member-membership')} />}
+    <div className="membership-checkout-links">{joining ? <button type="button" onClick={() => onNavigate('account-memberships')} className="underline">Back to My Memberships</button> : <button type="button" onClick={() => onNavigate('member-membership')} className="underline">Back to Manage Membership</button>}</div>
   </div>;
 }

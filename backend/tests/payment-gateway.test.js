@@ -7,13 +7,12 @@ import { Organisation, OrganisationMembership, PaymentCheckout, Invoice, User, A
 import { config } from '../config/config.js';
 import { createPaymentGateway, paymentGateway } from '../services/paymentGateway.js';
 import { emailService } from '../services/emailService.js';
-import { walletService } from '../services/walletService.js';
 import paymentRouter from '../routes/payments.js';
 
 const models = { Organisation, OrganisationMembership, PaymentCheckout, Invoice, User, ActivityLog, Tier };
 const originals = [];
 const clone = value => structuredClone(value);
-let rows, service, nextId, receiptCalls, welcomeCalls, walletCalls, currentTime;
+let rows, service, nextId, receiptCalls, welcomeCalls, currentTime;
 
 function matches(row, filter = {}) {
   return Object.entries(filter).every(([key, expected]) => {
@@ -79,11 +78,10 @@ before(() => {
   }, async endSession() {} }));
   patch(emailService, 'sendPaymentConfirmation', async () => { receiptCalls++; return { status: 'sent' }; });
   patch(emailService, 'sendOrganisationWelcome', async () => { welcomeCalls++; return { status: 'sent' }; });
-  patch(walletService, 'updateWalletObject', async () => { walletCalls++; });
 });
 after(() => { for (const [target, key, value] of originals.reverse()) target[key] = value; });
 beforeEach(() => {
-  nextId = receiptCalls = welcomeCalls = walletCalls = 0;
+  nextId = receiptCalls = welcomeCalls = 0;
   currentTime = new Date('2026-01-15T12:00:00.000Z');
   rows = Object.fromEntries(Object.keys(models).map(name => [name, []]));
   rows.Organisation.push({ _id: 'org', name: 'Local Community', adminId: 'owner', isPublic: true, visibility: 'public' }, { _id: 'other', name: 'Other', adminId: 'other-owner' });
@@ -107,7 +105,7 @@ test('Gateway sessions snapshot the server MYR price without activating paid mem
   assert.equal(result.checkout.billingInterval, 'monthly');
   assert.equal(membership().status, 'pending');
   assert.equal(rows.Invoice.length, 0);
-  assert.equal(receiptCalls + welcomeCalls + walletCalls, 0);
+  assert.equal(receiptCalls + welcomeCalls, 0);
 });
 
 test('Free, unsupported, invalid and unjoined paid tiers cannot create a gateway session', async () => {
@@ -171,7 +169,6 @@ for (const paymentMethod of ['card', 'online_banking', 'ewallet']) {
     assert.equal(rows.Invoice[0].amount, 49);
     assert.equal(receiptCalls, 1);
     assert.equal(welcomeCalls, 1);
-    assert.equal(walletCalls, 1);
   });
 }
 
@@ -185,7 +182,6 @@ test('Repeated approved confirmation reuses its invoice and never extends access
   assert.equal(rows.Invoice.length, 1);
   assert.equal(receiptCalls, 1);
   assert.equal(welcomeCalls, 1);
-  assert.equal(walletCalls, 1);
 });
 
 test('A declined demo payment stays locked and records a failed invoice once', async () => {
@@ -197,7 +193,7 @@ test('A declined demo payment stays locked and records a failed invoice once', a
   assert.equal(rows.Invoice[0].paymentStatus, 'failed');
   await service.confirmCheckout(confirmation(session.id, { scenario: 'declined' }));
   assert.equal(rows.Invoice.length, 1);
-  assert.equal(receiptCalls + welcomeCalls + walletCalls, 0);
+  assert.equal(receiptCalls + welcomeCalls, 0);
 });
 
 test('Cancellation leaves paid membership pending and prevents later confirmation', async () => {
@@ -288,7 +284,7 @@ test('A failed transaction rolls back invoice and activation so confirmation can
   await assert.rejects(service.confirmCheckout(confirmation(session.id)));
   assert.equal(membership().status, 'pending');
   assert.equal(rows.Invoice.length, 0);
-  assert.equal(receiptCalls + welcomeCalls + walletCalls, 0);
+  assert.equal(receiptCalls + welcomeCalls, 0);
   ActivityLog.create = original;
   assert.equal((await service.confirmCheckout(confirmation(session.id))).paymentStatus, 'paid');
 });
@@ -672,7 +668,7 @@ test('A failed or cancelled downgrade renewal preserves the pending choice and o
   assert.equal(membership().scheduledTierEffectiveAt, '2026-01-31T00:00:00.000Z');
   assert.equal(membership().billingRevision, 3);
   assert.equal(rows.Invoice.filter(invoice => invoice.paymentStatus === 'paid').length, 1);
-  assert.equal(receiptCalls + walletCalls, 0);
+  assert.equal(receiptCalls, 0);
 });
 
 test('Cancelling or replacing a scheduled change invalidates its existing checkout, even without a revision update', async () => {

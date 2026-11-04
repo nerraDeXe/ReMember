@@ -1,0 +1,46 @@
+@layer components {
+  .notification-bell { @apply relative shrink-0; }
+  .notification-bell-button { @apply relative flex items-center justify-center w-10 h-10 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors; }
+  .notification-bell-button-open { @apply bg-brand-50 border-brand-primary text-brand-ink; }
+  .notification-badge { @apply absolute -top-1.5 -right-1.5 min-w-5 h-5 rounded-full bg-brand-primary text-brand-ink border-2 border-white px-1 text-[10px] font-bold flex items-center justify-center; }
+  .notification-dropdown { @apply absolute right-0 top-full mt-3 w-96 max-w-[calc(100vw-2rem)] rounded-xl border border-slate-200 bg-white shadow-xl overflow-hidden z-50; }
+  .notification-dropdown-header { @apply flex items-center justify-between px-4 py-4 border-b border-slate-100; }
+  .notification-dropdown-header h2 { @apply text-sm font-bold text-slate-900; }
+  .notification-dropdown-header p { @apply text-[11px] text-slate-500 mt-1; }
+  .notification-settings { @apply p-2 rounded-lg text-slate-500 hover:bg-slate-100; }
+  .notification-list { @apply list-none m-0 p-0 divide-y divide-slate-100; }
+  .notification-list-compact { @apply max-h-[min(27rem,60vh)] overflow-y-auto; }
+  .notification-item { @apply flex items-center gap-2 bg-white transition-colors; }
+  .notification-item-unread { @apply bg-brand-50/60; }
+  .notification-item-link { @apply flex items-start gap-3 p-5 flex-1 min-w-0 hover:bg-slate-100/60; }
+  .notification-list-compact .notification-item-link { @apply p-4; }
+  .notification-type-icon { @apply flex items-center justify-center w-9 h-9 rounded-full bg-slate-100 text-slate-500 shrink-0; }
+  .notification-item-unread .notification-type-icon { @apply bg-brand-primary/30 text-brand-ink; }
+  .notification-item-content { @apply flex flex-col min-w-0 gap-1; }
+  .notification-organisation { @apply text-[10px] font-bold uppercase tracking-wide text-slate-600 break-words; }
+  .notification-item-title { @apply text-sm font-semibold text-slate-900 break-words; }
+  .notification-item-message { @apply text-xs leading-relaxed text-slate-600 whitespace-pre-line break-words; }
+  .notification-list-compact .notification-item-title { @apply text-xs; }
+  .notification-list-compact .notification-item-message { @apply line-clamp-2 text-[11px]; }
+  .notification-item-meta { @apply flex items-center gap-2 mt-1 text-[10px] text-slate-500; }
+  .notification-unread-label { @apply text-[10px] font-semibold text-brand-ink flex items-center gap-1; }
+  .notification-unread-label::before { content: ''; @apply w-1.5 h-1.5 rounded-full bg-brand-primary; }
+  .notification-mark-read { @apply flex items-center gap-1.5 shrink-0 p-2 mr-3 text-[11px] font-semibold text-slate-600 rounded-lg hover:bg-slate-200 disabled:opacity-50; }
+  .notification-state { @apply flex flex-col items-center justify-center gap-2 text-center p-7 text-xs text-slate-600; }
+  .notification-state p { @apply font-semibold; }
+  .notification-state span { @apply text-[11px] text-slate-500 max-w-sm leading-relaxed; }
+  .notification-error { @apply text-red-700; }
+  .notification-view-all { @apply flex items-center justify-between gap-3 px-4 py-3.5 text-xs font-bold text-brand-ink bg-slate-50 hover:bg-slate-100 border-t border-slate-100; }
+  .notification-text-button { @apply flex items-center gap-1.5 text-xs font-semibold text-slate-700 px-2 py-1.5 rounded-lg hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed; }
+  .notifications-panel { @apply rounded-xl bg-white border border-slate-200 shadow-sm overflow-hidden; }
+  .notifications-toolbar { @apply flex flex-wrap items-center justify-between gap-3 p-4 border-b border-slate-200; }
+  .notifications-toolbar p { @apply text-xs text-slate-600; }
+  .notifications-total { @apply text-slate-500; }
+  .notifications-empty { @apply py-16; }
+  .notifications-pagination { @apply flex items-center justify-between gap-3 px-4 py-4 border-t border-slate-200 text-xs text-slate-600; }
+  @media (max-width: 639px) {
+    .notification-dropdown { @apply fixed top-16 left-4 right-4 w-auto max-w-none mt-2; }
+    .notification-mark-read-label { @apply hidden; }
+    .notification-item-link { @apply p-4; }
+  }
+}

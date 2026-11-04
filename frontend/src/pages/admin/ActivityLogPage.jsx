@@ -7,7 +7,6 @@ import {
   AlertOctagon,
   CheckCircle,
   Layers,
-  Wallet,
   Calendar,
   RefreshCw,
   Clock,
@@ -17,20 +16,19 @@ import { api } from '../../api.js';
 import { useToast } from '../../context/ToastContext.jsx';
 import { useUrlState } from '../../routing.jsx';
 
-const actionClass = "activity-log-action-default";
-const tierClass = "activity-log-action-membership";
+const actionClass = "admin-state-brand";
+const tierClass = "activity-state-tier";
 const actions = {
   USER_REGISTERED: { icon: UserPlus, label: 'User Registered', filterLabel: 'User Registrations' },
   PROFILE_UPDATED: { icon: UserCheck, label: 'Profile Updated', filterLabel: 'Profile Updates' },
-  PAYMENT_FAILED: { icon: AlertOctagon, label: 'Payment Failed', filterLabel: 'Payment Failures', bg: "activity-log-payment-failed" },
+  PAYMENT_FAILED: { icon: AlertOctagon, label: 'Payment Failed', filterLabel: 'Payment Failures', bg: "state-muted-brand font-bold" },
   PAYMENT_SUCCESS: { icon: CheckCircle, label: 'Payment Success', filterLabel: 'Payment Successes' },
   TIER_CHANGED: { icon: Layers, label: 'Tier Changed', filterLabel: 'Tier Changes', bg: tierClass },
   STATUS_UPDATED: { icon: Shield, label: 'Status Updated', filterLabel: 'Status Updates', bg: tierClass },
-  GOOGLE_WALLET_SYNCED: { icon: Wallet, label: 'Wallet Synced', filterLabel: 'Google Wallet Syncs' },
   EVENT_RSVP: { icon: Calendar, label: 'Event RSVP', filterLabel: 'Event RSVPs' },
 };
 const getActionBadge = action => actions[action] || {
-  icon: ScrollText, bg: "activity-log-action-unknown", label: action.replace('_', ' '),
+  icon: ScrollText, bg: "activity-state-neutral", label: action.replace('_', ' '),
 };
 
 export default function ActivityLogPage() {
@@ -66,24 +64,24 @@ export default function ActivityLogPage() {
   return (
     <div className="page-stack">
       {/* Header */}
-      <div className="activity-log-header">
+      <div className="page-header">
         <div>
           <h1 className="page-title">
-            <ScrollText className="activity-log-scroll-text-icon" />
+            <ScrollText className="icon-brand-large" />
             Administrative Activity & Audit Log
           </h1>
           <p className="page-description">
-            Tracking recent user registrations, profile updates, payment failures, tier modifications, and wallet syncs.
+            Tracking recent user registrations, profile updates, payment failures, and tier modifications.
           </p>
         </div>
 
         {/* Action Filter */}
-        <div className="activity-log-filters">
-          <Filter className="activity-log-filter-icon" />
+        <div className="row-inline self-start sm:self-auto">
+          <Filter className="icon-default text-slate-400" />
           <select
             value={actionFilter}
             onChange={(e) => setActionFilter(e.target.value)}
-            className="activity-log-action-filter"
+            className="control-filter control-ring"
           >
             <option value="all">All Activities</option>
             {Object.entries(actions).map(([value, action]) => <option key={value} value={value}>{action.filterLabel}</option>)}
@@ -98,8 +96,8 @@ export default function ActivityLogPage() {
             <RefreshCw className="loading-spinner" />
           </div>
         ) : logs.length === 0 ? (
-          <div className="activity-log-empty">
-            <ScrollText className="activity-log-empty-icon" />
+          <div className="empty-state">
+            <ScrollText className="empty-state-icon" />
             No activity logs match the selected filter.
           </div>
         ) : (
@@ -112,7 +110,7 @@ export default function ActivityLogPage() {
                   <th className="data-table-cell">Member / Target</th>
                   <th className="data-table-cell">Role / Actor</th>
                   <th className="data-table-cell">Event Details & Metadata</th>
-                  <th className="activity-log-ip-heading">IP Address</th>
+                  <th className="data-table-cell text-right">IP Address</th>
                 </tr>
               </thead>
               <tbody className="table-body">
@@ -121,16 +119,16 @@ export default function ActivityLogPage() {
                   const Icon = badge.icon;
                   return (
                     <tr key={log._id} className="data-table-row">
-                      <td className="activity-log-timestamp-cell">
-                        <div className="activity-log-timestamp">
-                          <Clock className="activity-log-clock-icon" />
+                      <td className="text-note data-table-cell font-mono whitespace-nowrap">
+                        <div className="row-inline-tight">
+                          <Clock className="icon-small text-slate-400 shrink-0" />
                           <span>{new Date(log.timestamp).toLocaleString()}</span>
                         </div>
                       </td>
 
                       <td className="data-table-cell">
                         <span
-                          className={`activity-log-action-badge ${badge.bg || actionClass}`}
+                          className={`row-icon-inline activity-badge ${badge.bg || actionClass}`}
                         >
                           <Icon className="icon-small" />
                           <span>{badge.label}</span>
@@ -138,27 +136,27 @@ export default function ActivityLogPage() {
                       </td>
 
                       <td className="data-table-cell">
-                        <div className="activity-log-member-name">
+                        <div className="text-strong">
                           {log.userName || log.userEmail || 'System'}
                         </div>
                         {log.userEmail && (
-                          <div className="activity-log-member-email">{log.userEmail}</div>
+                          <div className="text-note">{log.userEmail}</div>
                         )}
                       </td>
 
                       <td className="data-table-cell">
-                        <span className="activity-log-actor-badge">
+                        <span className="badge-neutral badge-small font-mono uppercase">
                           {log.actorRole || 'system'}
                         </span>
                       </td>
 
-                      <td className="activity-log-metadata-cell">
-                        <div className="activity-log-metadata">
+                      <td className="data-table-cell max-w-xs">
+                        <div className="surface-muted activity-details">
                           {log.details ? JSON.stringify(log.details) : 'N/A'}
                         </div>
                       </td>
 
-                      <td className="activity-log-ip-cell">
+                      <td className="text-note data-table-cell activity-ip">
                         {log.ipAddress || '127.0.0.1'}
                       </td>
                     </tr>

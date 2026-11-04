@@ -23,23 +23,23 @@ export default function AccountOnboardingPage({ onNavigate }) {
 
   return (
     <AccountShell wide title={`Welcome${user?.firstName ? `, ${user.firstName}` : ''}!`} description="Your email is confirmed. What would you like to do first?" onNavigate={onNavigate}>
-      <div className="onboarding-choices">
-        <button type="button" onClick={() => onNavigate('organisation-setup')} disabled={loading} className="onboarding-create-choice">
-          <span className="onboarding-create-icon"><Building2 className="onboarding-choice-icon" aria-hidden="true" /></span>
+      <div className="form-grid">
+        <button type="button" onClick={() => onNavigate('organisation-setup')} disabled={loading} className="choice-selected onboarding-owner-choice">
+          <span className="icon-center onboarding-owner-icon"><Building2 className="icon-brand-medium" aria-hidden="true" /></span>
           <h2 className="section-title">Create an organisation</h2>
-          <p className="onboarding-choice-description">Build your community, set your membership tiers and manage it from your admin dashboard.</p>
-          <span className="onboarding-choice-action">Get started <ArrowRight className="icon-default" aria-hidden="true" /></span>
+          <p className="text-intro leading-relaxed">Build your community, set your membership tiers and manage it from your admin dashboard.</p>
+          <span className="button-inline text-semibold onboarding-action">Get started <ArrowRight className="icon-default" aria-hidden="true" /></span>
         </button>
-        <button type="button" onClick={browse} disabled={loading} className="onboarding-browse-choice">
-          <span className="onboarding-browse-icon"><Search className="onboarding-choice-icon" aria-hidden="true" /></span>
+        <button type="button" onClick={browse} disabled={loading} className="onboarding-member-choice">
+          <span className="icon-center onboarding-member-icon"><Search className="icon-brand-medium" aria-hidden="true" /></span>
           <h2 className="section-title">Find an organisation</h2>
-          <p className="onboarding-choice-description">Discover public organisations and choose a community to join. You can create your own later.</p>
-          <span className="onboarding-choice-action">{loading ? <><RefreshCw className="icon-spinner" aria-hidden="true" /> Opening directory…</> : <>Browse organisations <ArrowRight className="icon-default" aria-hidden="true" /></>}</span>
+          <p className="text-intro leading-relaxed">Discover public organisations and choose a community to join. You can create your own later.</p>
+          <span className="button-inline text-semibold onboarding-action">{loading ? <><RefreshCw className="icon-spinner" aria-hidden="true" /> Opening directory…</> : <>Browse organisations <ArrowRight className="icon-default" aria-hidden="true" /></>}</span>
         </button>
       </div>
-      {error && <p role="alert" className="onboarding-error">{error}</p>}
-      <p className="onboarding-account-note">Creating an organisation is optional. Your ReMember account lets you belong to multiple communities.</p>
-      <div className="onboarding-footer"><button type="button" onClick={() => { logout(); onNavigate('login'); }} disabled={loading} className="onboarding-signout">Sign out</button></div>
+      {error && <p role="alert" className="account-notice mt-4">{error}</p>}
+      <p className="onboarding-note">Creating an organisation is optional. Your ReMember account lets you belong to multiple communities.</p>
+      <div className="mt-5 text-center"><button type="button" onClick={() => { logout(); onNavigate('login'); }} disabled={loading} className="text-hint-strong hover:underline">Sign out</button></div>
     </AccountShell>
   );
 }

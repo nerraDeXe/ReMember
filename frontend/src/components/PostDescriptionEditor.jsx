@@ -149,24 +149,24 @@ export default function PostDescriptionEditor({ initialContent, initialText = ''
   const busy = disabled || reading || !editor;
   return (
     <div>
-      <div className={`post-editor-frame ${invalid ? "post-editor-invalid" : "post-editor-valid"} ${disabled ? "post-editor-disabled" : ''}`}>
-        <div role="toolbar" aria-label="Description formatting" className="post-editor-toolbar">
+      <div className={`editor-frame ${invalid ? "border-red-300" : "border-slate-300"} ${disabled ? "bg-slate-50" : ''}`}>
+        <div role="toolbar" aria-label="Description formatting" className="row-icon editor-toolbar">
           {tools.map(tool => {
             const Icon = tool.icon;
-            return <button key={tool.key} type="button" title={`${tool.label}${tool.shortcut ? ` (${tool.shortcut})` : ''}`} aria-label={tool.label} aria-pressed={Boolean(toolbarState?.[tool.key])} disabled={busy} onMouseDown={event => event.preventDefault()} onClick={tool.run} className={`post-editor-format-button ${toolbarState?.[tool.key] ? "post-editor-format-active" : "post-editor-format-idle"}`}><Icon className="icon-default" aria-hidden="true" /></button>;
+            return <button key={tool.key} type="button" title={`${tool.label}${tool.shortcut ? ` (${tool.shortcut})` : ''}`} aria-label={tool.label} aria-pressed={Boolean(toolbarState?.[tool.key])} disabled={busy} onMouseDown={event => event.preventDefault()} onClick={tool.run} className={`editor-tool ${toolbarState?.[tool.key] ? "editor-tool-active" : "editor-tool-idle"}`}><Icon className="icon-default" aria-hidden="true" /></button>;
           })}
-          <span className="post-editor-toolbar-divider" aria-hidden="true" />
-          <button type="button" disabled={busy} aria-label="Insert image" title="Insert image" onMouseDown={event => event.preventDefault()} onClick={() => { selectionRef.current = { from: editor.state.selection.from, to: editor.state.selection.to }; fileInput.current?.click(); }} className="post-editor-insert-image">{reading ? <RefreshCw className="icon-spinner" aria-hidden="true" /> : <ImagePlus className="icon-default" aria-hidden="true" />}<span>{reading ? 'Reading image…' : 'Insert image'}</span></button>
-          <span className="post-editor-history">
-            <button type="button" disabled={busy || !toolbarState?.undo} aria-label="Undo" title="Undo" onMouseDown={event => event.preventDefault()} onClick={() => editor.chain().focus().undo().run()} className="post-editor-history-button"><Undo2 className="icon-default" aria-hidden="true" /></button>
-            <button type="button" disabled={busy || !toolbarState?.redo} aria-label="Redo" title="Redo" onMouseDown={event => event.preventDefault()} onClick={() => editor.chain().focus().redo().run()} className="post-editor-history-button"><Redo2 className="icon-default" aria-hidden="true" /></button>
+          <span className="editor-tool-divider" aria-hidden="true" />
+          <button type="button" disabled={busy} aria-label="Insert image" title="Insert image" onMouseDown={event => event.preventDefault()} onClick={() => { selectionRef.current = { from: editor.state.selection.from, to: editor.state.selection.to }; fileInput.current?.click(); }} className="row-icon-inline editor-image-button">{reading ? <RefreshCw className="icon-spinner" aria-hidden="true" /> : <ImagePlus className="icon-default" aria-hidden="true" />}<span>{reading ? 'Reading image…' : 'Insert image'}</span></button>
+          <span className="row-icon ml-auto">
+            <button type="button" disabled={busy || !toolbarState?.undo} aria-label="Undo" title="Undo" onMouseDown={event => event.preventDefault()} onClick={() => editor.chain().focus().undo().run()} className="editor-history-button"><Undo2 className="icon-default" aria-hidden="true" /></button>
+            <button type="button" disabled={busy || !toolbarState?.redo} aria-label="Redo" title="Redo" onMouseDown={event => event.preventDefault()} onClick={() => editor.chain().focus().redo().run()} className="editor-history-button"><Redo2 className="icon-default" aria-hidden="true" /></button>
           </span>
         </div>
         <EditorContent editor={editor} className="post-description-editor" />
       </div>
       <input ref={fileInput} type="file" accept={IMAGE_MIME_TYPES.join(',')} aria-label="Choose description image" onChange={insertImage} disabled={busy} className="sr-only" tabIndex={-1} />
-      {editorError && <p role="alert" className="post-editor-image-error">{editorError}</p>}
-      <p className="post-editor-help">Select text to format it. Insert up to {POST_CONTENT_LIMITS.images} images (JPEG, PNG or WebP, 2 MB each).</p>
+      {editorError && <p role="alert" className="field-error">{editorError}</p>}
+      <p className="text-note mt-2 leading-relaxed">Select text to format it. Insert up to {POST_CONTENT_LIMITS.images} images (JPEG, PNG or WebP, 2 MB each).</p>
     </div>
   );
 }

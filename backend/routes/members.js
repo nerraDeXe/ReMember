@@ -2,10 +2,10 @@ import express from 'express';
 import { countryChoice, normaliseAccountPhone } from '../services/accountValidation.js';
 import { User, Tier, Invoice, Event, ActivityLog } from '../models/index.js';
 import { authenticateToken, requireVerifiedEmail } from '../middleware/auth.js';
-import { withSelectedMembership, requireActiveMembership, requireActivatedMembership } from '../services/membershipContext.js';
+import { withSelectedMembership, requireActivatedMembership } from '../services/membershipContext.js';
 import { eventView } from '../services/eventView.js';
-import { walletService } from '../services/walletService.js';
 import { MembershipError, membershipDetails, changeMembershipCancellation, scheduleMembershipDowngrade, cancelMembershipDowngrade } from '../services/membershipManagement.js';
+import { normaliseNotificationSettings } from '../services/notifications.js';
 
 const router = express.Router();
 router.use(authenticateToken, requireVerifiedEmail);
@@ -47,7 +47,7 @@ for (const action of ['schedule', 'cancel']) router.post(`/membership/downgrade$
 
 /**
  * GET /api/members/dashboard
- * Member dashboard summary: status, tier, expiration, wallet pass, upcoming RSVPs, recent invoices
+ * Member dashboard summary: membership card details, upcoming RSVPs, recent invoices
  */
 router.get('/dashboard', withSelectedMembership, requireActivatedMembership, async (req, res) => {
   try {
@@ -58,9 +58,7 @@ router.get('/dashboard', withSelectedMembership, requireActivatedMembership, asy
       Invoice.find({ userId: String(user._id), organisationId: req.organisationId }).sort({ createdAt: -1 }).limit(5)
     ]);
 
-    // Ensure wallet pass is up-to-date
     const isExpired = Boolean(user.expirationDate && new Date(user.expirationDate) < new Date());
-    const walletPass = user.status === 'active' && !isExpired ? walletService.generateSaveUrl(user) : null;
 
     res.json({
       success: true,
@@ -82,14 +80,7 @@ router.get('/dashboard', withSelectedMembership, requireActivatedMembership, asy
         avatarUrl: user.avatarUrl,
         phone: user.phone,
         bio: user.bio,
-        address: user.address,
-        googleWallet: walletPass ? {
-          saveUrl: walletPass.saveUrl,
-          jwtToken: walletPass.jwt,
-          passObject: walletPass.passObject,
-          lastSyncedAt: user.googleWallet?.lastSyncedAt || new Date().toISOString(),
-          syncStatus: user.googleWallet?.syncStatus || 'synced'
-        } : null
+        address: user.address
       },
       upcomingRsvps: myEvents.map(event => eventView(event, user._id, req.membershipRole === 'owner')).filter(event => event.eventStatus !== 'ended'),
       recentInvoices: invoices
@@ -146,7 +137,12 @@ router.put('/profile', async (req, res) => {
       }
     }
     if (address) updateFields.address = address;
-    if (notifications) updateFields.notifications = notifications;
+    if (notifications !== undefined) {
+      try {
+        const previous = req.user.notifications?.toObject ? req.user.notifications.toObject() : { ...req.user.notifications };
+        updateFields.notifications = normaliseNotificationSettings(notifications, previous);
+      } catch (error) { return res.status(400).json({ success: false, message: error.message }); }
+    }
 
     const updatedUser = await User.findByIdAndUpdate(
       userId,
@@ -180,25 +176,6 @@ router.put('/profile', async (req, res) => {
   } catch (err) {
     console.error('Profile update error:', err);
     res.status(500).json({ success: false, message: 'Failed to update profile.', error: err.message });
-  }
-});
-
-/**
- * GET /api/members/wallet-pass
- * Generate and return Google Wallet Pass details and interactive badge
- */
-router.get('/wallet-pass', withSelectedMembership, requireActiveMembership, async (req, res) => {
-  try {
-    const passData = walletService.generateSaveUrl(req.membershipUser);
-    res.json({
-      success: true,
-      saveUrl: passData.saveUrl,
-      jwt: passData.jwt,
-      passObject: passData.passObject
-    });
-  } catch (err) {
-    console.error('Wallet pass error:', err);
-    res.status(500).json({ success: false, message: 'Failed to generate wallet pass.', error: err.message });
   }
 });
 

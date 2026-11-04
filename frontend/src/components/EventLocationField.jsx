@@ -92,38 +92,38 @@ export default function EventLocationField({
 
   return (
     <div className="content-stack">
-      <label htmlFor="event-location" className="venue-label">Location / venue <span aria-hidden="true">*</span></label>
-      <div className="venue-search-field">
-        <MapPin className="venue-input-icon" aria-hidden="true" />
+      <label htmlFor="event-location" className="field-heading">Location / venue <span aria-hidden="true">*</span></label>
+      <div className="relative">
+        <MapPin className="icon-default control-search-icon" aria-hidden="true" />
         <input id="event-location" type="text" value={value} onChange={handleChange} onKeyDown={event => {
           if (event.key === 'Enter' && !event.nativeEvent.isComposing) { event.preventDefault(); search(); }
-        }} maxLength={500} required disabled={disabled} aria-describedby="event-location-help" placeholder="Search a venue name or enter its full address" className="venue-input" />
+        }} maxLength={500} required disabled={disabled} aria-describedby="event-location-help" placeholder="Search a venue name or enter its full address" className="control control-ring-strong location-input" />
       </div>
-      <p id="event-location-help" className="venue-search-help">Search for a venue or address and choose a result. You can also enter a complete address directly.</p>
-      <div className="venue-search-actions">
-        <button id="event-location-search" type="button" onClick={search} disabled={!canSearch} aria-controls="event-location-results" className="venue-search-button">
-          {searching ? <RefreshCw className="venue-search-spinner" aria-hidden="true" /> : <Search className="icon-small" aria-hidden="true" />}
+      <p id="event-location-help" className="text-note leading-relaxed">Search for a venue or address and choose a result. You can also enter a complete address directly.</p>
+      <div className="row-wrap">
+        <button id="event-location-search" type="button" onClick={search} disabled={!canSearch} aria-controls="event-location-results" className="row-icon-inline location-search-button">
+          {searching ? <RefreshCw className="icon-small-spinner" aria-hidden="true" /> : <Search className="icon-small" aria-hidden="true" />}
           {searching ? 'Searching...' : 'Search OpenStreetMap'}
         </button>
-        {selected && <span className="venue-selected"><CheckCircle2 className="icon-small" aria-hidden="true" />Location selected</span>}
+        {selected && <span className="row-icon-inline location-confirmed"><CheckCircle2 className="icon-small" aria-hidden="true" />Location selected</span>}
       </div>
-      {query.length > 200 && <p className="venue-search-status">Use up to 200 characters to search. You can keep this longer address as the event location.</p>}
-      {query.length > 0 && query.length < 3 && <p className="venue-search-minimum">Enter at least 3 characters to search.</p>}
-      <div role="status" aria-live="polite" aria-atomic="true" className="venue-search-status">
+      {query.length > 200 && <p className="text-xs text-slate-600">Use up to 200 characters to search. You can keep this longer address as the event location.</p>}
+      {query.length > 0 && query.length < 3 && <p className="text-note">Enter at least 3 characters to search.</p>}
+      <div role="status" aria-live="polite" aria-atomic="true" className="text-xs text-slate-600">
         {searching && 'Searching OpenStreetMap for matching venues...'}
         {status === 'complete' && (locations.length ? `${locations.length} matching ${locations.length === 1 ? 'location' : 'locations'}. Choose the venue below.` : 'No matching locations found. Try a more specific venue or enter the full address directly.')}
       </div>
-      {error && <p role="alert" className="venue-search-error">{error}</p>}
+      {error && <p role="alert" className="surface-muted location-confirmation">{error}</p>}
       <div id="event-location-results">
-        {locations.length > 0 && <ul aria-label="Matching event locations" className="venue-results">
-          {locations.map((location, index) => <li key={`${location.id}-${index}`}><button type="button" disabled={disabled} onClick={() => selectLocation(location)} className="venue-result"><MapPin className="venue-result-icon" aria-hidden="true" /><span className="venue-result-address">{location.label}</span></button></li>)}
+        {locations.length > 0 && <ul aria-label="Matching event locations" className="surface-rounded location-results">
+          {locations.map((location, index) => <li key={`${location.id}-${index}`}><button type="button" disabled={disabled} onClick={() => selectLocation(location)} className="control-option control-ring-strong location-result"><MapPin className="icon-brand mt-0.5 shrink-0" aria-hidden="true" /><span className="min-w-0 break-words">{location.label}</span></button></li>)}
         </ul>}
       </div>
-      <div className="venue-map-links">
-        {mapsUrl && <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="venue-map-link">Preview in Google Maps<ExternalLink className="icon-tiny" aria-hidden="true" /><span className="sr-only"> (opens in a new tab)</span></a>}
-        {selected && <a href={`https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=17/${latitude}/${longitude}`} target="_blank" rel="noopener noreferrer" className="venue-map-link">View in OpenStreetMap<ExternalLink className="icon-tiny" aria-hidden="true" /><span className="sr-only"> (opens in a new tab)</span></a>}
+      <div className="location-links">
+        {mapsUrl && <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="row-icon-tight link-underlined location-link">Preview in Google Maps<ExternalLink className="icon-tiny" aria-hidden="true" /><span className="sr-only"> (opens in a new tab)</span></a>}
+        {selected && <a href={`https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=17/${latitude}/${longitude}`} target="_blank" rel="noopener noreferrer" className="row-icon-tight link-underlined location-link">View in OpenStreetMap<ExternalLink className="icon-tiny" aria-hidden="true" /><span className="sr-only"> (opens in a new tab)</span></a>}
       </div>
-      <p className="venue-attribution">Search data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" className="venue-attribution-link">OpenStreetMap contributors</a>.</p>
+      <p className="text-[10px] text-slate-500">Search data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">OpenStreetMap contributors</a>.</p>
     </div>
   );
 }

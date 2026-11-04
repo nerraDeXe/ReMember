@@ -24,7 +24,7 @@ test('Member accounts retain their dashboard or open My Memberships before choos
 });
 
 test('Account pages stay outside portals when selection changes or an organisation is deleted', () => {
-  for (const page of ['account-organisations', 'account-memberships', 'member-organisations', 'member-profile', 'organisation-setup']) {
+  for (const page of ['account-organisations', 'account-memberships', 'member-organisations', 'member-profile', 'account-notifications', 'organisation-setup']) {
     assert.equal(isAccountPage(page), true);
     assert.equal(getPageAfterContextChange(page, owner), page);
     assert.equal(getPageAfterContextChange(page, member), page);
@@ -109,7 +109,7 @@ test('Direct visits enforce sign in, email verification, onboarding and portal p
   for (const page of ['landing', 'login', 'register', 'google-signup', 'forgot-password', 'reset-password', 'not-found']) {
     assert.equal(resolvePageAccess(page, null), page);
   }
-  for (const page of ['account-organisations', 'member-profile', 'member-invoices', 'admin-members']) {
+  for (const page of ['account-organisations', 'account-notifications', 'member-profile', 'member-invoices', 'admin-members']) {
     assert.equal(resolvePageAccess(page, null), 'login', page);
     assert.equal(resolvePageAccess(page, { ...signedMember, emailVerified: false }), 'verify-email', page);
     assert.equal(resolvePageAccess(page, { ...signedMember, onboardingCompleted: false }), 'account-onboarding', page);
@@ -135,6 +135,8 @@ test('Pending paid memberships open checkout and cannot reach member pages or by
   assert.equal(resolvePageAccess('member-checkout', pending), 'member-checkout');
   assert.equal(resolvePageAccess('account-memberships', pending), 'account-memberships');
   assert.equal(resolvePageAccess('member-profile', pending), 'member-profile');
+  assert.equal(resolvePageAccess('account-notifications', pending), 'account-notifications');
+  assert.equal(resolvePageAccess('account-notifications', { emailVerified: true, onboardingCompleted: true }), 'account-notifications');
   assert.equal(resolvePageAccess('member-dashboard', { ...pending, membershipStatus: 'active' }), 'member-dashboard');
   assert.equal(resolvePageAccess('member-dashboard', { ...pending, organisationRole: 'owner' }), 'member-dashboard');
   assert.equal(resolvePageAccess('admin-payments', pending), 'member-checkout');

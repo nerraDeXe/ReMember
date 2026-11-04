@@ -9,7 +9,6 @@ import {
   Layers,
   RefreshCw,
   CheckCircle2,
-  Wallet,
   Sparkles,
   X
 } from 'lucide-react';
@@ -149,7 +148,7 @@ export default function MembersListPage() {
       const response = await api.updateMemberTier(tierChangeMember._id, selectedNewTierId);
       if (response.success) {
         showToast(
-          `Tier updated to ${response.member?.tierName}! Google Wallet Object updated automatically via API.`,
+          `Tier updated to ${response.member?.tierName}.`,
           'success'
         );
         if (getSnapshot() === savingRoute) closeTierChange();
@@ -193,52 +192,52 @@ export default function MembersListPage() {
   return (
     <div className="page-stack">
       {/* Top Header */}
-      <div className="members-list-header">
+      <div className="page-header">
         <div>
           <h1 className="page-title">
-            <Users className="members-list-users-icon" />
+            <Users className="icon-brand-large" />
             Member Directory & Governance
           </h1>
           <p className="page-description">
-            Dynamic paginated member list retrieved from backend API with Google Wallet sync triggers.
+            Search members and manage their membership tiers and status.
           </p>
         </div>
 
-        <div className="members-list-header-actions">
-        <button type="button" onClick={() => loadMembers()} disabled={loading} className="members-list-refresh-button">
-          <RefreshCw className={`icon-default ${loading ? "members-list-spinner" : ''}`} aria-hidden="true" />Refresh members
+        <div className="members-header-actions">
+        <button type="button" onClick={() => loadMembers()} disabled={loading} className="surface-rounded row-inline button-small members-refresh">
+          <RefreshCw className={`icon-default ${loading ? "animate-spin" : ''}`} aria-hidden="true" />Refresh members
         </button>
         <button
           onClick={handleExportCsv}
-          className="members-list-export-button"
+          className="surface-rounded row-inline button-small members-invite"
         >
-          <Download className="members-list-download-icon" />
+          <Download className="icon-brand" />
           <span>Export Segmented CSV</span>
         </button>
         </div>
       </div>
 
       {/* Search & Filters Bar */}
-      <div className="members-list-filter-bar">
+      <div className="surface-card members-toolbar">
         {/* Search Input */}
-        <div className="members-list-search-field">
+        <div className="relative flex-1">
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => updateQuery({ search: e.target.value || null, page: null }, { replace: true })}
             placeholder="Search by name, email, or member number..."
-            className="members-list-search-input"
+            className="control control-ring members-search"
           />
-          <Search className="members-list-search-icon" />
+          <Search className="icon-default members-search-icon" />
         </div>
 
         {/* Status Filter */}
-        <div className="members-list-inline-controls">
+        <div className="row-inline">
           <select
             aria-label="Filter members by status"
             value={statusFilter}
             onChange={(e) => updateQuery({ status: e.target.value === 'all' ? null : e.target.value, page: null })}
-            className="members-list-filter-select"
+            className="control-filter control-ring"
           >
             <option value="all">All Statuses</option>
             <option value="active">Active</option>
@@ -252,7 +251,7 @@ export default function MembersListPage() {
           <select
             value={tierFilter}
             onChange={(e) => updateQuery({ tier: e.target.value === 'all' ? null : e.target.value, page: null })}
-            className="members-list-filter-select"
+            className="control-filter control-ring"
           >
             <option value="all">All Tiers</option>
             {tiers.map((t) => (
@@ -271,8 +270,8 @@ export default function MembersListPage() {
             <RefreshCw className="loading-spinner" />
           </div>
         ) : members.length === 0 ? (
-          <div className="members-list-empty">
-            <Users className="members-list-empty-icon" />
+          <div className="empty-state">
+            <Users className="empty-state-icon" />
             No members matched the search or filter criteria.
           </div>
         ) : (
@@ -285,8 +284,7 @@ export default function MembersListPage() {
                   <th className="data-table-cell">Membership Tier</th>
                   <th className="data-table-cell">Status</th>
                   <th className="data-table-cell">Expiration Date</th>
-                  <th className="data-table-cell">Google Wallet</th>
-                  <th className="members-list-actions-cell">Administrative Actions</th>
+                  <th className="data-table-cell text-right">Administrative Actions</th>
                 </tr>
               </thead>
               <tbody className="table-body">
@@ -294,30 +292,30 @@ export default function MembersListPage() {
                   <tr key={member._id} className="data-table-row">
                     {/* Member Name & Email */}
                     <td className="data-table-cell">
-                      <div className="members-list-member-identity">
-                        <div className="members-list-avatar" role="img" aria-label={member.avatarUrl ? `${member.name} profile photo` : `${member.name || 'User'} profile icon`}>
-                          {member.avatarUrl ? <img src={member.avatarUrl} alt={`${member.name} profile`} className="members-list-avatar-image" /> : <User className="members-list-avatar-placeholder" aria-hidden="true" />}
+                      <div className="row-inline-wide">
+                        <div className="icon-center member-avatar" role="img" aria-label={member.avatarUrl ? `${member.name} profile photo` : `${member.name || 'User'} profile icon`}>
+                          {member.avatarUrl ? <img src={member.avatarUrl} alt={`${member.name} profile`} className="avatar-photo" /> : <User className="icon-medium text-slate-500" aria-hidden="true" />}
                         </div>
                         <div>
-                          <div className="members-list-member-name">{member.name}</div>
-                          <div className="members-list-member-email">{member.email}</div>
+                          <div className="member-name">{member.name}</div>
+                          <div className="text-note mt-0.5">{member.email}</div>
                         </div>
                       </div>
                     </td>
 
                     {/* Member ID */}
-                    <td className="members-list-number-cell">
+                    <td className="data-table-cell text-identifier">
                       {member.membershipNumber}
                     </td>
 
                     {/* Tier */}
                     <td className="data-table-cell">
-                      <div className="members-list-inline-controls">
-                        <span className="members-list-current-tier">{member.tierName}</span>
+                      <div className="row-inline">
+                        <span className="text-strong">{member.tierName}</span>
                         <button
                           onClick={() => updateQuery({ memberTier: member._id })}
-                          className="members-list-change-tier-button"
-                          title="Change membership tier (auto-updates Google Wallet)"
+                          className="badge-neutral badge-small hover:bg-slate-200 transition-colors"
+                          title="Change membership tier"
                         >
                           Change
                         </button>
@@ -327,32 +325,24 @@ export default function MembersListPage() {
                     {/* Status */}
                     <td className="data-table-cell">
                       <StatusBadge status={member.status} />
-                      {member.status === 'cancelled' && <p className="members-list-cancellation-notice">
+                      {member.status === 'cancelled' && <p className="member-cancellation-access">
                         {member.cancellationScheduled && member.expirationDate ? `Access until ${member.expirationDate.split('T')[0]}` : 'Membership access ended'}
                       </p>}
-                      {member.cancelledAt && <p className="members-list-cancellation-date">Cancelled on {member.cancelledAt.split('T')[0]}</p>}
+                      {member.cancelledAt && <p className="member-cancellation-date">Cancelled on {member.cancelledAt.split('T')[0]}</p>}
                     </td>
 
                     {/* Expiration */}
-                    <td className="members-list-expiry-cell">
+                    <td className="data-table-cell text-slate-600">
                       {member.expirationDate ? member.expirationDate.split('T')[0] : 'Perpetual'}
                     </td>
 
-                    {/* Google Wallet Sync */}
-                    <td className="data-table-cell">
-                      <span className="members-list-wallet-badge">
-                        <Wallet className="icon-tiny" />
-                        <span>Synced</span>
-                      </span>
-                    </td>
-
                     {/* Status Controls */}
-                    <td className="members-list-actions-cell">
-                      <div className="members-list-member-actions">
+                    <td className="data-table-cell text-right">
+                      <div className="row-inline-tight justify-end">
                         {!['active', 'cancelled'].includes(member.status) && (
                           <button
                             onClick={() => handleStatusChange(member, 'active')}
-                            className="members-list-approve-button"
+                            className="badge-brand member-tier-action"
                             title="Approve / Activate Membership"
                           >
                             Approve
@@ -362,7 +352,7 @@ export default function MembersListPage() {
                         {member.status !== 'suspended' && (
                           <button
                             onClick={() => handleStatusChange(member, 'suspended')}
-                            className="members-list-suspend-button"
+                            className="member-renew-action"
                             title="Suspend Membership Access"
                           >
                             Suspend
@@ -372,7 +362,7 @@ export default function MembersListPage() {
                         {member.status !== 'revoked' && (
                           <button
                             onClick={() => handleStatusChange(member, 'revoked')}
-                            className="members-list-revoke-button"
+                            className="member-remove-action"
                             title="Revoke Membership"
                           >
                             Revoke
@@ -388,26 +378,26 @@ export default function MembersListPage() {
         )}
 
         {/* Pagination Footer */}
-        <div className="members-list-pagination">
+        <div className="row-between members-pagination">
           <div>
-            Showing <strong className="members-list-result-count">{members.length}</strong> of{' '}
-            <strong className="members-list-result-count">{pagination.totalMembers}</strong> registered members
+            Showing <strong className="text-slate-900">{members.length}</strong> of{' '}
+            <strong className="text-slate-900">{pagination.totalMembers}</strong> registered members
           </div>
-          <div className="members-list-inline-controls">
+          <div className="row-inline">
             <button
               onClick={() => updateQuery({ page: pagination.page <= 2 ? null : String(pagination.page - 1) })}
               disabled={!pagination.hasPrevPage}
-              className="members-list-page-button"
+              className="surface-rounded members-page-button"
             >
               <ChevronLeft className="icon-default" />
             </button>
-            <span className="members-list-page-indicator">
+            <span className="text-strong px-2">
               Page {pagination.page} of {pagination.totalPages}
             </span>
             <button
               onClick={() => updateQuery({ page: String(pagination.page + 1) })}
               disabled={!pagination.hasNextPage}
-              className="members-list-page-button"
+              className="surface-rounded members-page-button"
             >
               <ChevronRight className="icon-default" />
             </button>
@@ -415,30 +405,30 @@ export default function MembersListPage() {
         </div>
       </div>
 
-      {/* Tier Change & Automatic Google Wallet Update Modal */}
+      {/* Tier Change Modal */}
       {tierMemberId && (
-        <div className="members-list-tier-overlay">
-          <div className="members-list-tier-dialog">
-            <div className="members-list-tier-dialog-header">
-              <div className="members-list-inline-controls">
-                <Layers className="members-list-layers-icon" />
+        <div className="dialog-overlay overflow-y-auto">
+          <div className="surface-card member-tier-dialog">
+            <div className="row-between admin-dialog-header">
+              <div className="row-inline">
+                <Layers className="icon-brand-medium" />
                 <h3 className="card-title">Adjust Membership Tier</h3>
               </div>
               <button
                 onClick={closeTierChange}
-                className="members-list-tier-close-button"
+                className="admin-dialog-close"
               >
                 <X className="icon-medium" />
               </button>
             </div>
 
             {!tierChangeMember ? (
-              <div className="members-list-tier-dialog-description">
+              <div className="text-detail">
                 <p role={detailPending ? 'status' : 'alert'}>{detailPending ? 'Loading member...' : currentMemberDetail?.error || 'This member could not be found in your organisation.'}</p>
-                <button onClick={closeTierChange} className="members-list-return-button">Return to members</button>
+                <button onClick={closeTierChange} className="link-underlined mt-4">Return to members</button>
               </div>
             ) : <>
-            <div className="members-list-tier-dialog-description">
+            <div className="text-detail">
               Select new tier for <strong>{tierChangeMember.name}</strong> ({tierChangeMember.membershipNumber}).
             </div>
 
@@ -447,47 +437,47 @@ export default function MembersListPage() {
                 <button
                   key={t._id}
                   onClick={() => { tierSelectionRoute.current = route; setSelectedNewTierId(t._id); }}
-                  className={`members-list-tier-option ${
+                  className={`row-between member-tier-choice ${
                     selectedNewTierId === t._id
-                      ? "members-list-tier-option-selected"
-                      : "members-list-tier-option-idle"
+                      ? "choice-selected shadow-sm"
+                      : "member-tier-idle"
                   }`}
                 >
                   <div>
-                    <div className="members-list-tier-option-name">{t.name}</div>
-                    <div className="members-list-tier-option-price">MYR {t.price} / {t.interval}</div>
+                    <div className="heading-small">{t.name}</div>
+                    <div className="member-tier-price">MYR {t.price} / {t.interval}</div>
                   </div>
                   {selectedNewTierId === t._id && (
-                    <CheckCircle2 className="members-list-download-icon" />
+                    <CheckCircle2 className="icon-brand" />
                   )}
                 </button>
               ))}
             </div>
 
             {/* Requirement Notice */}
-            <div className="members-list-wallet-sync-notice">
-              <Sparkles className="members-list-sparkles-icon" />
+            <div className="member-tier-notice">
+              <Sparkles className="icon-brand shrink-0 mt-0.5" />
               <span>
-                <strong>Automatic Wallet Sync:</strong> Saving this change will automatically trigger a Google Wallet REST API call to update the member's pass object.
+                Saving this change updates the tier shown on the member's membership card when they next load it.
               </span>
             </div>
 
-            <div className="members-list-tier-dialog-actions">
+            <div className="member-tier-actions">
               <button
                 onClick={closeTierChange}
-                className="members-list-tier-cancel-button"
+                className="button-muted-bordered button-small"
               >
                 Cancel
               </button>
               <button
                 onClick={handleApplyTierChange}
                 disabled={updatingTier}
-                className="members-list-tier-save-button"
+                className="button-primary row-inline member-tier-save"
               >
                 {updatingTier ? (
                   <>
-                    <RefreshCw className="members-list-tier-save-spinner" />
-                    <span>Syncing Google Wallet...</span>
+                    <RefreshCw className="icon-small-spinner" />
+                    <span>Updating tier...</span>
                   </>
                 ) : (
                   <span>Update & Sync Pass</span>

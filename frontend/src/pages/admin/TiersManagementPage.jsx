@@ -106,10 +106,10 @@ export default function TiersManagementPage() {
   return (
     <div className="page-stack">
       {/* Page Header */}
-      <div className="tiers-management-header">
+      <div className="page-header">
         <div>
           <h1 className="page-title">
-            <Layers className="tiers-management-layers-icon" />
+            <Layers className="icon-brand-large" />
             Custom Membership Tiers & Pricing
           </h1>
           <p className="page-description">
@@ -120,36 +120,36 @@ export default function TiersManagementPage() {
         <button
           onClick={() => setTierRoute('new')}
           disabled={loading || Boolean(loadError)}
-          className="tiers-management-create-button"
+          className="button-primary row-inline tiers-add-button"
         >
           <Plus className="icon-default" />
           <span>Add Membership Tier</span>
         </button>
       </div>
 
-      {!loading && !loadError && <form onSubmit={saveBadgeAccent} aria-labelledby="membership-badge-accent-title" className="tiers-management-accent-form">
-        <div className="tiers-management-accent-controls">
+      {!loading && !loadError && <form onSubmit={saveBadgeAccent} aria-labelledby="membership-badge-accent-title" className="panel-compact">
+        <div className="tiers-accent-layout">
           <div className="content-stack">
             <div>
               <h2 id="membership-badge-accent-title" className="panel-title">Membership badge accent</h2>
               <p className="page-description">One badge colour for all membership tiers in this organisation.</p>
             </div>
-            <div className="tiers-management-accent-fields">
-              <input type="color" aria-label="Membership badge accent colour picker" value={/^#[0-9a-f]{6}$/i.test(badgeColor) ? badgeColor : savedBadgeColor} onChange={event => { setBadgeColor(event.target.value); setAccentError(''); setAccentMessage(''); }} disabled={savingAccent} className="tiers-management-accent-picker" />
+            <div className="row-inline-wide">
+              <input type="color" aria-label="Membership badge accent colour picker" value={/^#[0-9a-f]{6}$/i.test(badgeColor) ? badgeColor : savedBadgeColor} onChange={event => { setBadgeColor(event.target.value); setAccentError(''); setAccentMessage(''); }} disabled={savingAccent} className="tiers-color-picker" />
               <div>
-                <label htmlFor="membership-badge-accent" className="tiers-management-accent-label">Badge accent hex colour</label>
-                <input id="membership-badge-accent" type="text" value={badgeColor} onChange={event => { setBadgeColor(event.target.value); setAccentError(''); setAccentMessage(''); }} disabled={savingAccent} maxLength={7} spellCheck={false} aria-describedby="membership-badge-accent-help" aria-invalid={Boolean(accentError)} className="tiers-management-accent-input" />
+                <label htmlFor="membership-badge-accent" className="label-compact">Badge accent hex colour</label>
+                <input id="membership-badge-accent" type="text" value={badgeColor} onChange={event => { setBadgeColor(event.target.value); setAccentError(''); setAccentMessage(''); }} disabled={savingAccent} maxLength={7} spellCheck={false} aria-describedby="membership-badge-accent-help" aria-invalid={Boolean(accentError)} className="control-focus tiers-color-input" />
               </div>
             </div>
             <p id="membership-badge-accent-help" className="text-caption">Applies to all membership badges in this organisation.</p>
           </div>
-          <button type="submit" disabled={savingAccent || badgeColor.trim().toUpperCase() === savedBadgeColor.toUpperCase()} className="tiers-management-accent-save-button">
+          <button type="submit" disabled={savingAccent || badgeColor.trim().toUpperCase() === savedBadgeColor.toUpperCase()} className="button-primary button-inline tiers-accent-save">
             {savingAccent ? <RefreshCw className="icon-spinner" /> : <Save className="icon-default" />}
             {savingAccent ? 'Saving badge accent...' : 'Save badge accent'}
           </button>
         </div>
-        {accentError && <p role="alert" className="tiers-management-accent-error">{accentError}</p>}
-        {accentMessage && <p role="status" className="tiers-management-accent-status">{accentMessage}</p>}
+        {accentError && <p role="alert" className="tiers-accent-error">{accentError}</p>}
+        {accentMessage && <p role="status" className="tiers-accent-message">{accentMessage}</p>}
       </form>}
 
       {/* Tiers Grid */}
@@ -158,22 +158,22 @@ export default function TiersManagementPage() {
           <RefreshCw className="loading-spinner" />
         </div>
       ) : loadError ? (
-        <div role="alert" className="tiers-management-load-error">
-          <p>{loadError}</p><button onClick={loadTiers} className="tiers-management-retry-button">Retry</button>
+        <div role="alert" className="surface-card text-description p-5">
+          <p>{loadError}</p><button onClick={loadTiers} className="link-underlined mt-3">Retry</button>
         </div>
       ) : (
-        <div className="tiers-management-cards">
+        <div className="tiers-grid">
           {tiers.map((tier) => (
             <div
               key={tier._id}
-              className="group tiers-management-tier-card"
+              className="panel-card tier-card group"
             >
               <div>
                 {/* Header */}
-                <div className="tiers-management-card-header">
-                  <div className="tiers-management-tier-identity">
+                <div className="row-between mb-3">
+                  <div className="row-inline">
                     <span
-                      className="tiers-management-colour-dot"
+                      className="icon-tiny rounded-full"
                       aria-label={`${tier.name} badge accent`}
                       style={{ backgroundColor: savedBadgeColor }}
                     />
@@ -182,31 +182,31 @@ export default function TiersManagementPage() {
                 </div>
 
                 {/* Price */}
-                <div className="tiers-management-price">
-                  <span className="tiers-management-price-amount">MYR {tier.price}</span>
-                  <span className="tiers-management-price-interval">/{tier.interval}</span>
+                <div className="mb-4">
+                  <span className="tier-price">MYR {tier.price}</span>
+                  <span className="text-caption ml-1">/{tier.interval}</span>
                 </div>
 
-                <p className="tiers-management-tier-description">
+                <p className="tier-description">
                   {tier.description || 'No description provided.'}
                 </p>
 
                 {/* Perks List */}
-                <div className="tiers-management-perks">
+                <div className="detail-stack tier-perks">
                   {(tier.perks || []).map((perk, i) => (
-                    <div key={i} className="tiers-management-perk">
-                      <Check className="tiers-management-check-icon" />
-                      <span className="tiers-management-perk-text">{perk}</span>
+                    <div key={i} className="tier-perk">
+                      <Check className="icon-brand-small shrink-0 mt-0.5" />
+                      <span className="text-slate-700">{perk}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
               {/* Actions Footer */}
-              <div className="tiers-management-card-actions">
+              <div className="row-inline tier-actions">
                 <button
                   onClick={() => setTierRoute(tier._id)}
-                  className="tiers-management-edit-button"
+                  className="button-muted-bordered row-icon tier-edit-button"
                   title="Modify Tier Rules"
                 >
                   <Edit2 className="icon-small" />
@@ -214,7 +214,7 @@ export default function TiersManagementPage() {
                 </button>
                 <button
                   onClick={() => handleDeleteTier(tier)}
-                  className="tiers-management-delete-button"
+                  className="button-icon-brand row-icon tier-delete-button"
                   title="Delete Tier"
                 >
                   <Trash2 className="icon-small" />
@@ -228,9 +228,9 @@ export default function TiersManagementPage() {
 
       {/* Tier Create/Edit Modal */}
       {tierRoute && tierRoute !== 'new' && !loading && !editingTier && (
-        <div role="alert" className="tiers-management-load-error">
+        <div role="alert" className="surface-card text-description p-5">
           <p>{loadError || 'This membership tier could not be found. It may have been removed.'}</p>
-          <button onClick={closeEditor} className="tiers-management-return-button">Return to tiers</button>
+          <button onClick={closeEditor} className="link-underlined mt-3 text-brand-ink">Return to tiers</button>
         </div>
       )}
       <TierModal

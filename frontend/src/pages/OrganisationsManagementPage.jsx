@@ -214,20 +214,20 @@ export default function OrganisationsManagementPage({ onNavigate }) {
     <div className="page-stack">
       {/* Header Banner */}
       <div className="panel-card">
-        <div className="orgs-header">
+        <div className="management-header">
           <div>
-            <h1 className="orgs-title">
+            <h1 className="organisation-metric-total">
               Organisations & Visibility
             </h1>
-            <p className="orgs-intro">
+            <p className="text-help max-w-2xl">
               Manage your organisations and their visibility here. Open an organisation's admin portal to manage its members, tiers, events, and finances.
             </p>
           </div>
 
-          <div className="orgs-header-actions">
+          <div className="row-wrap-wide">
             <button
               onClick={openCreateModal}
-              className="orgs-create"
+              className="button-primary row-inline management-add-button"
             >
               <Plus className="icon-default" />
               <span>Create New Organisation</span>
@@ -236,74 +236,74 @@ export default function OrganisationsManagementPage({ onNavigate }) {
         </div>
       </div>
 
-      <dl aria-label="Organisation summary" className="orgs-summary">
-        <div className="orgs-stat-total">
-          <dt className="orgs-stat-label">Total organisations</dt>
-          <dd className="orgs-stat-value">{organisations.length.toLocaleString()}</dd>
+      <dl aria-label="Organisation summary" className="surface-rounded grid-pair sm:grid-cols-4">
+        <div className="organisation-metric-cell-first">
+          <dt className="text-hint">Total organisations</dt>
+          <dd className="metric-summary">{organisations.length.toLocaleString()}</dd>
         </div>
-        <div className="orgs-stat-public">
-          <dt className="orgs-stat-label">Public</dt>
-          <dd className="orgs-stat-value">{publicCount.toLocaleString()}</dd>
+        <div className="organisation-metric-cell">
+          <dt className="text-hint">Public</dt>
+          <dd className="metric-summary">{publicCount.toLocaleString()}</dd>
         </div>
-        <div className="orgs-stat-private">
-          <dt className="orgs-stat-label">Private</dt>
-          <dd className="orgs-stat-value">{privateCount.toLocaleString()}</dd>
+        <div className="organisation-metric-cell-lower">
+          <dt className="text-hint">Private</dt>
+          <dd className="metric-summary">{privateCount.toLocaleString()}</dd>
         </div>
-        <div className="orgs-stat-members">
-          <dt className="orgs-stat-label">Community members</dt>
-          <dd className="orgs-stat-value">{totalMembers.toLocaleString()}</dd>
+        <div className="organisation-metric-cell-last">
+          <dt className="text-hint">Community members</dt>
+          <dd className="metric-summary">{totalMembers.toLocaleString()}</dd>
         </div>
       </dl>
 
-      <div><h2 className="orgs-list-heading">Organisations You Own</h2><p className="orgs-list-description">Each organisation has its own administration portal.</p></div>
-      {loadError && <div role="alert" className="orgs-load-error"><p>{loadError}</p><button onClick={loadOrganisations} className="orgs-retry">Retry</button></div>}
+      <div><h2 className="text-lg font-bold">Organisations You Own</h2><p className="text-help">Each organisation has its own administration portal.</p></div>
+      {loadError && <div role="alert" className="row-inline-wide organisation-error"><p>{loadError}</p><button onClick={loadOrganisations} className="link-underlined">Retry</button></div>}
 
       {/* Filter and Search Bar */}
-      <div className="orgs-filters">
-        <div className="orgs-search">
-          <Search className="orgs-search-icon" />
+      <div className="surface-card row-inline-wide organisation-toolbar">
+        <div className="organisation-search-field">
+          <Search className="icon-default control-search-icon" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by name, category, or location..."
-            className="orgs-search-input"
+            className="surface-muted control-focus organisation-search"
           />
         </div>
 
-        <div className="orgs-visibility-filter">
-          <span className="orgs-filter-label">Visibility:</span>
-          <div className="orgs-filter-options">
+        <div className="row-inline w-full sm:w-auto">
+          <span className="text-label-muted">Visibility:</span>
+          <div className="surface-muted organisation-view-tabs">
             <button
               onClick={() => setVisibilityFilter('all')}
-              className={`orgs-filter-all ${
+              className={`organisation-view-tab ${
                 visibilityFilter === 'all'
                   ? 'orgs-filter-all-active'
-                  : "orgs-filter-idle"
+                  : "organisation-view-tab-idle"
               }`}
             >
               All ({organisations.length})
             </button>
             <button
               onClick={() => setVisibilityFilter('public')}
-              className={`orgs-filter-option ${
+              className={`row-icon organisation-view-tab ${
                 visibilityFilter === 'public'
                   ? 'orgs-filter-visibility-active'
-                  : "orgs-filter-idle"
+                  : "organisation-view-tab-idle"
               }`}
             >
-              <Globe className="orgs-filter-icon" />
+              <Globe className="icon-tiny text-brand-ink" />
               Public ({publicCount})
             </button>
             <button
               onClick={() => setVisibilityFilter('private')}
-              className={`orgs-filter-option ${
+              className={`row-icon organisation-view-tab ${
                 visibilityFilter === 'private'
                   ? 'orgs-filter-visibility-active'
-                  : "orgs-filter-idle"
+                  : "organisation-view-tab-idle"
               }`}
             >
-              <Lock className="orgs-filter-icon" />
+              <Lock className="icon-tiny text-brand-ink" />
               Private ({privateCount})
             </button>
           </div>
@@ -312,20 +312,20 @@ export default function OrganisationsManagementPage({ onNavigate }) {
 
       {/* Organisations Table / Cards */}
       {loading ? (
-        <div className="orgs-loading">
+        <div className="surface-card py-20 text-center">
           <div className="directory-loading-spinner" />
-          <p className="orgs-loading-message">LOADING ORGANISATIONS...</p>
+          <p className="text-caption font-mono">LOADING ORGANISATIONS...</p>
         </div>
       ) : !loadError && filtered.length === 0 ? (
-        <div className="orgs-empty">
-          <Building2 className="orgs-empty-icon" />
-          <h3 className="orgs-empty-title">No Organisations Found</h3>
-          <p className="orgs-empty-description">
+        <div className="surface-card organisation-no-results">
+          <Building2 className="directory-no-results-icon" />
+          <h3 className="directory-no-results-title">No Organisations Found</h3>
+          <p className="page-description max-w-sm mx-auto">
             No organisations matching your current filter. Create a new one or adjust your search.
           </p>
           <button
             onClick={openCreateModal}
-            className="orgs-create-first"
+            className="button-primary button-small mt-4 transition-colors"
           >
             Create Organisation
           </button>
@@ -340,32 +340,32 @@ export default function OrganisationsManagementPage({ onNavigate }) {
               return (
                 <div
                   key={org._id}
-                  className="orgs-list-item"
+                  className="organisation-row"
                 >
                   {/* Left: Info */}
-                  <div className="orgs-identity">
-                    <OrganisationImage src={org.logoUrl} alt={`${org.name} logo`} className="orgs-logo" />
-                    <div className="orgs-details">
-                      <div className="orgs-name-row">
-                        <h3 className="orgs-name">
+                  <div className="organisation-row-details">
+                    <OrganisationImage src={org.logoUrl} alt={`${org.name} logo`} className="organisation-logo" />
+                    <div className="min-w-0">
+                      <div className="row-wrap">
+                        <h3 className="panel-title truncate">
                           {org.name}
                         </h3>
-                        <span className="orgs-category">
+                        <span className="badge-small organisation-visibility">
                           {org.category}
                         </span>
                       </div>
 
-                      <p className="orgs-description">
+                      <p className="text-help line-clamp-1 leading-relaxed">
                         {org.description}
                       </p>
 
-                      <div className="orgs-metadata">
-                        <span className="orgs-location">
-                          <MapPin className="orgs-location-icon" />
+                      <div className="text-caption organisation-meta">
+                        <span className="row-icon">
+                          <MapPin className="icon-small text-slate-400" />
                           {org.location}
                         </span>
-                        <span className="orgs-member-count">
-                          <Users className="orgs-detail-icon" />
+                        <span className="row-icon font-semibold text-slate-700">
+                          <Users className="icon-brand-small" />
                           {org.memberCount || 1} Members
                         </span>
                         {org.website && (
@@ -373,7 +373,7 @@ export default function OrganisationsManagementPage({ onNavigate }) {
                             href={org.website}
                             target="_blank"
                             rel="noreferrer"
-                            className="orgs-website"
+                            className="row-icon text-brand-ink hover:underline"
                           >
                             <ExternalLink className="icon-tiny" />
                             <span>Link</span>
@@ -384,24 +384,24 @@ export default function OrganisationsManagementPage({ onNavigate }) {
                   </div>
 
                   {/* Right: Visibility Switch & Actions */}
-                  <div className="orgs-actions">
-                    <button disabled={!!openingId} onClick={() => openPortal(org._id, true)} aria-label={`Open admin portal for ${org.name}`} className="orgs-open-portal">
+                  <div className="row-between organisation-actions">
+                    <button disabled={!!openingId} onClick={() => openPortal(org._id, true)} aria-label={`Open admin portal for ${org.name}`} className="button-primary button-content organisation-portal-button">
                       {openingId === org._id ? <RefreshCw className="icon-spinner" /> : <ArrowRight className="icon-default" />}Open Admin Portal
                     </button>
                     {/* Visibility Switch Controller */}
-                    <div className="orgs-visibility-control">
-                      <div className="orgs-visibility-summary">
-                        <div className="orgs-visibility-heading">
+                    <div className="organisation-visibility-control">
+                      <div className="text-right">
+                        <div className="row-inline-tight justify-end">
                           <span
-                            className={`orgs-visibility-dot ${
-                              isPub ? "orgs-visibility-public" : "orgs-visibility-private"
+                            className={`organisation-visibility-dot ${
+                              isPub ? "organisation-state-public" : "organisation-state-private"
                             }`}
                           />
-                          <span className="orgs-visibility-title">
+                          <span className="organisation-visibility-label">
                             {isPub ? 'Public' : 'Private'}
                           </span>
                         </div>
-                        <p className="orgs-visibility-description">
+                        <p className="text-[10px] text-slate-500">
                           {isPub ? 'Searchable by members' : 'Invite-only, hidden from search'}
                         </p>
                       </div>
@@ -411,31 +411,31 @@ export default function OrganisationsManagementPage({ onNavigate }) {
                         type="button"
                         disabled={isToggling}
                         onClick={() => handleToggleVisibility(org)}
-                        className={`orgs-visibility-switch ${
-                          isPub ? "orgs-visibility-public" : "orgs-switch-off"
+                        className={`visibility-switch ${
+                          isPub ? "organisation-state-public" : "organisation-switch-private"
                         }`}
                         title={isPub ? 'Click to make Private (Invite Only)' : 'Click to make Public'}
                       >
                         <span
-                          className={`orgs-switch-thumb ${
-                            isPub ? "orgs-thumb-on" : "orgs-thumb-off"
+                          className={`icon-medium visibility-switch-thumb ${
+                            isPub ? "organisation-switch-on" : "organisation-switch-off"
                           }`}
                         />
                       </button>
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="orgs-edit-actions">
+                    <div className="row-inline-tight">
                       <button
                         onClick={() => openEditModal(org)}
-                        className="orgs-edit"
+                        className="organisation-edit-button"
                         title="Edit Organisation"
                       >
                         <Edit2 className="icon-default" />
                       </button>
                       <button
                         onClick={() => handleDeleteOrganisation(org)}
-                        className="orgs-delete"
+                        className="organisation-delete-button"
                         title="Delete Organisation"
                       >
                         <Trash2 className="icon-default" />
@@ -451,26 +451,26 @@ export default function OrganisationsManagementPage({ onNavigate }) {
 
       {/* Create / Edit Organisation Modal */}
       {editingOrgId && !editingOrg && (
-        <div className="orgs-editor-overlay">
-          <div role="dialog" aria-modal="true" aria-label="Edit organisation" className="orgs-editor-status">
-            <p role={loading ? 'status' : 'alert'} className="orgs-editor-message">{loading ? 'Loading organisation...' : loadError || 'This organisation could not be found or you no longer own it.'}</p>
-            <button onClick={closeEditModal} className="orgs-back-to-list">Back to organisations</button>
+        <div className="dialog-overlay">
+          <div role="dialog" aria-modal="true" aria-label="Edit organisation" className="dialog-panel space-y-4">
+            <p role={loading ? 'status' : 'alert'} className="text-sm text-slate-700">{loading ? 'Loading organisation...' : loadError || 'This organisation could not be found or you no longer own it.'}</p>
+            <button onClick={closeEditModal} className="link-brand text-sm">Back to organisations</button>
           </div>
         </div>
       )}
       {isModalOpen && (
-        <div className="orgs-editor-overlay">
-          <div className="orgs-editor">
-            <div className="orgs-editor-header">
-              <div className="orgs-editor-heading">
-                <div className="orgs-editor-icon">
+        <div className="dialog-overlay">
+          <div className="surface-large directory-dialog">
+            <div className="row-between organisation-editor-header">
+              <div className="row-inline">
+                <div className="icon-center organisation-editor-icon">
                   <Building2 className="icon-default" />
                 </div>
                 <div>
                   <h3 className="card-title">
                     {editingOrg ? 'Edit Organisation' : 'Create New Organisation'}
                   </h3>
-                  <p className="orgs-editor-subtitle">
+                  <p className="text-note">
                     Configure community profile and public or private invite visibility
                   </p>
                 </div>
@@ -478,25 +478,25 @@ export default function OrganisationsManagementPage({ onNavigate }) {
               <button
                 onClick={closeEditModal}
                 aria-label="Close organisation editor"
-                className="orgs-editor-close"
+                className="organisation-editor-close"
               >
                 <X className="icon-medium" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveOrganisation} className="orgs-editor-form">
+            <form onSubmit={handleSaveOrganisation} className="form-stack directory-dialog-content">
               {/* Visibility Choice Radio Cards (CRITICAL REQUIREMENT) */}
               <div>
-                <label className="orgs-visibility-legend">
+                <label className="organisation-visibility-heading">
                   Organisation Access & Visibility Level *
                 </label>
-                <div className="orgs-visibility-options">
+                <div className="organisation-choice-grid">
                   <label
                     onClick={() => setFormVisibility('public')}
-                    className={`orgs-visibility-option ${
+                    className={`row-start organisation-visibility-choice ${
                       formVisibility === 'public'
                         ? 'orgs-visibility-public-active'
-                        : "orgs-visibility-option-idle"
+                        : "organisation-visibility-idle"
                     }`}
                   >
                     <input
@@ -505,14 +505,14 @@ export default function OrganisationsManagementPage({ onNavigate }) {
                       value="public"
                       checked={formVisibility === 'public'}
                       onChange={() => setFormVisibility('public')}
-                      className="orgs-visibility-radio"
+                      className="organisation-visibility-radio"
                     />
                     <div>
-                      <div className="orgs-visibility-option-title">
-                        <Globe className="orgs-detail-icon" />
+                      <div className="row-inline-tight heading-small">
+                        <Globe className="icon-brand-small" />
                         <span>Public Organisation</span>
                       </div>
-                      <p className="orgs-visibility-option-description">
+                      <p className="text-note mt-1 leading-snug">
                         Discoverable on the Home Page public search. Open for prospective members to find and apply.
                       </p>
                     </div>
@@ -520,10 +520,10 @@ export default function OrganisationsManagementPage({ onNavigate }) {
 
                   <label
                     onClick={() => setFormVisibility('private')}
-                    className={`orgs-visibility-option ${
+                    className={`row-start organisation-visibility-choice ${
                       formVisibility === 'private'
                         ? 'orgs-visibility-private-active'
-                        : "orgs-visibility-option-idle"
+                        : "organisation-visibility-idle"
                     }`}
                   >
                     <input
@@ -532,14 +532,14 @@ export default function OrganisationsManagementPage({ onNavigate }) {
                       value="private"
                       checked={formVisibility === 'private'}
                       onChange={() => setFormVisibility('private')}
-                      className="orgs-visibility-radio"
+                      className="organisation-visibility-radio"
                     />
                     <div>
-                      <div className="orgs-visibility-option-title">
-                        <Lock className="orgs-detail-icon" />
+                      <div className="row-inline-tight heading-small">
+                        <Lock className="icon-brand-small" />
                         <span>Private / Invite Only</span>
                       </div>
-                      <p className="orgs-visibility-option-description">
+                      <p className="text-note mt-1 leading-snug">
                         Strictly hidden from public home page search. Access is restricted to direct invite links or admin codes.
                       </p>
                     </div>
@@ -548,7 +548,7 @@ export default function OrganisationsManagementPage({ onNavigate }) {
               </div>
 
               {/* Name & Category */}
-              <div className="orgs-editor-fields">
+              <div className="form-grid">
                 <div>
                   <label className="field-label">
                     Organisation Name *
@@ -559,7 +559,7 @@ export default function OrganisationsManagementPage({ onNavigate }) {
                     onChange={(e) => setFormName(e.target.value)}
                     required
                     placeholder="e.g. Apex Tech Founders Alliance"
-                    className="orgs-editor-input"
+                    className="control control-small control-focus"
                   />
                 </div>
 
@@ -568,7 +568,7 @@ export default function OrganisationsManagementPage({ onNavigate }) {
                   <select
                     value={formCategory}
                     onChange={(e) => setFormCategory(e.target.value)}
-                    className="orgs-editor-input"
+                    className="control control-small control-focus"
                   >
                     <option value="Technology & AI">Technology & AI</option>
                     <option value="Arts & Culture">Arts & Culture</option>
@@ -593,12 +593,12 @@ export default function OrganisationsManagementPage({ onNavigate }) {
                   onChange={(e) => setFormDescription(e.target.value)}
                   required
                   placeholder="Detail the mission, activities, and community vision of this organisation..."
-                  className="orgs-editor-input"
+                  className="control control-small control-focus"
                 />
               </div>
 
               {/* Location & Website */}
-              <div className="orgs-editor-fields">
+              <div className="form-grid">
                 <div>
                   <label className="field-label">Location</label>
                   <input
@@ -606,7 +606,7 @@ export default function OrganisationsManagementPage({ onNavigate }) {
                     value={formLocation}
                     onChange={(e) => setFormLocation(e.target.value)}
                     placeholder="e.g. San Francisco, CA & Hybrid"
-                    className="orgs-editor-input"
+                    className="control control-small control-focus"
                   />
                 </div>
 
@@ -617,13 +617,13 @@ export default function OrganisationsManagementPage({ onNavigate }) {
                     value={formWebsite}
                     onChange={(e) => setFormWebsite(e.target.value)}
                     placeholder="https://example.com"
-                    className="orgs-editor-input"
+                    className="control control-small control-focus"
                   />
                 </div>
               </div>
 
               {/* Tags & Join Requirements */}
-              <div className="orgs-editor-fields">
+              <div className="form-grid">
                 <div>
                   <label className="field-label">
                     Tags (comma separated)
@@ -633,7 +633,7 @@ export default function OrganisationsManagementPage({ onNavigate }) {
                     value={formTags}
                     onChange={(e) => setFormTags(e.target.value)}
                     placeholder="e.g. AI, Founders, DeepTech"
-                    className="orgs-editor-input"
+                    className="control control-small control-focus"
                   />
                 </div>
 
@@ -646,34 +646,34 @@ export default function OrganisationsManagementPage({ onNavigate }) {
                     value={formJoinRequirements}
                     onChange={(e) => setFormJoinRequirements(e.target.value)}
                     placeholder="e.g. Open enrollment / Invite by existing member"
-                    className="orgs-editor-input"
+                    className="control control-small control-focus"
                   />
                 </div>
               </div>
 
               {/* Organisation images */}
-              <div className="orgs-editor-fields">
+              <div className="form-grid">
                 <ImageUploadField label="Logo" kind="logo" value={formLogoUrl} onChange={setFormLogoUrl} onBusyChange={busy => setReadingImages(previous => ({ ...previous, logo: busy }))} disabled={saving} />
                 <ImageUploadField label="Banner" kind="banner" value={formBannerUrl} onChange={setFormBannerUrl} onBusyChange={busy => setReadingImages(previous => ({ ...previous, banner: busy }))} disabled={saving} />
               </div>
 
               {/* Modal Buttons */}
-              <div className="orgs-editor-footer">
+              <div className="row-inline-wide organisation-editor-actions">
                 <button
                   type="button"
                   onClick={closeEditModal}
-                  className="orgs-cancel"
+                  className="organisation-editor-cancel"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving || imagesBusy}
-                  className="orgs-save"
+                  className="button-primary row-inline-tight organisation-editor-save"
                 >
                   {saving ? (
                     <>
-                      <RefreshCw className="orgs-save-spinner" />
+                      <RefreshCw className="icon-small-spinner" />
                       <span>Saving...</span>
                     </>
                   ) : (

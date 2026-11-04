@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>IT-03 - Organisation Permissions</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#fff;color:#18212f;font:16px/1.45 Arial,sans-serif}.page{max-width:1400px;margin:auto;padding:30px 36px 28px}header{display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #d7dfe8;padding-bottom:15px;margin-bottom:14px}h1{font-size:27px;line-height:1.2;margin:3px 0 0}.eyebrow{font-size:13px;color:#536174;letter-spacing:1px}.status{font-weight:bold;font-size:22px;padding:9px 20px;border:2px solid #167149;color:#167149;border-radius:5px}.scope{font-size:14px;color:#536174;margin:10px 0}.label{font-size:14px;font-weight:bold;margin:14px 0 6px}.command,pre{white-space:pre-wrap;overflow-wrap:anywhere;margin:0;font:14px/1.45 Consolas,monospace}.command{padding:10px 12px;background:#f4f6f8;border:1px solid #dde3e9}.source{background:#f8fafc;border:1px solid #d9e0e8;padding:10px 0}.source-line{display:flex;font:15px/1.42 Consolas,monospace;min-height:21px}.line-number{flex:0 0 48px;padding-right:10px;text-align:right;color:#7b8795;user-select:none}.source-line code{font:inherit;white-space:pre-wrap;overflow-wrap:anywhere;min-width:0;flex:1;padding-right:10px}.result{border:1px solid #d9e0e8;background:#fcfdfd;padding:12px}.result-grid{display:grid;grid-template-columns:1fr 245px;gap:22px}.note{font-size:13px;color:#536174;margin:8px 0 0}a{color:#175caa}.outcome{margin-top:16px;font-size:16px}.timestamp{font-size:12px;color:#68778a;margin-top:12px}
+</style></head><body><main class="page">
+<header><div><div class="eyebrow">ReMember · Integration Test IT-03</div><h1>Organisation Permissions</h1></div><div class="status">PASS</div></header>
+<p class="scope">Real HTTP, authentication router, JWT middleware, organisation context and ownership checks; database and email delivery mocked.</p>
+<div class="label">Executed command</div><div class="command">node --test --test-reporter=tap --test-name-pattern=&quot;^admin permissions require verified ownership in the selected organisation$&quot; backend/tests/auth.test.js</div>
+<div class="label">Exact test code · backend/tests/auth.test.js:473–490</div>
+<div class="source"><div class="source-line"><span class="line-number">473</span><code>test('admin permissions require verified ownership in the selected organisation', async () =&gt; {</code></div>
+<div class="source-line"><span class="line-number">474</span><code>  const registration = await request('/api/auth/register', { body: validAccount });</code></div>
+<div class="source-line"><span class="line-number">475</span><code>  const token = registration.body.token;</code></div>
+<div class="source-line"><span class="line-number">476</span><code>  users[0].emailVerified = true;</code></div>
+<div class="source-line"><span class="line-number">477</span><code>  users[0].role = 'admin';</code></div>
+<div class="source-line"><span class="line-number">478</span><code>  assert.equal((await request('/owner-action', { token })).status, 403);</code></div>
+<div class="source-line"><span class="line-number">479</span><code>  organisations = [</code></div>
+<div class="source-line"><span class="line-number">480</span><code>    { _id: 'owned-org', name: 'Owned Organisation', adminId: users[0]._id, visibility: 'public', isPublic: true },</code></div>
+<div class="source-line"><span class="line-number">481</span><code>    { _id: 'joined-org', name: 'Joined Organisation', adminId: 'another-owner', visibility: 'public', isPublic: true }</code></div>
+<div class="source-line"><span class="line-number">482</span><code>  ];</code></div>
+<div class="source-line"><span class="line-number">483</span><code>  memberships = [{ _id: 'joined-membership', userId: users[0]._id, organisationId: 'joined-org', role: 'member', status: 'active' }];</code></div>
+<div class="source-line"><span class="line-number">484</span><code>  users[0].activeOrganisationId = 'joined-org';</code></div>
+<div class="source-line"><span class="line-number">485</span><code>  assert.equal((await request('/owner-action', { token })).status, 403);</code></div>
+<div class="source-line"><span class="line-number">486</span><code>  users[0].activeOrganisationId = 'owned-org';</code></div>
+<div class="source-line"><span class="line-number">487</span><code>  assert.equal((await request('/owner-action', { token })).status, 200);</code></div>
+<div class="source-line"><span class="line-number">488</span><code>  users[0].emailVerified = false;</code></div>
+<div class="source-line"><span class="line-number">489</span><code>  assert.equal((await request('/owner-action', { token })).status, 403);</code></div>
+<div class="source-line"><span class="line-number">490</span><code>});</code></div></div>
+<div class="label">Actual test output · Node v20.18.0 · Exit 0</div>
+<div class="result"><div class="result-grid"><pre># Subtest: admin permissions require verified ownership in the selected organisation
+ok 18 - admin permissions require verified ownership in the selected organisation
+  ---
+  duration_ms: 296.3918
+  ...</pre><pre># tests 18
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 17
+# todo 0
+# duration_ms 2237.1903</pre></div><p class="note">Only the named test was selected; unrelated tests were skipped. <a href="IT-03.txt">Full raw stdout and stderr</a></p></div>
+<p class="outcome"><strong>Expected outcome:</strong> Only a verified owner of the selected organisation can access owner actions.</p>
+<div class="timestamp">Executed 2026-11-04T05:12:39.708Z · Mocked storage and email; no live database or external delivery was tested.</div>
+</main></body></html>

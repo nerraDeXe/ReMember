@@ -1,0 +1,114 @@
+/* Member portal presentation. Shared patterns live in interface.css and controls.css. */
+@layer components {
+  .calendar-empty { @apply text-center py-16 p-8 shadow-sm; }
+  .calendar-card { @apply rounded-xl border bg-white shadow-sm overflow-hidden flex flex-col justify-between transition-all; }
+  .calendar-category { @apply rounded bg-white text-brand-ink border border-brand-silver; }
+  .calendar-reserved-badge { @apply absolute top-3 right-3 px-3 py-1 rounded bg-brand-accent text-brand-ink font-bold text-xs shadow-sm; }
+  .calendar-closed { @apply px-4 py-3 text-center text-xs font-semibold text-slate-600; }
+  .calendar-cancel { @apply w-full py-2.5 font-semibold text-xs; }
+  .calendar-unavailable { @apply w-full py-2.5 text-slate-400 font-medium text-xs cursor-not-allowed; }
+  .calendar-rsvp { @apply w-full py-2.5 text-xs transition-colors shadow-sm active:scale-[0.99]; }
+  .member-dashboard-header { @apply flex flex-col md:flex-row md:items-center justify-between gap-6; }
+  .member-dashboard-details { @apply flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600; }
+  .member-credit-button { @apply px-4 py-2 rounded-lg bg-brand-primary text-brand-ink font-semibold; }
+  .member-upgrade-notice { @apply flex items-start gap-2.5 p-3 text-slate-700; }
+  .member-rsvp-empty { @apply text-center py-8 bg-slate-50 border-dashed; }
+  .member-rsvp-badge { @apply px-2.5 py-1 rounded-full text-[11px] font-semibold text-brand-ink border shrink-0; }
+  .member-hub-card { @apply bg-white hover:border-brand-primary cursor-pointer transition-colors shadow-sm; }
+  .member-organisation-role { @apply px-3 py-1.5 rounded-lg bg-brand-50 border border-brand-primary/30 text-xs font-semibold text-brand-ink; }
+  .member-organisation-logo { @apply w-11 h-11 rounded-lg border border-slate-200 shrink-0; }
+  .member-organisation-open { @apply mt-auto px-4 py-2.5 border border-slate-300 rounded-lg text-xs font-bold hover:bg-slate-100 disabled:opacity-60; }
+  .member-organisation-back { @apply border border-slate-300 hover:bg-slate-100 text-slate-700 font-semibold text-xs rounded-lg px-4 py-2.5; }
+  .directory-card-logo { @apply w-10 h-10 rounded-lg border border-slate-200 shrink-0; }
+  .member-organisation-join { @apply text-xs font-bold bg-brand-primary hover:bg-brand-secondary px-3 py-2 rounded-lg disabled:opacity-60; }
+  .membership-current { @apply mt-5 flex-wrap gap-4 bg-slate-50; }
+  .membership-cancellation-notice { @apply mt-5 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900; }
+  .membership-downgrade-notice { @apply mt-5 rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950; }
+  .membership-downgrade-cancel { @apply mt-3 rounded-lg border border-blue-300 bg-white px-3 py-2 text-xs font-semibold disabled:opacity-50; }
+  .membership-card-empty { @apply rounded-lg border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-500; }
+  .membership-downgrade-button { @apply mt-4 rounded-lg border border-slate-300 font-bold text-slate-800 hover:bg-slate-50 disabled:opacity-50; }
+  .membership-cancel-button { @apply mt-4 rounded-lg border border-red-200 font-semibold text-red-700 hover:bg-red-50; }
+  .profile-photo-section { @apply flex flex-col sm:flex-row sm:items-center gap-5 pb-6 border-b border-slate-200; }
+  .profile-avatar { @apply w-20 h-20 shrink-0 rounded-full border-2 border-brand-primary bg-slate-50; }
+  .profile-membership-id { @apply w-full font-mono text-brand-ink cursor-not-allowed; }
+  .profile-checkbox { @apply rounded accent-brand-primary bg-white border-slate-300 cursor-pointer; }
+  .profile-save { @apply py-2.5 px-6 text-sm transition-colors shadow-sm active:scale-[0.99]; }
+  /* Remaining member layouts and states compose with the shared patterns above. */
+  .calendar-filters { @apply overflow-x-auto pb-2 sm:pb-0; }
+  .calendar-filter-icon { @apply text-slate-400 mr-1 shrink-0; }
+  .calendar-filter-idle { @apply bg-white text-slate-600 hover:text-slate-900 border border-slate-200; }
+  .calendar-grid { @apply grid grid-cols-1 md:grid-cols-2 gap-6; }
+  .calendar-card-reserved { @apply border-brand-primary ring-1 ring-brand-primary/50; }
+  .calendar-card-idle { @apply border-slate-200 hover:border-slate-300; }
+  .calendar-thumbnail { @apply h-44 relative overflow-hidden bg-slate-100; }
+  .calendar-image { @apply w-full h-full object-cover; }
+  .calendar-placeholder { @apply h-full bg-gradient-to-br from-brand-50 to-slate-100; }
+  .calendar-placeholder-icon { @apply h-16 w-16 text-slate-300; }
+  .calendar-category-position { @apply absolute top-3 left-3 flex gap-2; }
+  .calendar-description { @apply line-clamp-2 leading-relaxed; }
+  .member-event-details { @apply text-xs text-slate-700; }
+  .calendar-capacity { @apply p-3 space-y-1.5; }
+  .calendar-capacity-fill { @apply h-full rounded-full transition-all; }
+  .calendar-capacity-high { @apply bg-brand-secondary; }
+  .calendar-capacity-normal { @apply bg-brand-primary; }
+  .calendar-tier-label { @apply text-[10px] uppercase font-bold text-slate-500; }
+  .calendar-tier-current { @apply text-brand-ink font-bold; }
+  .calendar-tier-other { @apply bg-slate-100 text-slate-600 border-slate-200; }
+  .calendar-tier-badge { @apply rounded border; }
+  .calendar-footer { @apply p-6 pt-0; }
+  .calendar-action-size { @apply w-full py-2.5; }
+  .member-status-active { @apply text-brand-ink; }
+  .member-invoice-actions { @apply text-right space-x-2; }
+  .member-welcome-title { @apply text-2xl sm:text-3xl font-extrabold text-slate-900; }
+  .member-reference { @apply font-mono text-brand-ink font-semibold; }
+  .member-dashboard-grid { @apply grid grid-cols-1 lg:grid-cols-12 gap-6 items-start; }
+  .member-perks-grid { @apply grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs; }
+  .member-perk-icon { @apply text-brand-muted shrink-0 mt-0.5; }
+  .member-rsvp-empty-icon { @apply mx-auto mb-2 text-slate-400; }
+  .member-rsvp-browse { @apply block mx-auto mt-2; }
+  .member-rsvp-details { @apply min-w-0 flex-1 basis-52; }
+  .member-hub-arrow { @apply text-slate-400 group-hover:text-brand-ink transition-colors; }
+  .member-organisations-header { @apply p-6 flex-wrap gap-4; }
+  .member-organisations-grid { @apply grid sm:grid-cols-2 xl:grid-cols-3 gap-4; }
+  .member-organisation-card { @apply p-5 flex flex-col gap-4; }
+  .member-organisation-status { @apply px-2 py-1 rounded-md font-semibold capitalize; }
+  .member-organisation-active { @apply bg-emerald-50 text-emerald-800; }
+  .member-organisation-pending { @apply bg-amber-50 text-amber-800; }
+  .member-organisations-empty-icon { @apply p-2.5 bg-brand-50 rounded-lg text-brand-ink shrink-0; }
+  .member-organisations-empty-title { @apply font-semibold text-sm text-slate-900; }
+  .member-directory-filters { @apply flex flex-col sm:flex-row gap-3; }
+  .member-directory-search-icon { @apply absolute left-3 top-3.5 text-slate-500; }
+  .member-directory-spinner { @apply animate-spin mx-auto; }
+  .member-directory-empty-icon { @apply w-10 h-10 text-slate-400 mx-auto mb-3; }
+  .member-directory-grid { @apply grid sm:grid-cols-2 xl:grid-cols-3 gap-5; }
+  .member-directory-card { @apply overflow-hidden flex flex-col; }
+  .member-directory-category { @apply text-[11px] font-semibold text-slate-600; }
+  .member-directory-description { @apply line-clamp-3 mt-3; }
+  .member-directory-footer { @apply border-t border-slate-200 p-4; }
+  .member-directory-dialog { @apply max-h-[90vh] overflow-auto; }
+  .member-directory-heading { @apply flex justify-between items-start gap-4; }
+  .member-directory-legend { @apply text-sm font-semibold mb-2; }
+  .member-price-period { @apply block font-normal; }
+  .membership-loading { @apply min-h-72 justify-center; }
+  .membership-tier-title { @apply mt-1 text-xl font-bold; }
+  .membership-price-period { @apply text-sm font-normal text-slate-500; }
+  .membership-dates { @apply mt-5 xl:grid-cols-4; }
+  .membership-date-value { @apply mt-1.5 text-sm font-semibold; }
+  .membership-layout { @apply grid items-start gap-6 xl:grid-cols-2; }
+  .membership-section-heading { @apply text-base font-bold; }
+  .membership-card-description { @apply mb-5 mt-1 text-sm text-slate-500; }
+  .membership-upgrade-note { @apply mt-3 text-sm text-blue-900; }
+  .membership-tier-summary { @apply flex flex-wrap items-start justify-between gap-2; }
+  .membership-tier-description { @apply mt-2 text-xs text-slate-600; }
+  .membership-tier-perk { @apply flex items-start gap-2 text-xs text-slate-600; }
+  .membership-secondary-action { @apply px-4 py-2.5 disabled:opacity-50; }
+  .membership-cancel-note { @apply mt-3 text-sm text-amber-900; }
+  .membership-checkout { @apply mx-auto max-w-2xl; }
+  .membership-checkout-links { @apply flex flex-wrap gap-4 text-sm font-semibold; }
+  .profile-page { @apply max-w-4xl mx-auto; }
+  .profile-default-avatar { @apply w-10 h-10 text-slate-400; }
+  .profile-photo-label { @apply text-xs font-semibold text-slate-700 mb-1; }
+  .profile-email { @apply w-full text-slate-500 cursor-not-allowed; }
+  .profile-bio-count { @apply text-right mt-1; }
+  .profile-address-grid { @apply grid grid-cols-2 sm:grid-cols-4 gap-3; }
+}

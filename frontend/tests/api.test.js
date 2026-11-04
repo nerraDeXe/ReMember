@@ -40,14 +40,12 @@ test('JSON helpers preserve HTTP methods, field payloads and requests without a 
   await api.login(credentials);
   await api.updateOrganisationVisibility('org-1', false);
   await api.rsvpEvent('event-1');
-  await api.syncWalletObject('member-1');
   await api.resendVerification();
   await api.deleteTier('tier-1');
   assert.deepEqual(browser.requests.map(({ url, method, body }) => ({ url, method, body })), [
     { url: '/api/auth/login', method: 'POST', body: JSON.stringify(credentials) },
     { url: '/api/organisations/org-1/visibility', method: 'PUT', body: '{"isPublic":false,"visibility":"private"}' },
     { url: '/api/events/event-1/rsvp', method: 'POST', body: undefined },
-    { url: '/api/wallet/update-object/member-1', method: 'PUT', body: undefined },
     { url: '/api/auth/resend-verification', method: 'POST', body: '{}' },
     { url: '/api/tiers/tier-1', method: 'DELETE', body: undefined },
   ]);
@@ -92,6 +90,22 @@ test('Event requests carry the captured organisation for stale portal checks', a
   assert.equal(searchUrl.pathname, '/api/events/locations/search');
   assert.equal(searchUrl.searchParams.get('q'), 'Hall & Garden, Kuala Lumpur');
   assert.equal(searchUrl.searchParams.get('organisationId'), organisationId);
+});
+
+test('Notifications use account-wide pagination and authenticated read updates', async (t) => {
+  const browser = mockBrowser(t);
+  await api.getNotifications({ page: 2, limit: 3 });
+  await api.markNotificationRead('notification/a & b');
+  await api.markAllNotificationsRead();
+  assert.deepEqual(browser.requests.map(({ url, method }) => ({ url, method })), [
+    { url: '/api/notifications?page=2&limit=3', method: undefined },
+    { url: '/api/notifications/notification%2Fa%20%26%20b/read', method: 'PATCH' },
+    { url: '/api/notifications/read-all', method: 'PATCH' },
+  ]);
+  assert.ok(browser.requests.every(request => request.headers.Authorization === 'Bearer session-token'));
+  const preferences = { email: true, events: true, eventReminderDays: [14, 2] };
+  await api.updateProfile({ notifications: preferences });
+  assert.deepEqual(JSON.parse(browser.requests[3].body), { notifications: preferences });
 });
 
 test('Direct member and post reads encode IDs and retain post organisation scope', async (t) => {

@@ -8,15 +8,13 @@ import adminRouter from '../routes/admin.js';
 import memberRouter from '../routes/members.js';
 import eventRouter from '../routes/events.js';
 import paymentRouter from '../routes/payments.js';
-import walletRouter from '../routes/wallet.js';
 import emailRouter from '../routes/emails.js';
 import { paymentGateway } from '../services/paymentGateway.js';
-import { walletService } from '../services/walletService.js';
 import { emailService } from '../services/emailService.js';
 
 const models = { User, Organisation, OrganisationMembership, Tier, Invoice, Event, ActivityLog, EmailNotification };
 const originals = [];
-let records, serial, walletCalls, mailCalls, findCalls;
+let records, serial, mailCalls, findCalls;
 const clone = value => structuredClone(value);
 function matches(record, filter = {}) {
   return Object.entries(filter).every(([key, expected]) => {
@@ -136,10 +134,6 @@ before(() => {
       catch (error) { records = snapshot; throw error; }
     }, async endSession() {}
   }));
-  patch(walletService, 'updateWalletObject', async user => {
-    walletCalls.push(clone(user));
-    return { success: true, objectId: `${user._id}_${user.organisationId}` };
-  });
   patch(emailService, 'sendPaymentConfirmation', async (...args) => { mailCalls.push(['payment', ...args.map(value => clone(Object.fromEntries(Object.entries(value))))]); return { status: 'sent' }; });
   patch(emailService, 'sendEventRsvpConfirmation', async (...args) => { mailCalls.push(['rsvp', ...args.map(value => clone(Object.fromEntries(Object.entries(value))))]); return { status: 'sent' }; });
   patch(emailService, 'sendOrganisationWelcome', async (...args) => { mailCalls.push(['welcome', ...args.map(value => clone(Object.fromEntries(Object.entries(value))))]); return { status: 'sent', sentAt: new Date().toISOString() }; });
@@ -152,7 +146,6 @@ const account = (id, selectedOrg, role = 'member') => ({ _id: id, name: id, firs
 const membership = (userId, organisationId, role = 'member', status = 'active', tier = `${organisationId}-free`) => ({ _id: `${userId}-${organisationId}`, userId, organisationId, role, status, tierId: tier, tierName: tier.endsWith('paid') ? 'Supporter' : 'Community', joinedDate: '2026-10-14T00:00:00Z', expirationDate: '2099-01-01T00:00:00Z' });
 beforeEach(() => {
   serial = 0;
-  walletCalls = [];
   mailCalls = [];
   findCalls = [];
   records = Object.fromEntries(Object.keys(models).map(name => [name, []]));
@@ -226,7 +219,6 @@ test('Status and tier administration affect only the selected organisation assoc
   assert.equal(records.OrganisationMembership.find(item => item._id === 'member-A').status, 'suspended');
   assert.equal(records.OrganisationMembership.find(item => item._id === 'member-B').status, 'active');
   assert.equal(records.User.find(user => user._id === 'member').status, 'active');
-  assert.equal(walletCalls[0].organisationId, 'A');
 });
 
 test('Administrative tier and status changes invalidate scheduled downgrades and old billing quotes', async () => {
@@ -343,20 +335,7 @@ test('Event mutation and creation cannot target a foreign organisation', async (
   assert.equal(ownCreate.body.event.organisationId, 'A');
 });
 
-test('Wallet passes belong to the selected organisation and members can sync only themselves', async () => {
-  const own = await request(walletRouter, 'GET', '/pass');
-  assert.equal(own.status, 200);
-  assert.ok(own.body.passObject.id.endsWith('.member_A'));
-  const other = await request(walletRouter, 'PUT', '/update-object/:memberId', { params: { memberId: 'ownerB' } });
-  assert.equal(other.status, 403);
-  const foreignOwnerSync = await request(walletRouter, 'PUT', '/update-object/:memberId', { userId: 'ownerA', params: { memberId: 'foreign' } });
-  assert.equal(foreignOwnerSync.status, 404);
-  records.User.find(user => user._id === 'ownerA').activeOrganisationId = 'B';
-  const globalAdminAsMember = await request(walletRouter, 'PUT', '/update-object/:memberId', { userId: 'ownerA', params: { memberId: 'foreign' } });
-  assert.equal(globalAdminAsMember.status, 403);
-});
-
-test('Member dashboard, wallet download and sync use the selected organisation badge accent', async () => {
+test('Dashboard and membership card details use the selected organisation badge accent', async () => {
   records.Organisation.find(item => item._id === 'A').badgeColor = '#123456';
   records.Organisation.find(item => item._id === 'B').badgeColor = '#ABCDEF';
   for (const [organisationId, color] of [['A', '#123456'], ['B', '#ABCDEF']]) {
@@ -364,12 +343,10 @@ test('Member dashboard, wallet download and sync use the selected organisation b
     const dashboard = await request(memberRouter, 'GET', '/dashboard');
     assert.equal(dashboard.status, 200);
     assert.equal(dashboard.body.membership.organisation.badgeColor, color);
-    assert.equal(dashboard.body.membership.googleWallet.passObject.hexBackgroundColor, color);
-    const download = await request(walletRouter, 'GET', '/pass');
-    assert.equal(download.body.passObject.hexBackgroundColor, color);
-    const sync = await request(walletRouter, 'PUT', '/update-object/:memberId', { params: { memberId: 'member' } });
-    assert.equal(sync.status, 200);
-    assert.equal(walletCalls.at(-1).organisation.badgeColor, color);
+    const overview = await request(memberRouter, 'GET', '/membership', { query: { organisationId } });
+    assert.equal(overview.status, 200);
+    assert.equal(overview.body.membership.organisation.badgeColor, color);
+    assert.equal(overview.body.membership.membershipNumber, dashboard.body.membership.membershipNumber);
   }
 });
 
@@ -411,7 +388,7 @@ test('Paid cancellation keeps access until expiry, can be undone, and cannot aff
   assert.equal(association.cancelAtPeriodEnd, true);
   assert.equal(association.expirationDate, originalExpiry);
   assert.equal(association.billingRevision, 1);
-  assert.equal((await request(walletRouter, 'GET', '/pass')).status, 200);
+  assert.equal((await request(eventRouter, 'GET', '/')).status, 200);
   const repeated = await request(memberRouter, 'POST', '/membership/cancel', { body: { organisationId: 'A' } });
   assert.equal(repeated.status, 200);
   assert.equal(association.billingRevision, 1);
@@ -434,7 +411,7 @@ test('Admin cancelled status, filters, member details and CSV follow a paid memb
   assert.equal(directory.body.members[0].status, 'cancelled');
   assert.equal(directory.body.members[0].accessStatus, 'active');
   assert.equal(directory.body.members[0].cancellationScheduled, true);
-  assert.equal((await request(walletRouter, 'GET', '/pass')).status, 200, 'Reporting cancellation does not remove paid access early');
+  assert.equal((await request(eventRouter, 'GET', '/')).status, 200, 'Reporting cancellation does not remove paid access early');
   const details = await request(adminRouter, 'GET', '/members/:id', { userId: 'ownerA', params: { id: 'member' } });
   assert.equal(details.body.member.status, 'cancelled');
   const active = await request(adminRouter, 'GET', '/members', { userId: 'ownerA', query: { status: 'active' } });
@@ -456,7 +433,7 @@ test('Admin cancelled status, filters, member details and CSV follow a paid memb
   assert.equal(ended.body.member.status, 'cancelled');
   assert.equal(ended.body.member.accessStatus, 'cancelled');
   assert.equal(ended.body.member.cancellationScheduled, false);
-  assert.equal((await request(walletRouter, 'GET', '/pass')).status, 403);
+  assert.equal((await request(eventRouter, 'GET', '/')).status, 403);
 });
 
 test('Free member cancellations show as cancelled in only their organisation admin directory', async () => {
@@ -479,7 +456,7 @@ test('Free cancellation ends access immediately while leaving membership history
   assert.equal(cancelled.status, 200);
   assert.equal(association.status, 'cancelled');
   assert.equal(association.cancelAtPeriodEnd, false);
-  assert.equal((await request(walletRouter, 'GET', '/pass')).status, 403);
+  assert.equal((await request(eventRouter, 'GET', '/')).status, 403);
   const overview = await request(memberRouter, 'GET', '/membership', { query: { organisationId: 'A' } });
   assert.equal(overview.status, 200);
   assert.equal(overview.body.membership.status, 'cancelled');
@@ -493,7 +470,7 @@ test('Cancelled paid memberships stop access at expiry and retain their overview
   const overview = await request(memberRouter, 'GET', '/membership', { query: { organisationId: 'A' } });
   assert.equal(overview.status, 200);
   assert.equal(overview.body.membership.status, 'cancelled');
-  assert.equal((await request(walletRouter, 'GET', '/pass')).status, 403);
+  assert.equal((await request(eventRouter, 'GET', '/')).status, 403);
   assert.equal((await request(memberRouter, 'POST', '/membership/resume', { body: { organisationId: 'A' } })).status, 409);
 });
 
@@ -519,7 +496,6 @@ test('Creating a payment session ignores client prices and cannot activate a mem
   assert.equal(result.body.invoice, undefined);
   assert.equal(selected.status, 'pending');
   assert.equal(records.Invoice.length, 4);
-  assert.equal(walletCalls.length, 0);
   assert.equal(mailCalls.length, 0);
 });
 
@@ -587,7 +563,7 @@ test('Members with pending, suspended, expired or absent access cannot use activ
   const selected = records.OrganisationMembership.find(item => item._id === 'member-A');
   selected.status = 'pending';
   assert.equal((await request(memberRouter, 'GET', '/dashboard')).status, 403);
-  assert.equal((await request(walletRouter, 'GET', '/pass')).status, 403);
+  assert.equal((await request(eventRouter, 'GET', '/')).status, 403);
   assert.equal((await request(eventRouter, 'GET', '/')).status, 403);
   selected.status = 'suspended';
   // Remove B fallback: a suspended association must never become an active context.
@@ -595,7 +571,7 @@ test('Members with pending, suspended, expired or absent access cannot use activ
   assert.ok([400, 403].includes((await request(paymentRouter, 'POST', '/renew', { body: { tierId: 'A-paid' } })).status));
   selected.status = 'active';
   selected.expirationDate = '2000-01-01T00:00:00Z';
-  assert.equal((await request(walletRouter, 'GET', '/pass')).status, 403);
+  assert.equal((await request(eventRouter, 'GET', '/')).status, 403);
   assert.equal((await request(eventRouter, 'GET', '/')).status, 403);
   assert.equal((await request(memberRouter, 'GET', '/invoices', { userId: 'unassociated' })).status, 400);
 });
@@ -655,11 +631,12 @@ test('RSVP mutation responses hide other members’ names and email addresses', 
   assert.ok(!JSON.stringify(cancelled.body.event).includes('PRIVATE_OTHER_EMAIL'));
 });
 
-test('Expired active member dashboard does not issue a usable wallet save URL', async () => {
+test('Expired member dashboard exposes the expiry for card availability', async () => {
   records.OrganisationMembership.find(item => item._id === 'member-A').expirationDate = '2000-01-01T00:00:00Z';
   const dashboard = await request(memberRouter, 'GET', '/dashboard');
   assert.equal(dashboard.status, 200);
-  assert.equal(dashboard.body.membership.googleWallet, null);
+  assert.equal(dashboard.body.membership.isExpired, true);
+  assert.equal(dashboard.body.membership.expirationDate, '2000-01-01T00:00:00Z');
 });
 
 test('RSVP reports SMTP acceptance and preserves the reservation on delivery failures', async t => {

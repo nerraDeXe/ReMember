@@ -24,11 +24,11 @@ export default function AccountHomePage({ activeTab = 'organisations', onNavigat
 
   return (
     <div className="section-stack">
-      <div role="tablist" aria-label="My account sections" className="account-tabs">
+      <div role="tablist" aria-label="My account sections" className="surface-card account-tabs">
         {tabs.map((tab, index) => {
           const Icon = tab.icon;
           const selected = activeTab === tab.id;
-          return <button key={tab.id} ref={element => { tabRefs.current[index] = element; }} id={`account-tab-${tab.id}`} role="tab" type="button" aria-selected={selected} aria-controls={`account-panel-${tab.id}`} tabIndex={selected ? 0 : -1} onClick={() => onNavigate(tab.page)} onKeyDown={event => handleTabKeyDown(event, index)} className={`account-tab ${selected ? "account-tab-active" : "account-tab-idle"}`}><Icon aria-hidden="true" className="account-tab-icon" />{tab.label}</button>;
+          return <button key={tab.id} ref={element => { tabRefs.current[index] = element; }} id={`account-tab-${tab.id}`} role="tab" type="button" aria-selected={selected} aria-controls={`account-panel-${tab.id}`} tabIndex={selected ? 0 : -1} onClick={() => onNavigate(tab.page)} onKeyDown={event => handleTabKeyDown(event, index)} className={`button-inline account-tab ${selected ? "tab-selected" : "account-tab-idle"}`}><Icon aria-hidden="true" className="icon-default account-tab-icon" />{tab.label}</button>;
         })}
       </div>
       {tabs.map(tab => <section key={tab.id} id={`account-panel-${tab.id}`} role="tabpanel" aria-labelledby={`account-tab-${tab.id}`} tabIndex={0} hidden={activeTab !== tab.id}>

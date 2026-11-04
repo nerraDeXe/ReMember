@@ -2,21 +2,21 @@ import React from 'react';
 
 export default function AccountShell({ title, description, children, onNavigate, wide = false }) {
   return (
-    <main className="account-shell-main">
-      <div className={`account-shell-content ${wide ? "account-shell-wide" : "account-shell-narrow"}`}>
-        <div className="account-shell-brand">
-          <button type="button" onClick={() => onNavigate?.('landing')} className="account-shell-home-link" aria-label="ReMember home">
+    <main className="icon-center account-shell">
+      <div className={`w-full ${wide ? "max-w-3xl" : "max-w-xl"}`}>
+        <div className="account-logo-row">
+          <button type="button" onClick={() => onNavigate?.('landing')} className="account-home-link" aria-label="ReMember home">
             <img
               src="/remember-logo.png"
               alt="ReMember"
-              className="account-shell-logo"
+              className="account-logo"
             />
           </button>
         </div>
-        <section className="account-shell-card" aria-label={title}>
-          <header className="account-shell-header">
-            <h1 className="account-shell-title">{title}</h1>
-            <p className="account-shell-description">{description}</p>
+        <section className="surface-large account-panel" aria-label={title}>
+          <header className="mb-7">
+            <h1 className="heading-large sm:text-3xl">{title}</h1>
+            <p className="text-intro leading-relaxed">{description}</p>
           </header>
           {children}
         </section>

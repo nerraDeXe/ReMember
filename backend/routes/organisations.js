@@ -10,6 +10,7 @@ import { DEFAULT_MEMBERSHIP_BADGE_COLOR, isBadgeColor } from '../../shared/membe
 import { effectiveMembershipStatus } from '../services/membershipState.js';
 import { membershipDetails } from '../services/membershipManagement.js';
 import { sendWelcomeForMembership } from '../services/organisationEmailSettings.js';
+import { notifyMembershipChange } from '../services/notifications.js';
 import {
   accessibleMembershipStatuses,
   canReadOrganisation,
@@ -212,6 +213,7 @@ router.post('/:id/join', authenticateToken, requireVerifiedEmail, async (req, re
     const tier = await Tier.findOne({ _id: req.body.tierId, organisationId: String(organisation._id), isActive: true });
     if (!tier) return res.status(400).json({ success: false, message: 'Choose an active tier belonging to this organisation.' });
     let membership = await OrganisationMembership.findOne({ organisationId: String(organisation._id), userId: String(req.user._id) });
+    const previousMembership = membership ? (membership.toObject ? membership.toObject() : { ...membership }) : null;
     if (membership && ['suspended', 'revoked'].includes(membership.status) && !owner) return res.status(403).json({ success: false, message: 'Contact this organisation’s owner about your membership status.' });
     if (!membership || ['expired', 'cancelled'].includes(effectiveMembershipStatus(membership))) {
       if (tier.maxMembers && await OrganisationMembership.countDocuments({ organisationId: String(organisation._id), tierId: String(tier._id), status: { $in: ['active', 'pending'] } }) >= tier.maxMembers && !owner) return res.status(409).json({ success: false, message: 'This membership tier has reached its member limit.' });
@@ -240,6 +242,7 @@ router.post('/:id/join', authenticateToken, requireVerifiedEmail, async (req, re
       }
     }
     if (owner && (membership.role !== 'owner' || membership.status !== 'active')) membership = await OrganisationMembership.findByIdAndUpdate(membership._id, { $set: { role: 'owner', status: 'active' } }, { new: true });
+    await notifyMembershipChange(previousMembership, membership, { organisation }).catch(() => console.error('Could not record membership join notification.'));
     const user = await User.findByIdAndUpdate(req.user._id, { $set: { activeOrganisationId: String(organisation._id), onboardingCompleted: true } }, { new: true });
     const updatedOrganisation = await updateOrgMemberCount(organisation._id);
     const requiresPayment = membership.status === 'pending';

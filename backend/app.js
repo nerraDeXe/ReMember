@@ -10,10 +10,10 @@ import tierRoutes from './routes/tiers.js';
 import eventRoutes from './routes/events.js';
 import postRoutes from './routes/posts.js';
 import paymentRoutes from './routes/payments.js';
-import walletRoutes from './routes/wallet.js';
 import adminRoutes from './routes/admin.js';
 import emailRoutes from './routes/emails.js';
 import organisationRoutes from './routes/organisations.js';
+import notificationRoutes from './routes/notifications.js';
 
 
 export function createApp({ serveFrontend = true, logRequests = true } = {}) {
@@ -22,7 +22,7 @@ export function createApp({ serveFrontend = true, logRequests = true } = {}) {
   // Middleware
   app.use(cors({
     origin: '*',
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
   }));
   // Three inline description images and an optional post cover can total 8 MB
@@ -63,11 +63,11 @@ export function createApp({ serveFrontend = true, logRequests = true } = {}) {
   app.use('/api/events', eventRoutes);
   app.use('/api/posts', postRoutes);
   app.use('/api/payments', paymentRoutes);
-  app.use('/api/wallet', walletRoutes);
   app.use('/api/admin', adminRoutes);
   app.use('/api/emails', emailRoutes);
   app.use('/api/organisations', organisationRoutes);
   app.use('/api/organizations', organisationRoutes);
+  app.use('/api/notifications', notificationRoutes);
 
   // One Render web service serves the built website and the existing API.
   // Local development can still run Vite separately when no build exists.

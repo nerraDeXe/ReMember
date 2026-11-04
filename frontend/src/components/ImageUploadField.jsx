@@ -55,17 +55,17 @@ export default function ImageUploadField({ label, kind, value, onChange, onBusyC
   return (
     <div className="image-upload-field">
       <p className="image-upload-label">{label}</p>
-      <OrganisationImage src={value} kind={kind} alt={`${label} preview`} className={`image-upload-preview ${kind === 'banner' ? "image-upload-banner-preview" : "image-upload-logo-preview"}`} />
-      <div className="image-upload-actions">
-        <label htmlFor={inputId} className={`image-upload-choose ${busy ? "image-upload-busy" : "image-upload-ready"}`}>
-          {reading ? <RefreshCw className="image-upload-reading" /> : <Upload className="icon-small" />}
+      <OrganisationImage src={value} kind={kind} alt={`${label} preview`} className={`image-upload-preview ${kind === 'banner' ? "image-upload-banner" : "image-upload-logo"}`} />
+      <div className="row-wrap">
+        <label htmlFor={inputId} className={`row-icon-inline image-upload-button ${busy ? "opacity-60" : "image-upload-ready"}`}>
+          {reading ? <RefreshCw className="icon-small-spinner" /> : <Upload className="icon-small" />}
           {reading ? 'Reading…' : value ? `Replace ${label.toLowerCase()}` : `Upload ${label.toLowerCase()}`}
           <input id={inputId} type="file" accept={IMAGE_MIME_TYPES.join(',')} onChange={handleUpload} disabled={busy} className="sr-only" />
         </label>
-        {value && <button type="button" disabled={busy} onClick={() => { onChange(''); setError(''); }} aria-label={`Remove ${label.toLowerCase()}`} className="image-upload-remove"><Trash2 className="icon-small" />Remove</button>}
+        {value && <button type="button" disabled={busy} onClick={() => { onChange(''); setError(''); }} aria-label={`Remove ${label.toLowerCase()}`} className="row-icon-tight image-remove-button"><Trash2 className="icon-small" />Remove</button>}
       </div>
-      <p className="image-upload-file-help">JPEG, PNG, or WebP. Up to 2 MB.</p>
-      {error && <p role="alert" className="image-upload-error">{error}</p>}
+      <p className="text-note">JPEG, PNG, or WebP. Up to 2 MB.</p>
+      {error && <p role="alert" className="text-xs text-slate-700">{error}</p>}
     </div>
   );
 }

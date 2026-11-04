@@ -70,27 +70,27 @@ export default function VerifyEmailPage({ onNavigate }) {
 
   return (
     <AccountShell title="Confirm your email" description="Confirm your email before creating or joining an organisation." onNavigate={onNavigate}>
-      <div className="verification-instructions">
-        <MailCheck className="verification-mail-icon" aria-hidden="true" />
-        <p className="verification-instructions-text">We'll confirm <span className="verification-email-address">{user?.email}</span> with a six-digit code. Enter it below and check your spam folder if it hasn't arrived.</p>
+      <div className="verify-notice">
+        <MailCheck className="icon-brand-medium mt-0.5 shrink-0" aria-hidden="true" />
+        <p className="verify-message">We'll confirm <span className="font-semibold break-all">{user?.email}</span> with a six-digit code. Enter it below and check your spam folder if it hasn't arrived.</p>
       </div>
-      {deliveryError && <p role="alert" className="verification-delivery-error">We couldn't send your confirmation email. Please try sending it again. If the problem continues, contact support.</p>}
+      {deliveryError && <p role="alert" className="account-notice mb-5">We couldn't send your confirmation email. Please try sending it again. If the problem continues, contact support.</p>}
       <form onSubmit={handleVerify} className="form-stack">
         <div>
           <label htmlFor="verification-code" className="field-label">Confirmation Code</label>
-          <input id="verification-code" name="code" type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required autoFocus value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, '').slice(0, 6))} disabled={!!busy} placeholder="000000" className="verification-code-input" />
+          <input id="verification-code" name="code" type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required autoFocus value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, '').slice(0, 6))} disabled={!!busy} placeholder="000000" className="control verify-code" />
         </div>
-        {error && <p role="alert" className="verification-error">{error}</p>}
-        <button type="submit" disabled={!!busy || code.length !== 6} className="verification-submit">
+        {error && <p role="alert" className="account-notice">{error}</p>}
+        <button type="submit" disabled={!!busy || code.length !== 6} className="button-block-primary verify-submit">
           {busy === 'verify' && <RefreshCw className="icon-spinner" aria-hidden="true" />}
           {busy === 'verify' ? 'Confirming…' : 'Confirm Email'}
         </button>
       </form>
-      <div className="verification-footer">
-        <button type="button" onClick={handleResend} disabled={!!busy || remaining > 0} className="verification-resend">
+      <div className="mt-5 text-center">
+        <button type="button" onClick={handleResend} disabled={!!busy || remaining > 0} className="link-brand verify-resend">
           {busy === 'resend' ? 'Sending…' : remaining ? `Send a new code in ${remaining}s` : 'Send a new code'}
         </button>
-        <p className="verification-account-prompt">Signed in with the wrong account?{' '}<button type="button" onClick={() => { logout(); onNavigate('login'); }} className="verification-signout" disabled={!!busy}>Sign out</button></p>
+        <p className="text-caption mt-4">Signed in with the wrong account?{' '}<button type="button" onClick={() => { logout(); onNavigate('login'); }} className="verify-signout" disabled={!!busy}>Sign out</button></p>
       </div>
     </AccountShell>
   );

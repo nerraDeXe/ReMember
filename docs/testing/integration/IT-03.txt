@@ -1,0 +1,106 @@
+Command: node --test --test-reporter=tap --test-name-pattern="^admin permissions require verified ownership in the selected organisation$" backend/tests/auth.test.js
+Exit code: 0
+
+STDOUT
+TAP version 13
+# Subtest: registration requires account fields, a real country, password length, and a 500 character bio
+ok 1 - registration requires account fields, a real country, password length, and a 500 character bio # SKIP test name does not match pattern
+  ---
+  duration_ms: 7.7487
+  ...
+# Subtest: Passwords require a capital letter, a digit and a symbol; phone entry follows the country and 15 digit limit
+ok 2 - Passwords require a capital letter, a digit and a symbol; phone entry follows the country and 15 digit limit # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.335
+  ...
+# Subtest: Email sessions last 24 hours or 30 days, and email confirmation does not extend expiry
+ok 3 - Email sessions last 24 hours or 30 days, and email confirmation does not extend expiry # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.2797
+  ...
+# Subtest: Password reset emails use single-use expiring links, enforce password rules and revoke old sessions
+ok 4 - Password reset emails use single-use expiring links, enforce password rules and revoke old sessions # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.2395
+  ...
+# Subtest: Reset requests have identical unknown-account responses, a delivery cooldown, expiry and failure cleanup
+ok 5 - Reset requests have identical unknown-account responses, a delivery cooldown, expiry and failure cleanup # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.2481
+  ...
+# Subtest: Google signup waits for editable names and required country; identity cannot be changed by the form
+ok 6 - Google signup waits for editable names and required country; identity cannot be changed by the form # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.5146
+  ...
+# Subtest: Returning Google users have the same session durations, and both signup paths highlight duplicates
+ok 7 - Returning Google users have the same session durations, and both signup paths highlight duplicates # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.2668
+  ...
+# Subtest: Google sign-in rejects invalid credentials, nonce mismatches, reused challenges and expired signup flows
+ok 8 - Google sign-in rejects invalid credentials, nonce mismatches, reused challenges and expired signup flows # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.2563
+  ...
+# Subtest: Google does not silently link a password account, and third-party Google email needs confirmation
+ok 9 - Google does not silently link a password account, and third-party Google email needs confirmation # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.3578
+  ...
+# Subtest: registration creates an account without a tier, expiry, or placeholder avatar
+ok 10 - registration creates an account without a tier, expiry, or placeholder avatar # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.3563
+  ...
+# Subtest: a delivered code confirms email, removes its hash, and permits verified actions
+ok 11 - a delivered code confirms email, removes its hash, and permits verified actions # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.2976
+  ...
+# Subtest: verification codes expire and lock after five wrong attempts
+ok 12 - verification codes expire and lock after five wrong attempts # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.5459
+  ...
+# Subtest: resend observes a cooldown, invalidates the previous code, and restarts verification attempts
+ok 13 - resend observes a cooldown, invalidates the previous code, and restarts verification attempts # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.3894
+  ...
+# Subtest: missing SMTP preserves the pending account and explicitly reports unavailable verification
+ok 14 - missing SMTP preserves the pending account and explicitly reports unavailable verification # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.2335
+  ...
+# Subtest: a failed SMTP delivery leaves no usable code and reports the saved pending account
+ok 15 - a failed SMTP delivery leaves no usable code and reports the saved pending account # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.532
+  ...
+# Subtest: login and me omit secrets; expired codes get delivered again on login
+ok 16 - login and me omit secrets; expired codes get delivered again on login # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.4668
+  ...
+# Subtest: parallel resend and verification requests cannot bypass cooldown or the attempt limit
+ok 17 - parallel resend and verification requests cannot bypass cooldown or the attempt limit # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.2207
+  ...
+# Subtest: admin permissions require verified ownership in the selected organisation
+ok 18 - admin permissions require verified ownership in the selected organisation
+  ---
+  duration_ms: 296.3918
+  ...
+1..18
+# tests 18
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 17
+# todo 0
+# duration_ms 2237.1903
+
+STDERR

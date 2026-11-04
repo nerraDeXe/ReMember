@@ -40,15 +40,10 @@ const userSchema = new mongoose.Schema({
     country: { type: String, default: '' }
   },
   avatarUrl: { type: String },
-  googleWallet: {
-    passObjectId: { type: String },
-    saveUrl: { type: String },
-    lastSyncedAt: { type: String },
-    syncStatus: { type: String }
-  },
   notifications: {
     email: { type: Boolean, default: true },
     events: { type: Boolean, default: true },
+    eventReminderDays: { type: [Number], default: () => [7, 1] },
     marketing: { type: Boolean, default: false }
   }
 }, { timestamps: true });
@@ -116,6 +111,7 @@ const organisationPostSchema = new mongoose.Schema({
   imageUrl: { type: String, default: '' },
   authorId: { type: String, required: true },
   authorName: { type: String, required: true },
+  notificationQueued: { type: Boolean },
 }, { timestamps: true });
 organisationPostSchema.index({ organisationId: 1, createdAt: -1, _id: -1 });
 
@@ -248,8 +244,25 @@ const organisationMembershipSchema = new mongoose.Schema({
   renewalEmailClaimedAt: { type: String },
   renewalEmailClaimToken: { type: String },
   renewalEmailRetryAt: { type: String },
+  notificationSnapshot: { type: mongoose.Schema.Types.Mixed },
 }, { timestamps: true });
 organisationMembershipSchema.index({ organisationId: 1, userId: 1 }, { unique: true });
+
+const notificationSchema = new mongoose.Schema({
+  _id: { type: String, required: true },
+  userId: { type: String, required: true },
+  type: { type: String, enum: ['post', 'event', 'membership'], required: true },
+  title: { type: String, required: true },
+  message: { type: String, required: true },
+  organisationId: { type: String, required: true },
+  organisationName: { type: String, required: true },
+  postId: { type: String },
+  eventId: { type: String },
+  membershipId: { type: String },
+  readAt: { type: Date, default: null },
+}, { timestamps: true });
+notificationSchema.index({ userId: 1, createdAt: -1, _id: -1 });
+notificationSchema.index({ userId: 1, readAt: 1 });
 
 // A checkout fixes the server's price for a short-lived demonstration payment.
 // No card numbers, verification codes, or bank credentials are stored.
@@ -306,3 +319,4 @@ export const Organisation = mongoose.models.Organisation || mongoose.model('Orga
 export const Organization = Organisation;
 export const OrganisationMembership = mongoose.models.OrganisationMembership || mongoose.model('OrganisationMembership', organisationMembershipSchema);
 export const PaymentCheckout = mongoose.models.PaymentCheckout || mongoose.model('PaymentCheckout', paymentCheckoutSchema);
+export const Notification = mongoose.models.Notification || mongoose.model('Notification', notificationSchema);

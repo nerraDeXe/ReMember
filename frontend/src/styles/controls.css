@@ -1,0 +1,55 @@
+/* Shared controls. Variants preserve each form's existing sizing and focus treatment. */
+@layer components {
+  /* Inputs, focus variants and field sizing */
+  .control { @apply w-full rounded-lg border border-slate-300 bg-white text-slate-900; }
+  .control-focus { @apply focus:outline-none focus:border-brand-primary; }
+  .control-ring { @apply focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary; }
+  .control-ring-strong { @apply focus:outline-none focus:ring-2 focus:ring-brand-primary; }
+  .control-standard { @apply px-3.5 py-2.5 text-sm; }
+  .control-small { @apply px-3.5 py-2.5 text-xs; }
+  .control-compact { @apply px-3.5 py-2 text-xs; }
+  .control-editor { @apply px-3 py-2.5 text-sm; }
+  .control-filter { @apply rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900; }
+  .control-disabled { @apply disabled:bg-slate-50 disabled:text-slate-500; }
+  .control-option { @apply w-full text-left text-xs; }
+  .label-compact { @apply block text-xs font-semibold text-slate-700 mb-1; }
+  .choice-card { @apply flex items-center gap-3 rounded-lg border p-3 cursor-pointer; }
+  .choice-selected { @apply border-brand-primary bg-brand-50; }
+  .tab-selected { @apply bg-brand-primary text-brand-ink shadow-sm; }
+  .state-muted { @apply bg-slate-100 text-slate-700; }
+  .state-muted-brand { @apply bg-slate-100 text-brand-ink border-brand-silver; }
+  .state-inactive { @apply border-slate-300 bg-slate-100 text-slate-700; }
+  /* Button appearances and content alignment compose in JSX. */
+  .button-primary { @apply rounded-lg bg-brand-primary hover:bg-brand-secondary text-brand-ink font-bold; }
+  .button-accent { @apply rounded-lg bg-brand-primary text-brand-ink font-bold; }
+  .button-secondary { @apply rounded-lg border border-slate-300 text-sm font-semibold; }
+  .button-danger { @apply rounded-lg bg-red-600 text-white hover:bg-red-700 font-semibold; }
+  .button-outline { @apply rounded-lg border border-slate-300 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50; }
+  .button-inline { @apply inline-flex items-center gap-2; }
+  .button-content { @apply flex items-center justify-center gap-2; }
+  .button-small { @apply px-4 py-2 text-xs; }
+  .button-standard { @apply px-4 py-2.5 text-sm; }
+  .link-brand { @apply font-semibold text-brand-ink hover:underline; }
+  .link-underlined { @apply font-semibold underline; }
+  /* Badges, photos and compact actions */
+  .badge-label { @apply rounded-full border px-3 py-1 text-xs font-semibold; }
+  .badge-uppercase { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border; }
+  .avatar-photo { @apply w-full h-full rounded-full object-cover; }
+  .button-muted { @apply rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold; }
+  .button-muted-bordered { @apply rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 font-semibold; }
+  .button-icon { @apply p-1.5 rounded bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 transition-colors; }
+  .button-icon-brand { @apply rounded-lg bg-slate-100 hover:bg-slate-200 border border-brand-silver text-brand-ink transition-colors; }
+  .badge-brand { @apply rounded bg-brand-50 text-brand-ink border border-brand-primary/30; }
+  .badge-neutral { @apply rounded bg-slate-100 text-slate-700 border border-slate-200; }
+  .badge-small { @apply px-2 py-0.5 text-[10px]; }
+  .badge-meta { @apply px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider; }
+  .filter-tab { @apply px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors; }
+  .control-search { @apply w-full pl-10 pr-4 py-3 rounded-lg border border-slate-300 text-sm; }
+  .control-search-select { @apply w-full rounded-lg border border-slate-300 px-4 py-3 text-sm; }
+  .control-analytics { @apply rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs font-semibold text-slate-700; }
+  .control-input { @apply w-full py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary; }
+  .control-input-icon { @apply w-4 h-4 text-slate-400 absolute left-3.5 top-3.5; }
+  .control-search-icon { @apply absolute left-3 top-3 text-slate-400; }
+  .auth-password-toggle { @apply absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-500 hover:text-slate-900 rounded-r-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-primary; }
+  .button-block-primary { @apply w-full py-3 rounded-lg font-bold text-sm bg-brand-primary hover:bg-brand-secondary text-brand-ink flex items-center justify-center gap-2; }
+}

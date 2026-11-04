@@ -5,6 +5,7 @@ import { requireOrganisationOwner } from '../middleware/organisationAccess.js';
 import { withSelectedMembership, requireActivatedMembership } from '../services/membershipContext.js';
 import { normaliseOrganisationImage } from '../services/organisationImages.js';
 import { normalisePostInput } from '../../shared/posts.js';
+import { notifyPost } from '../services/notifications.js';
 
 const router = express.Router();
 router.use(authenticateToken, requireVerifiedEmail, withSelectedMembership, requireActivatedMembership);
@@ -106,7 +107,9 @@ router.post('/', requireOrganisationOwner, async (req, res) => {
       organisationId: req.organisationId,
       authorId: String(req.user._id),
       authorName: req.user.name,
+      notificationQueued: true,
     });
+    await notifyPost(post, req.organisation).catch(error => console.error('Post notification delivery queued for retry:', error.message));
     await recordPostActivity(req, 'POST_CREATED', post);
     res.status(201).json({ success: true, message: 'Post published to your members.', post: postView(post) });
   } catch (error) {

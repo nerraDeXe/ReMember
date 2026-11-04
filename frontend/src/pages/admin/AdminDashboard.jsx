@@ -37,33 +37,33 @@ export default function AdminDashboard({ onNavigate }) {
   return (
     <div className="page-stack">
       {/* Header Banner */}
-      <div className="admin-dashboard-welcome">
-        <div className="admin-dashboard-welcome-content">
+      <div className="panel-card sm:p-8">
+        <div className="management-header">
           <div>
-            <div className="admin-dashboard-greeting">
-              <span className="admin-dashboard-greeting-label">
+            <div className="row-inline">
+              <span className="text-eyebrow">
                 Administration Portal
               </span>
             </div>
-            <h1 className="admin-dashboard-title">
+            <h1 className="dashboard-heading">
               {user?.activeOrganisation?.name} Dashboard
             </h1>
-            <p className="admin-dashboard-welcome-description">
+            <p className="text-help">
               Manage this organisation's members, membership tiers, events, and finances.
             </p>
           </div>
 
-          <div className="admin-dashboard-actions">
+          <div className="row-wrap-wide">
             <button
               onClick={() => onNavigate('admin-members')}
-              className="admin-dashboard-manage-button"
+              className="button-muted-bordered row-inline dashboard-action"
             >
               <Users className="icon-default" />
               <span>Manage Members</span>
             </button>
             <button
               onClick={() => onNavigate('admin-tiers')}
-              className="admin-dashboard-manage-button"
+              className="button-muted-bordered row-inline dashboard-action"
             >
               <Layers className="icon-default" />
               <span>Tiers & Pricing</span>
@@ -73,66 +73,66 @@ export default function AdminDashboard({ onNavigate }) {
       </div>
 
       {/* Top Metric KPI Cards */}
-      <div className="admin-dashboard-metrics">
+      <div className="form-grid lg:grid-cols-4">
         <div className="panel-card">
-          <div className="admin-dashboard-metric-heading">
-            <span className="admin-dashboard-metric-label">Organisation Revenue</span>
-            <div className="admin-dashboard-metric-icon">
+          <div className="row-between">
+            <span className="text-label-muted">Organisation Revenue</span>
+            <div className="surface-brand-icon">
               <DollarSign className="icon-default" />
             </div>
           </div>
-          <div className="admin-dashboard-metric-value">
+          <div className="metric-total">
             MYR {(metrics.totalRevenue || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
           </div>
-          <div className="admin-dashboard-revenue-breakdown">
-            <span className="admin-dashboard-subscription-revenue">Sub: MYR {metrics.totalSubscriptionRevenue || 0}</span>
+          <div className="row-icon text-note mt-1">
+            <span className="text-brand-ink font-semibold">Sub: MYR {metrics.totalSubscriptionRevenue || 0}</span>
             <span>•</span>
             <span>Events: MYR {metrics.totalEventTicketingRevenue || 0}</span>
           </div>
         </div>
 
         <div className="panel-card">
-          <div className="admin-dashboard-metric-heading">
-            <span className="admin-dashboard-metric-label">Active Members</span>
-            <div className="admin-dashboard-metric-icon">
+          <div className="row-between">
+            <span className="text-label-muted">Active Members</span>
+            <div className="surface-brand-icon">
               <Users className="icon-default" />
             </div>
           </div>
-          <div className="admin-dashboard-metric-value">
+          <div className="metric-total">
             {metrics.activeMembersCount || 0}{' '}
-            <span className="admin-dashboard-registered-count">/ {metrics.membersCount || 0} registered</span>
+            <span className="text-caption font-normal">/ {metrics.membersCount || 0} registered</span>
           </div>
-          <div className="admin-dashboard-metric-highlight">
+          <div className="dashboard-metric-note">
             Across this organisation's membership tiers
           </div>
         </div>
 
         <div className="panel-card">
-          <div className="admin-dashboard-metric-heading">
-            <span className="admin-dashboard-metric-label">Monthly Run Rate (MRR)</span>
-            <div className="admin-dashboard-metric-icon">
+          <div className="row-between">
+            <span className="text-label-muted">Monthly Run Rate (MRR)</span>
+            <div className="surface-brand-icon">
               <TrendingUp className="icon-default" />
             </div>
           </div>
-          <div className="admin-dashboard-metric-value">
+          <div className="metric-total">
             MYR {(metrics.monthlyRecurringRevenue || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
           </div>
-          <div className="admin-dashboard-mrr-description">
+          <div className="dashboard-equivalent-note">
             ARR Run-Rate: MYR {(metrics.annualRunRate || 0).toLocaleString()}
           </div>
         </div>
 
         <div className="panel-card">
-          <div className="admin-dashboard-metric-heading">
-            <span className="admin-dashboard-metric-label">Paid Invoices</span>
-            <div className="admin-dashboard-metric-icon">
+          <div className="row-between">
+            <span className="text-label-muted">Paid Invoices</span>
+            <div className="surface-brand-icon">
               <CreditCard className="icon-default" />
             </div>
           </div>
-          <div className="admin-dashboard-metric-value">
+          <div className="metric-total">
             {metrics.paidInvoicesCount || 0}
           </div>
-          <div className="admin-dashboard-metric-highlight">
+          <div className="dashboard-metric-note">
             {metrics.failedInvoicesCount || 0} payment failures tracked in audit
           </div>
         </div>

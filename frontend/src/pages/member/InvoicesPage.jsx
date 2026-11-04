@@ -50,7 +50,7 @@ export default function InvoicesPage() {
     <div className="page-stack">
       <div>
         <h1 className="page-title">
-          <Receipt className="invoices-receipt-icon" />
+          <Receipt className="icon-brand-large" />
           Payment Invoices & Receipts
         </h1>
         <p className="page-description">
@@ -64,8 +64,8 @@ export default function InvoicesPage() {
             <RefreshCw className="loading-spinner" />
           </div>
         ) : invoices.length === 0 ? (
-          <div className="invoices-empty">
-            <Receipt className="invoices-empty-icon" />
+          <div className="empty-state">
+            <Receipt className="empty-state-icon" />
             No payment invoices on file yet.
           </div>
         ) : (
@@ -79,7 +79,7 @@ export default function InvoicesPage() {
                   <th className="data-table-cell">Payment Method</th>
                   <th className="data-table-cell">Amount</th>
                   <th className="data-table-cell">Status</th>
-                  <th className="invoices-actions-heading">Actions</th>
+                  <th className="data-table-cell text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="table-body">
@@ -87,46 +87,46 @@ export default function InvoicesPage() {
                   const isPaid = inv.paymentStatus === 'paid';
                   return (
                     <tr key={inv._id} className="data-table-row">
-                      <td className="invoices-number-cell">
+                      <td className="data-table-cell text-identifier">
                         {inv.invoiceNumber}
                       </td>
-                      <td className="invoices-date-cell">
+                      <td className="data-table-cell text-slate-600">
                         {inv.paidAt
                           ? new Date(inv.paidAt).toLocaleDateString()
                           : new Date(inv.createdAt).toLocaleDateString()}
                       </td>
-                      <td className="invoices-tier-cell">
+                      <td className="data-table-cell text-strong">
                         {inv.tierName}
                       </td>
-                      <td className="invoices-method-cell">
+                      <td className="text-note data-table-cell font-mono">
                         {inv.paymentMethod}
                       </td>
-                      <td className="invoices-amount-cell">
+                      <td className="data-table-cell text-bold">
                         MYR {Number(inv.amount).toFixed(2)}
                       </td>
                       <td className="data-table-cell">
                         <span
-                          className={`invoices-status-badge ${
+                          className={`badge-uppercase ${
                             isPaid
-                              ? "invoices-status-paid"
-                              : "invoices-status-declined"
+                              ? "choice-selected member-status-active"
+                              : "state-muted-brand"
                           }`}
                         >
                           {isPaid ? <CheckCircle2 className="icon-tiny" /> : <AlertCircle className="icon-tiny" />}
                           {inv.paymentStatus}
                         </span>
                       </td>
-                      <td className="invoices-actions-cell">
+                      <td className="data-table-cell member-invoice-actions">
                         <button
                           onClick={() => setInvoiceId(String(inv._id))}
-                          className="invoices-receipt-action"
+                          className="button-icon"
                           title="View Printable Receipt"
                         >
                           <Eye className="icon-default" />
                         </button>
                         <button
                           onClick={() => handleDownload(inv)}
-                          className="invoices-receipt-action"
+                          className="button-icon"
                           title="Download Invoice JSON"
                         >
                           <Download className="icon-default" />
@@ -142,11 +142,11 @@ export default function InvoicesPage() {
       </div>
 
       {invoiceId && !selectedInvoice && (
-        <div className="invoices-receipt-overlay">
-          <div role="dialog" aria-modal="true" aria-label="Invoice receipt" className="invoices-receipt-dialog">
-            <p role={loading ? 'status' : 'alert'} className="invoices-receipt-status">{loading ? 'Loading invoice...' : loadError || 'This invoice could not be found in your current membership.'}</p>
-            {loadError && <button onClick={loadInvoices} className="invoices-retry-button">Retry</button>}
-            <button onClick={() => closeQuery(['invoice'])} className="invoices-return-button">Back to invoices</button>
+        <div className="dialog-overlay">
+          <div role="dialog" aria-modal="true" aria-label="Invoice receipt" className="dialog-panel form-stack">
+            <p role={loading ? 'status' : 'alert'} className="text-sm text-slate-700">{loading ? 'Loading invoice...' : loadError || 'This invoice could not be found in your current membership.'}</p>
+            {loadError && <button onClick={loadInvoices} className="link-brand mr-4 text-sm">Retry</button>}
+            <button onClick={() => closeQuery(['invoice'])} className="link-brand text-sm">Back to invoices</button>
           </div>
         </div>
       )}

@@ -1,6 +1,6 @@
 # ReMember — Enterprise Membership Management System
 
-A web-based Membership Management System engineered with **React**, **Tailwind CSS**, and **Node.js / Express** with MongoDB, JWT Authentication, Role-Based Access Control (RBAC), and Google Wallet digital passes.
+A web-based Membership Management System engineered with **React**, **Tailwind CSS**, and **Node.js / Express** with MongoDB, JWT Authentication, Role-Based Access Control (RBAC), and digital membership cards.
 
 ---
 
@@ -12,11 +12,10 @@ A web-based Membership Management System engineered with **React**, **Tailwind C
 | **JWT Session Authentication** | Secure Bearer JWT token issuance and validation across all member & admin routes. | ✅ Complete |
 | **Role-Based Access Control (RBAC)** | Strict Node.js RBAC middleware (`requireRole('admin')`) denying standard members (403 Forbidden). | ✅ Complete |
 | **Member Dashboard** | Membership status, tier, expiry and links to the combined membership overview. | ✅ Complete |
-| **Manage Membership** | Digital pass, subscription dates, prorated upgrades, scheduled downgrades and cancellation with paid access retained until expiry. | ✅ Complete |
+| **Manage Membership** | Membership card, subscription dates, prorated upgrades, scheduled downgrades and cancellation with paid access retained until expiry. | ✅ Complete |
 | **MongoDB Profile Persistence** | Full personal profile updating (bio, phone, address, preferences) stored in MongoDB. | ✅ Complete |
 | **Renewal Payment Gateway** | In-app demo checkout for cards, online banking and e-wallets, verification, receipts and decline testing. No money is charged. [Guide](docs/PAYMENT_GATEWAY.md). | ✅ Complete |
-| **Google Wallet Digital Pass** | Generic Pass Object generator with QR/Code128 barcode, holographic card styling, and "Add to Google Wallet" button. | ✅ Complete |
-| **Automated Google Wallet Sync** | Admin tier changes automatically trigger REST API calls to update the Google Wallet object in real time. | ✅ Complete |
+| **Membership Card** | In-app card showing the member's name, ID, tier, status and dates in their organisation's colour. No external setup is required; membership changes appear when the card is next loaded. | ✅ Complete |
 | **Events Calendar & RSVP** | Interactive event cards with capacity meters, tier access restrictions, and live RSVP. | ✅ Complete |
 | **Automated Email Confirmations** | HTML confirmation emails dispatched upon registration, payment renewal, and event RSVPs with in-app email center. | ✅ Complete |
 | **Payment-gated memberships** | Paid memberships stay pending until an approved demo payment. Free tiers activate immediately; paid monthly/yearly periods renew through checkout. | ✅ Complete |
@@ -28,7 +27,7 @@ A web-based Membership Management System engineered with **React**, **Tailwind C
 | **Event Listing Management** | Admin tool to publish new events specifying date, venue, capacity, and allowed membership tiers. | ✅ Complete |
 | **Financial Analytics** | Breakdown of revenue from subscriptions vs. event ticketing with visual progress bars. | ✅ Complete |
 | **Segmented CSV Export** | Dynamic CSV file generator exporting filtered member segments for external reporting. | ✅ Complete |
-| **Audit Activity Log** | Immutable log recording registrations, profile edits, payment failures, tier adjustments, and wallet syncs. | ✅ Complete |
+| **Audit Activity Log** | Immutable log recording registrations, profile edits, payment failures, and tier adjustments. | ✅ Complete |
 
 ---
 

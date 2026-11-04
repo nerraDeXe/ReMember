@@ -15,30 +15,41 @@ rectangle "ReMember Membership Management System" {
     usecase "Reset forgotten password" as S4
     usecase "Edit personal profile\nand notification preferences" as S5
     usecase "Discover organisations\nand view membership tiers" as S6
-    usecase "Create an organisation\nwith initial membership tiers" as S7
+    usecase "Create an organisation" as S7
     usecase "Select / switch\norganisation portal" as S8
+    usecase "Define initial\nmembership tier(s)" as S9
   }
   package "Member functions" {
-    usecase "View membership dashboard\n(status, tier and expiry)" as M1
-    usecase "Join an organisation\nand select a tier" as M2
-    usecase "Activate / renew membership\nthrough test checkout" as M3
-    usecase "Browse events, RSVP\nand cancel RSVP" as M4
-    usecase "View, save and sync\nGoogle Wallet membership pass" as M5
-    usecase "View, download and\nprint invoices" as M6
-    usecase "Receive welcome, renewal,\npayment and RSVP emails" as M7
+    usecase "View membership dashboard\nand membership card" as M1
+    usecase "Join an organisation" as M2
+    usecase "Renew paid membership\nor upgrade tier" as M3
+    usecase "Schedule / cancel downgrade;\ncancel / resume subscription" as M4
+    usecase "Browse events\nand reservations" as M5
+    usecase "RSVP to an event" as M6
+    usecase "Cancel an event RSVP" as M7
+    usecase "View invoices\nand receipt details" as M8
+    usecase "Read organisation posts\nand view notifications" as M9
+    usecase "Receive confirmation emails\nand renewal reminders" as M10
+    usecase "Select membership tier" as M11
+    usecase "Complete demo checkout" as M12
+    usecase "Check membership / tier,\nregistration time and capacity" as M13
+    usecase "Download invoice" as M14
+    usecase "Print receipt" as M15
   }
   package "Admin functions" {
     usecase "View organisation dashboard\nand member analytics" as A1
-    usecase "Edit / delete organisation\nand set public / private visibility" as A2
+    usecase "Edit / delete organisation;\nmanage visibility and branding" as A2
     usecase "Search and filter\nmember directory" as A3
     usecase "Activate, suspend or\nrevoke memberships" as A4
     usecase "Assign / change\nmember tiers" as A5
-    usecase "Manage membership tiers,\nprices, benefits and capacity" as A6
-    usecase "Manage events\nand inspect attendees" as A7
+    usecase "Manage tiers, prices,\nbenefits and capacity" as A6
+    usecase "Create / edit / delete events\nand inspect attendees" as A7
     usecase "View financial metrics\nand payment transactions" as A8
     usecase "Export filtered\nmember data as CSV" as A9
-    usecase "Customise / preview welcome emails\nand configure renewal reminders" as A10
+    usecase "Customise welcome emails\nand renewal reminder settings" as A10
     usecase "View and filter\naudit activity logs" as A11
+    usecase "Create / edit / delete\norganisation posts" as A12
+    usecase "View demo payment methods\nand gateway information" as A13
   }
 }
 Member -- S1
@@ -64,6 +75,9 @@ Member -- M4
 Member -- M5
 Member -- M6
 Member -- M7
+Member -- M8
+Member -- M9
+Member -- M10
 Admin -- A1
 Admin -- A2
 Admin -- A3
@@ -75,17 +89,29 @@ Admin -- A8
 Admin -- A9
 Admin -- A10
 Admin -- A11
+Admin -- A12
+Admin -- A13
+S7 ..> S9 : <<include>>
+M2 ..> M11 : <<include>>
+M3 ..> M12 : <<include>>
+M6 ..> M13 : <<include>>
+M12 ..> M2 : <<extend>>\n[paid tier selected]
+M14 ..> M8 : <<extend>>\n[download requested]
+M15 ..> M8 : <<extend>>\n[print requested]
 note bottom of Admin
   Admin means owner of the selected organisation.
   The same account can be a Member in another organisation.
 end note
-note bottom of M3
-  Checkout currently simulates payment.
+note bottom of M12
+  Checkout simulates payment; no money is charged.
+  Free-tier joining does not require checkout.
 end note
-note bottom of A10
-  Welcome: first membership activation.
-  Renewal: X days before membership expiry.
-  Subject, message, preview and enable/disable settings
-  belong to the individual organisation.
+note bottom of M4
+  Scheduling a downgrade does not require checkout.
+  Paid cancellations retain access until expiry.
+end note
+note bottom of M10
+  Emails depend on applicable preferences and organisation settings.
+  Renewal reminders run X days before membership expiry.
 end note
 @enduml

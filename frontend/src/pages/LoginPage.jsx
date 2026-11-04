@@ -31,46 +31,46 @@ export default function LoginPage({ onNavigate, initialEmail = '' }) {
 
 
   return (
-    <div className="login-page">
-      <div className="login-card">
-        <div className="login-header">
+    <div className="icon-center login-page">
+      <div className="surface-card login-panel">
+        <div className="text-center mb-8">
           <div
             onClick={() => onNavigate('landing')}
-            className="group login-home-link"
+            className="button-inline group mb-3 cursor-pointer"
           >
             <img
               src="/remember-logo.png"
               alt="ReMember"
-              className="login-logo"
+              className="w-auto object-contain"
             />
           </div>
-          <h2 className="login-title">Sign In to Your Portal</h2>
+          <h2 className="login-heading">Sign In to Your Portal</h2>
           <p className="page-description">
-            Access your membership pass, upcoming events, and dashboard
+            Access your membership card, upcoming events, and dashboard
           </p>
         </div>
 
 
         <form onSubmit={handleSubmit} className="form-stack">
-          <fieldset disabled={loading || googleBusy} className="login-fields">
+          <fieldset disabled={loading || googleBusy} className="space-y-4 min-w-0">
           <div>
             <label className="field-label">Email Address</label>
-            <div className="login-field">
+            <div className="relative">
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 placeholder="name@domain.com"
-                className="login-email-input"
+                className="control-input pl-10 pr-4"
               />
-              <Mail className="login-field-icon" />
+              <Mail className="control-input-icon" />
             </div>
           </div>
 
           <div>
             <label htmlFor="login-password" className="field-label">Password</label>
-            <div className="login-field">
+            <div className="relative">
               <input
                 id="login-password"
                 name="password"
@@ -80,31 +80,31 @@ export default function LoginPage({ onNavigate, initialEmail = '' }) {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 placeholder="••••••••••••"
-                className="login-password-input"
+                className="control-input pl-10 pr-12"
               />
-              <Lock className="login-field-icon" />
+              <Lock className="control-input-icon" />
               <button
                 type="button"
                 onClick={() => setShowPassword((visible) => !visible)}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
                 aria-controls="login-password"
                 aria-pressed={showPassword}
-                className="login-password-toggle"
+                className="auth-password-toggle"
               >
                 {showPassword ? <EyeOff className="icon-default" aria-hidden="true" /> : <Eye className="icon-default" aria-hidden="true" />}
               </button>
             </div>
           </div>
 
-          <div className="login-options">
-            <label className="login-remember-label"><input type="checkbox" checked={rememberMe} onChange={event => setRememberMe(event.target.checked)} className="login-remember-checkbox" />Remember Me (30 days)</label>
-            <button type="button" onClick={() => onNavigate('forgot-password')} className="login-forgot-password">Forgot password?</button>
+          <div className="row-wrap justify-between text-xs">
+            <label className="row-inline cursor-pointer"><input type="checkbox" checked={rememberMe} onChange={event => setRememberMe(event.target.checked)} className="accent-brand-primary" />Remember Me (30 days)</label>
+            <button type="button" onClick={() => onNavigate('forgot-password')} className="font-semibold hover:underline">Forgot password?</button>
           </div>
           <p className="text-caption">{rememberMe ? 'Stay signed in for 30 days.' : 'Your session lasts 24 hours.'} Applies to email and Google sign-in.</p>
           <button
             type="submit"
             disabled={loading}
-            className="login-submit"
+            className="button-block-primary login-submit"
           >
             {loading ? (
               <>
@@ -121,13 +121,13 @@ export default function LoginPage({ onNavigate, initialEmail = '' }) {
           </fieldset>
         </form>
 
-        <div className="login-google-section"><p className="login-google-label">Or continue with Google</p><GoogleSignIn intent="login" rememberMe={rememberMe} disabled={loading} onBusyChange={setGoogleBusy} onNavigate={onNavigate} /></div>
+        <div className="mt-6 space-y-4"><p className="text-caption text-center">Or continue with Google</p><GoogleSignIn intent="login" rememberMe={rememberMe} disabled={loading} onBusyChange={setGoogleBusy} onNavigate={onNavigate} /></div>
 
-        <div className="login-signup-prompt">
+        <div className="text-caption mt-6 text-center">
           Don't have a membership account yet?{' '}
           <button
             onClick={() => onNavigate('register')}
-            className="login-signup-link"
+            className="link-brand"
           >
             Register Here
           </button>

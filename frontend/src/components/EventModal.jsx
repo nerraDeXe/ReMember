@@ -10,7 +10,7 @@ import {
   DEFAULT_EVENT_TIME_ZONE, EVENT_MAX_DAYS, getEventDates, getEligibleEventTiers, sortEventTiers,
 } from '../../../shared/events.js';
 
-const inputClass = "event-modal-input";
+const inputClass = "control control-ring-strong control-editor control-disabled min-w-0";
 const labelClass = "field-label";
 const timeZones = [...new Set([
   DEFAULT_EVENT_TIME_ZONE, 'UTC',
@@ -131,21 +131,21 @@ function EventForm({ onClose, onCreated, tiers = [], organisationId }) {
   };
 
   return (
-    <div style={{ margin: 0 }} className="event-modal-overlay">
-      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={headingId} onKeyDown={handleDialogKeyDown} className="event-modal-dialog">
-        <div className="event-modal-header">
-          <div className="event-modal-heading">
-            <div className="event-modal-icon"><Calendar className="icon-medium" /></div>
+    <div className="event-editor-overlay">
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={headingId} onKeyDown={handleDialogKeyDown} className="surface-large event-editor-dialog">
+        <div className="row-inline-wide event-editor-header">
+          <div className="row-inline-wide">
+            <div className="event-editor-icon"><Calendar className="icon-medium" /></div>
             <div>
               <h2 id={headingId} className="card-title">Create Community Event</h2>
-              <p className="event-modal-intro">Share a venue, a daily schedule and membership access.</p>
+              <p className="text-caption mt-0.5">Share a venue, a daily schedule and membership access.</p>
             </div>
           </div>
-          <button type="button" onClick={onClose} disabled={busy} aria-label="Close create event" className="event-modal-close"><X className="icon-medium" /></button>
+          <button type="button" onClick={onClose} disabled={busy} aria-label="Close create event" className="event-editor-close"><X className="icon-medium" /></button>
         </div>
 
-        <form onSubmit={handleSubmit} className="event-modal-form">
-          <fieldset disabled={busy} className="event-modal-fields">
+        <form onSubmit={handleSubmit} className="event-editor-form">
+          <fieldset disabled={busy} className="min-w-0 space-y-6">
             <div className="form-stack">
               <div>
                 <label htmlFor="event-title" className={labelClass}>Event title</label>
@@ -158,10 +158,10 @@ function EventForm({ onClose, onCreated, tiers = [], organisationId }) {
               <ImageUploadField label="Header image" kind="banner" value={imageUrl} onChange={setImageUrl} onBusyChange={setReadingImage} disabled={busy} />
             </div>
 
-            <section aria-labelledby="event-schedule-heading" className="event-modal-form-section">
-              <h3 id="event-schedule-heading" className="event-modal-schedule-heading"><Clock3 className="icon-default" />Dates and daily times</h3>
-              <p className="event-modal-schedule-help">Use the same start and end date for a single-day event. For multiple days, choose times for each day. Up to {EVENT_MAX_DAYS} days.</p>
-              <div className="event-modal-date-fields">
+            <section aria-labelledby="event-schedule-heading" className="event-editor-section">
+              <h3 id="event-schedule-heading" className="row-inline panel-title mb-1"><Clock3 className="icon-default" />Dates and daily times</h3>
+              <p className="text-caption mb-4 leading-relaxed">Use the same start and end date for a single-day event. For multiple days, choose times for each day. Up to {EVENT_MAX_DAYS} days.</p>
+              <div className="event-date-grid">
                 <div>
                   <label htmlFor="event-start-date" className={labelClass}>Start date</label>
                   <input id="event-start-date" type="date" value={startDate} min={minimumDate} onChange={event => {
@@ -175,22 +175,22 @@ function EventForm({ onClose, onCreated, tiers = [], organisationId }) {
                   <input id="event-end-date" type="date" value={endDate} min={startDate && startDate > minimumDate ? startDate : minimumDate} onChange={event => { setEndDate(event.target.value); setError(''); }} required className={inputClass} />
                 </div>
               </div>
-              {dateError && <p role="alert" className="event-modal-schedule-error">{dateError}</p>}
-              <p className="event-modal-date-policy">New events must start tomorrow or later in the selected event time zone. RSVPs close when the event starts.</p>
-              <div className="event-modal-field-offset">
+              {dateError && <p role="alert" className="field-error">{dateError}</p>}
+              <p className="text-caption mt-2">New events must start tomorrow or later in the selected event time zone. RSVPs close when the event starts.</p>
+              <div className="mt-4">
                 <label htmlFor="event-time-zone" className={labelClass}>Event time zone</label>
                 <select id="event-time-zone" value={timeZone} onChange={event => setTimeZone(event.target.value)} className={inputClass}>
                   {timeZones.map(zone => <option key={zone} value={zone}>{zone.replaceAll('_', ' ')}</option>)}
                 </select>
-                <p className="event-modal-timezone-help">All daily times below use this time zone.</p>
+                <p className="text-note mt-1.5">All daily times below use this time zone.</p>
               </div>
-              <div className="event-modal-daily-schedule">
+              <div className="mt-4 space-y-3">
                 {schedule.map((day, index) => {
                   const invalidTime = day.startTime && day.endTime && day.endTime <= day.startTime;
                   return (
-                    <fieldset key={day.date} className="event-modal-schedule-day">
-                      <legend className="event-modal-day-label">{schedule.length > 1 ? `Day ${index + 1} · ` : ''}{dateLabel(day.date)}</legend>
-                      <div className="event-modal-time-fields">
+                    <fieldset key={day.date} className="surface-rounded event-day-fieldset">
+                      <legend className="event-day-legend">{schedule.length > 1 ? `Day ${index + 1} · ` : ''}{dateLabel(day.date)}</legend>
+                      <div className="grid-pair event-time-grid">
                         <div>
                           <label htmlFor={`event-${day.date}-start-time`} className={labelClass}>Start time</label>
                           <input id={`event-${day.date}-start-time`} aria-label={`Start time for ${day.date}`} type="time" value={day.startTime} onChange={event => updateTime(day.date, 'startTime', event.target.value)} required className={inputClass} />
@@ -200,12 +200,12 @@ function EventForm({ onClose, onCreated, tiers = [], organisationId }) {
                           <input id={`event-${day.date}-end-time`} aria-label={`End time for ${day.date}`} type="time" value={day.endTime} onChange={event => updateTime(day.date, 'endTime', event.target.value)} required aria-invalid={Boolean(invalidTime)} className={inputClass} />
                         </div>
                       </div>
-                      {invalidTime && <p className="event-modal-schedule-error">End time must be after the start time on this day.</p>}
+                      {invalidTime && <p className="field-error">End time must be after the start time on this day.</p>}
                     </fieldset>
                   );
                 })}
               </div>
-              <p className="event-modal-overnight-help">For an overnight event, split the schedule across its calendar days.</p>
+              <p className="text-fine-print">For an overnight event, split the schedule across its calendar days.</p>
             </section>
 
             <div className="form-stack">
@@ -214,45 +214,45 @@ function EventForm({ onClose, onCreated, tiers = [], organisationId }) {
                 latitude={locationCoordinates.latitude} longitude={locationCoordinates.longitude} onCoordinatesChange={setLocationCoordinates}
                 organisationId={organisationId} onBusyChange={setSearchingLocation} disabled={busy}
               />
-              <div className="event-modal-capacity-field">
+              <div className="max-w-xs">
                 <label htmlFor="event-capacity" className={labelClass}>Capacity limit</label>
                 <input id="event-capacity" type="number" value={capacity} onChange={event => setCapacity(event.target.value)} min="1" max="100000" step="1" required className={inputClass} />
               </div>
             </div>
 
-            <section aria-labelledby="event-access-heading" className="event-modal-form-section">
-              <h3 id="event-access-heading" className="event-modal-access-heading"><Users className="icon-default" />Membership access</h3>
+            <section aria-labelledby="event-access-heading" className="event-editor-section">
+              <h3 id="event-access-heading" className="row-inline panel-title mb-3"><Users className="icon-default" />Membership access</h3>
               <div className="content-stack">
-                <label className="event-modal-all-tiers-option">
-                  <input type="radio" name="event-access" value="all" checked={tierAccess === 'all'} onChange={() => setTierAccess('all')} className="event-modal-access-radio" />
-                  <span><span className="event-modal-option-title">All membership tiers</span><span className="text-caption">Every active member in this organisation can RSVP.</span></span>
+                <label className="event-day-label">
+                  <input type="radio" name="event-access" value="all" checked={tierAccess === 'all'} onChange={() => setTierAccess('all')} className="mt-1 accent-brand-ink" />
+                  <span><span className="block font-semibold">All membership tiers</span><span className="text-caption">Every active member in this organisation can RSVP.</span></span>
                 </label>
-                <label className={`event-modal-minimum-tier-option ${rankedTiers.length ? "event-modal-option-enabled" : "event-modal-option-disabled"}`}>
-                  <input type="radio" name="event-access" value="minimum" checked={tierAccess === 'minimum'} onChange={() => setTierAccess('minimum')} disabled={!rankedTiers.length} className="event-modal-access-radio" />
-                  <span><span className="event-modal-option-title">Selected tier and higher tiers</span><span className="text-caption">Choose the lowest tier that can attend.</span></span>
+                <label className={`event-access-label ${rankedTiers.length ? "event-access-enabled" : "text-slate-400"}`}>
+                  <input type="radio" name="event-access" value="minimum" checked={tierAccess === 'minimum'} onChange={() => setTierAccess('minimum')} disabled={!rankedTiers.length} className="mt-1 accent-brand-ink" />
+                  <span><span className="block font-semibold">Selected tier and higher tiers</span><span className="text-caption">Choose the lowest tier that can attend.</span></span>
                 </label>
               </div>
-              {tierAccess === 'minimum' && <div className="event-modal-field-offset">
+              {tierAccess === 'minimum' && <div className="mt-4">
                 <label htmlFor="event-minimum-tier" className={labelClass}>Minimum membership tier</label>
                 <select id="event-minimum-tier" value={effectiveMinimumTierId} onChange={event => setMinimumTierId(event.target.value)} required className={inputClass}>
                   {rankedTiers.map(tier => <option key={tier._id} value={tier._id}>{tier.name} · MYR {tier.price || 0}/{tier.interval || 'monthly'}</option>)}
                 </select>
-                <p className="event-modal-tier-order-help">Tiers are ordered by their equivalent monthly price. Tiers with the same monthly price share access.</p>
+                <p className="text-note mt-2 leading-relaxed">Tiers are ordered by their equivalent monthly price. Tiers with the same monthly price share access.</p>
               </div>}
-              <div className="event-modal-eligible-summary">
-                <p className="event-modal-eligible-label">{tierAccess === 'all' ? 'Available to all tiers' : 'Eligible tiers'}</p>
-                <div className="event-modal-eligible-tiers">
-                  {eligibleTiers.map(tier => <span key={tier._id} className="event-modal-eligible-tier">{tier.name}</span>)}
+              <div className="event-eligible-tiers">
+                <p className="text-note event-eligible-heading">{tierAccess === 'all' ? 'Available to all tiers' : 'Eligible tiers'}</p>
+                <div className="tag-list">
+                  {eligibleTiers.map(tier => <span key={tier._id} className="event-day-badge">{tier.name}</span>)}
                   {!rankedTiers.length && <p className="text-caption">All active members. Add membership tiers to set tier restrictions.</p>}
                 </div>
               </div>
             </section>
           </fieldset>
 
-          {error && <p role="alert" className="event-modal-submit-error">{error}</p>}
-          <div className="event-modal-footer">
-            <button type="button" onClick={onClose} disabled={busy} className="event-modal-cancel">Cancel</button>
-            <button type="submit" disabled={busy || searchingLocation || Boolean(dateError)} className="event-modal-create">
+          {error && <p role="alert" className="event-editor-error">{error}</p>}
+          <div className="event-editor-actions">
+            <button type="button" onClick={onClose} disabled={busy} className="button-secondary event-editor-back">Cancel</button>
+            <button type="submit" disabled={busy || searchingLocation || Boolean(dateError)} className="button-primary button-content event-editor-save">
               {busy || searchingLocation ? <RefreshCw className="icon-spinner" /> : <Plus className="icon-default" />}
               {saving ? 'Publishing event...' : readingImage ? 'Reading header image...' : searchingLocation ? 'Searching location...' : 'Publish Community Event'}
             </button>

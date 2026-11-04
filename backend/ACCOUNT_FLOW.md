@@ -14,7 +14,7 @@ The account home has My Organisations and My Memberships tabs. My Organisations 
 
 Membership, tier, event, invoice and admin permissions belong to the selected organisation. Free tiers activate on joining. Paid tiers remain pending until the in-app demo gateway confirms an approved payment; pending members can access checkout and their personal account, but cannot open the member dashboard or community content. Checkout supports preset card, online banking and e-wallet demos in MYR, a verification step, processing and receipts. No money is charged, and no real payment credentials are collected. Owners do not need a payment-provider account. Monthly/yearly membership periods renew through another member-initiated checkout; there are no automatic charges. See the [payment gateway guide](../docs/PAYMENT_GATEWAY.md).
 
-The member portal combines its digital pass and subscription management at `/member/membership`. The overview shows subscription history and billing dates without starting a payment. Members explicitly choose an upgrade or overdue renewal. Upgrades begin a new billing period and apply verified unused paid time as credit; remaining excess credit is preserved. Paid cancellations retain access until expiry and can be undone before then. Free cancellations end access immediately. Cancelled memberships remain selectable for history and rejoining, but do not grant active community access after their paid period ends.
+The member portal combines its membership card and subscription management at `/member/membership`. The overview shows subscription history and billing dates without starting a payment. Members explicitly choose an upgrade or overdue renewal. Upgrades begin a new billing period and apply verified unused paid time as credit; remaining excess credit is preserved. Paid cancellations retain access until expiry and can be undone before then. Free cancellations end access immediately. Cancelled memberships remain selectable for history and rejoining, but do not grant active community access after their paid period ends.
 
 The admin directory reports **Cancelled** as soon as a member cancels, including paid cancellations scheduled for expiry. These rows show the remaining access date. Member access continues to follow the paid period independently of this reporting label. The Cancelled filter, CSV exports and status analytics use the same reporting rule; undoing cancellation restores the Active label. The directory refreshes while visible and when returning to the tab. Admin approval cannot silently undo a member's cancellation.
 
@@ -74,6 +74,14 @@ Descriptions are saved as validated structured content with a plain-text fallbac
 
 Posts appear newest first with pagination. Members with accessible active, pending or expired memberships can read their organisation's notices; suspended or revoked associations cannot grant access. Members cannot create, edit or delete posts, and public organisation discovery does not expose them. Every request is scoped to the selected organisation, and the editor includes its organisation context to reject requests from stale pages after a selection change. Deleting an organisation removes its posts in the same transaction. Both portals group navigation by purpose and include a mobile page selector.
 
+## Member notifications
+
+The bell beside the profile shows the latest three notifications across the member's joined organisations. View all notifications opens `/account/notifications`, with pagination and persistent individual and bulk read controls. Each notice identifies its organisation and links to the relevant post, event or membership. Read APIs require a verified session and always filter by the signed-in account: `GET /api/notifications?page=1&limit=3`, `PATCH /api/notifications/:id/read`, and `PATCH /api/notifications/read-all`.
+
+Publishing a new post notifies activated members of that organisation. Membership status, tier and cancellation changes create notices, including natural expiry. The running backend checks eligible upcoming events every minute using each event's stored time zone and tier rules. Reminders default to seven days and one day before the start. Profile settings can disable reminders or save up to five distinct offsets from 1 to 365 days in `notifications.eventReminderDays`; `notifications.events` controls event reminders and RSVP confirmation emails. These reminders are in-app notifications.
+
+Notification records persist in MongoDB. Deterministic identifiers prevent repeated scans or restarts from duplicating notices; queued post delivery and membership snapshots allow failed writes to be retried. An overdue event scan creates only the closest due reminder while the event is still upcoming. Existing membership records without a notification snapshot receive one current-status notice when first scanned. Historical posts are not backfilled.
+
 ## Community events
 
 Owners can upload an optional JPEG, PNG or WebP event header image of up to 2 MB. New events do not accept remote image URLs. Existing event images and legacy date/time text remain readable.
@@ -98,7 +106,7 @@ The login page has a Forgot password link. Configure `APP_WEB_URL` to the fronte
 APP_WEB_URL=http://localhost:5173
 ```
 
-Use your actual HTTPS frontend URL in production. This setting is separate from `APP_ORIGIN` used by Google Wallet. The selected mail transport delivers password reset emails. Each reset link expires after 30 minutes, can be used once, and lives in the URL fragment so the reset token is not sent in ordinary HTTP access logs. Only a hash is saved in MongoDB; the token is not returned through the API or saved with email delivery records. Requests have a one-minute cooldown and the same response for unknown emails. A completed reset invalidates all earlier account sessions and requires a fresh login. Google-only accounts should use Google sign-in; this form does not silently add a password to them.
+Use your actual HTTPS frontend URL in production. The selected mail transport delivers password reset emails. Each reset link expires after 30 minutes, can be used once, and lives in the URL fragment so the reset token is not sent in ordinary HTTP access logs. Only a hash is saved in MongoDB; the token is not returned through the API or saved with email delivery records. Requests have a one-minute cooldown and the same response for unknown emails. A completed reset invalidates all earlier account sessions and requires a fresh login. Google-only accounts should use Google sign-in; this form does not silently add a password to them.
 
 ## Google sign-in setup
 
@@ -110,7 +118,7 @@ Use your actual HTTPS frontend URL in production. This setting is separate from 
    GOOGLE_CLIENT_ID=your-web-client-id.apps.googleusercontent.com
    ```
 
-4. Restart the backend and reload the frontend. No client secret or frontend environment variable is required for this Google Identity Services flow. This OAuth client ID is separate from Google Wallet credentials.
+4. Restart the backend and reload the frontend. No client secret or frontend environment variable is required for this Google Identity Services flow.
 
 The login and register pages display Google's sign-in button. New Google users review editable first/last names and supply a country, optional phone, and optional bio before an account is created. Google supplies the email, which the form cannot change. Existing account emails are highlighted and redirected to the appropriate sign-in method; a Google identity is not silently linked to an existing password account. Google accounts are identified by their stable Google subject ID. A third-party email used with Google, outside Gmail or verified Workspace, still completes ReMember email verification.
 

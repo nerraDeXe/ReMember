@@ -335,7 +335,7 @@ test('Google does not silently link a password account, and third-party Google e
   assert.equal((await request('/verified-action', { token: created.body.token })).status, 403);
 });
 
-test('registration creates an account without a tier, expiry, wallet pass, or placeholder avatar', async () => {
+test('registration creates an account without a tier, expiry, or placeholder avatar', async () => {
   const registration = await request('/api/auth/register', { body: { ...validAccount, tierId: 'ignored-tier', role: 'admin', bio: 'a'.repeat(500), email: 'DARREN@example.test' } });
   assert.equal(registration.status, 201);
   assert.equal(registration.body.user.name, 'Darren Lim');
@@ -347,7 +347,6 @@ test('registration creates an account without a tier, expiry, wallet pass, or pl
   assert.equal(users[0].tierId, undefined);
   assert.equal(users[0].expirationDate, undefined);
   assert.equal(users[0].avatarUrl, undefined);
-  assert.equal(users[0].googleWallet?.passObjectId, undefined);
   assert.notEqual(users[0].password, validAccount.password);
   assert.match(users[0].emailVerificationHash, /^[a-f0-9]{64}$/);
   assert.equal(registration.body.verification.delivery, 'sent');

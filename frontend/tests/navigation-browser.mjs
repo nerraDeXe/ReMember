@@ -15,7 +15,7 @@ const scenarioFilter = process.argv[4];
 const pause = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
 const results = [];
 
-function installMocks({ role, authenticated, organisation, membershipStatus = 'active', returnPaid = false, emailSettings, eventAnalyticsFixture = false, tierSettingsFixture = false, membershipPortalFixture = false, freeMembershipFixture = false, downgradeFixture = false, adminCancellationFixture = false, eventLifecycleFixture = false }) {
+function installMocks({ role, authenticated, organisation, membershipStatus = 'active', returnPaid = false, emailSettings, eventAnalyticsFixture = false, tierSettingsFixture = false, membershipPortalFixture = false, freeMembershipFixture = false, downgradeFixture = false, adminCancellationFixture = false, eventLifecycleFixture = false, notificationFixture = false }) {
   const organisations = [
     { _id: 'A', name: 'Alpha Community', adminId: 'qa-account', description: 'Alpha navigation fixture', category: 'Technology & AI', location: 'Malaysia', isPublic: true, visibility: 'public', memberCount: 1, tags: [] },
     { _id: 'B', name: 'Beta Community', adminId: 'qa-account', description: 'Beta navigation fixture', category: 'Technology & AI', location: 'Malaysia', isPublic: true, visibility: 'public', memberCount: 1, tags: [] },
@@ -122,6 +122,31 @@ function installMocks({ role, authenticated, organisation, membershipStatus = 'a
     window.__navigationQa.requests.push({ path, method, organisation: id, url: location.pathname + location.search, requestUrl: url.pathname + url.search, ...(options.body ? { payload: JSON.parse(options.body) } : {}) });
     if (path === '/auth/google/config') return reply({ enabled: false });
     if (path === '/auth/me') return reply({ success: true, user });
+    if (path === '/notifications' || (notificationFixture && path.startsWith('/notifications/'))) {
+      const notifications = JSON.parse(sessionStorage.getItem('qa-notifications') || 'null') || (notificationFixture ? Array.from({ length: 23 }, (_, index) => ({
+        id: `notice-${index + 1}`, type: index === 1 ? 'event' : index === 2 ? 'membership' : 'post',
+        title: index === 0 ? 'A new Beta post' : index === 1 ? 'Alpha event reminder' : index === 2 ? 'Beta membership updated' : `Community notice ${index + 1}`,
+        message: 'An update from your organisation.', organisationId: index === 1 ? 'A' : 'B', organisationName: index === 1 ? 'Alpha Community' : 'Beta Community',
+        postId: 'B-notification-post', eventId: 'A-empty-event', membershipId: 'B-membership',
+        createdAt: new Date(Date.now() - index * 60000).toISOString(), readAt: null,
+      })) : []);
+      if (method === 'PATCH') {
+        const selectedId = decodeURIComponent(path.split('/')[2]);
+        for (const notice of notifications) if (path === '/notifications/read-all' || notice.id === selectedId) notice.readAt ||= new Date().toISOString();
+        sessionStorage.setItem('qa-notifications', JSON.stringify(notifications));
+        return reply({ success: true, notification: notifications.find(item => item.id === selectedId), unreadCount: notifications.filter(item => !item.readAt).length });
+      }
+      const page = Number(url.searchParams.get('page') || 1);
+      const limit = Number(url.searchParams.get('limit') || 20);
+      return reply({ success: true, notifications: notifications.slice((page - 1) * limit, page * limit), unreadCount: notifications.filter(item => !item.readAt).length, total: notifications.length, page, totalPages: Math.max(1, Math.ceil(notifications.length / limit)) });
+    }
+    if (notificationFixture && path === '/members/profile' && method === 'PUT') {
+      const saved = JSON.parse(options.body);
+      localStorage.setItem('navigation-qa-user', JSON.stringify({ ...user, ...saved }));
+      return reply({ success: true });
+    }
+    if (notificationFixture && path === '/posts/B-notification-post') return reply({ success: true, post: { _id: 'B-notification-post', organisationId: 'B', title: 'Beta notice opened from notifications', subtitle: 'A specific older post', description: 'Long notice content. '.repeat(30) + 'End of the complete notification post.', createdAt: new Date().toISOString() } });
+    if (notificationFixture && path === '/posts') return reply({ success: true, posts: [], total: 0, totalPages: 1 });
     if (/^\/organisations\/[^/]+\/email-settings$/.test(path)) {
       const selectedId = path.split('/')[2];
       if (method === 'PUT') {
@@ -267,7 +292,6 @@ function installMocks({ role, authenticated, organisation, membershipStatus = 'a
     if (path.startsWith('/admin/members/')) return reply({ success: true, member: member(id) });
     if (path === '/admin/financial-summary') return reply({ success: true, metrics: {} });
     if (path === '/members/dashboard') return reply({ success: true, membership: { ...user, status: user.membershipStatus, tier: tier(id) }, upcomingRsvps: [], recentInvoices: [] });
-    if (path === '/members/wallet-pass') return reply({ success: true, saveUrl: 'https://pay.google.com/gp/v/save/mock-qa-pass' });
     if (path === '/admin/dashboard-analytics') {
       const startMonth = url.searchParams.get('startMonth') || '2026-08';
       const endMonth = url.searchParams.get('endMonth') || '2026-09';
@@ -288,7 +312,7 @@ function installMocks({ role, authenticated, organisation, membershipStatus = 'a
     }
     if (path === '/members/invoices') return reply({ success: true, invoices: [{ _id: 'receipt-1', invoiceNumber: 'QA-RECEIPT-001', userName: user.name, userEmail: user.email, tierName: 'Community', paymentStatus: 'paid', paymentMethod: 'Fixture', amount: 10, createdAt: '2026-10-01T00:00:00Z', paidAt: '2026-10-01T00:00:00Z' }] });
     if (path === '/events') {
-      const events = eventAnalyticsFixture || eventLifecycleFixture ? eventFixtures(id) : [];
+      const events = eventAnalyticsFixture || eventLifecycleFixture || notificationFixture ? eventFixtures(id) : [];
       if (eventLifecycleFixture) {
         const start = Math.ceil(Date.now() / 60000) * 60000 + 120000;
         const end = start + 60000;
@@ -902,20 +926,20 @@ await scenario('late organisation accent save cannot change another organisation
 });
 
 await scenario('member badges keep the organisation accent across tier changes', { role: 'member', authenticated: true, organisation: 'A', tierSettingsFixture: true }, '/member/pass?organisation=A', async browser => {
-  await browser.waitFor(`document.querySelector('[aria-label="Membership badge"]')`, 'member badge');
-  assert.equal(await browser.evaluate(`getComputedStyle(document.querySelector('[aria-label="Membership badge"]')).backgroundColor`), 'rgb(255, 215, 0)');
+  await browser.waitFor(`document.querySelector('[aria-label="Membership card"]')`, 'member badge');
+  assert.equal(await browser.evaluate(`getComputedStyle(document.querySelector('[aria-label="Membership card"]')).backgroundColor`), 'rgb(255, 215, 0)');
   await browser.evaluate(`(() => { const user = JSON.parse(localStorage.getItem('navigation-qa-user')); user.tierId = 'A-premium'; user.tierName = 'A Premium'; localStorage.setItem('navigation-qa-user', JSON.stringify(user)); })()`);
   await browser.call('Page.reload');
-  await browser.waitFor(`document.querySelector('[aria-label="Membership badge"]')?.textContent.includes('A Premium')`, 'different membership tier badge');
-  assert.equal(await browser.evaluate(`getComputedStyle(document.querySelector('[aria-label="Membership badge"]')).backgroundColor`), 'rgb(255, 215, 0)');
+  await browser.waitFor(`document.querySelector('[aria-label="Membership card"]')?.textContent.includes('A Premium')`, 'different membership tier badge');
+  assert.equal(await browser.evaluate(`getComputedStyle(document.querySelector('[aria-label="Membership card"]')).backgroundColor`), 'rgb(255, 215, 0)');
   await browser.call('Page.navigate', { url: appOrigin + '/member/pass?organisation=B' });
-  await browser.waitFor(`document.querySelector('[aria-label="Membership badge"]')?.textContent.includes('Beta Community')`, 'second organisation member badge');
-  assert.equal(await browser.evaluate(`getComputedStyle(document.querySelector('[aria-label="Membership badge"]')).backgroundColor`), 'rgb(37, 99, 235)');
+  await browser.waitFor(`document.querySelector('[aria-label="Membership card"]')?.textContent.includes('Beta Community')`, 'second organisation member badge');
+  assert.equal(await browser.evaluate(`getComputedStyle(document.querySelector('[aria-label="Membership card"]')).backgroundColor`), 'rgb(37, 99, 235)');
 });
 
 await scenario('combined membership overview shows statistics and a pass without creating a checkout', { role: 'member', authenticated: true, organisation: 'A', membershipPortalFixture: true }, '/member/membership?organisation=A', async browser => {
   await browser.call('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });
-  await browser.waitFor(`${browser.bodyHas('Membership overview')} && document.querySelector('[aria-label="Membership badge"]')`, 'membership overview and digital pass');
+  await browser.waitFor(`${browser.bodyHas('Membership overview')} && document.querySelector('[aria-label="Membership card"]')`, 'membership overview and membership card');
   for (const text of ['First subscribed', 'Current period started', 'Renewal date', 'Days remaining', 'Upgrade your membership']) {
     assert.equal(await browser.evaluate(browser.bodyHas(text)), true, `overview includes ${text}`);
   }
@@ -946,7 +970,7 @@ await scenario('canceling a paid membership keeps the pass until period end and 
   await browser.clickText('Confirm cancellation');
   await browser.waitFor(`${browser.bodyHas('Keep my membership')} && ${browser.bodyHas('Access ends')}`, 'cancellation scheduled for the period end');
   assert.equal(await browser.evaluate(`JSON.parse(localStorage.getItem('navigation-qa-user')).membershipStatus`), 'active');
-  assert.equal(await browser.evaluate(`!!document.querySelector('[aria-label="Membership badge"]')`), true, 'the paid pass stays available');
+  assert.equal(await browser.evaluate(`!!document.querySelector('[aria-label="Membership card"]')`), true, 'the paid pass stays available');
   assert.equal(await browser.evaluate(`JSON.parse(sessionStorage.getItem('membership-A')).cancelAtPeriodEnd`), true);
   await browser.call('Page.reload');
   await browser.waitFor(browser.bodyHas('Keep my membership'), 'scheduled cancellation survives reload');
@@ -956,21 +980,21 @@ await scenario('canceling a paid membership keeps the pass until period end and 
   assert.equal(await browser.evaluate(`window.__navigationQa.requests.some(request => request.path.startsWith('/payments/'))`), false);
 });
 
-await scenario('canceling a free membership immediately removes its digital pass', { role: 'member', authenticated: true, organisation: 'A', membershipPortalFixture: true, freeMembershipFixture: true }, '/member/membership?organisation=A', async browser => {
-  await browser.waitFor(`document.querySelector('[aria-label="Membership badge"]') && ${browser.bodyHas('Free membership')}`, 'active free membership');
+await scenario('canceling a free membership immediately removes its membership card', { role: 'member', authenticated: true, organisation: 'A', membershipPortalFixture: true, freeMembershipFixture: true }, '/member/membership?organisation=A', async browser => {
+  await browser.waitFor(`document.querySelector('[aria-label="Membership card"]') && ${browser.bodyHas('Free membership')}`, 'active free membership');
   await browser.clickText('Cancel subscription');
-  await browser.waitFor(browser.bodyHas('Your membership and digital pass access will end immediately.'), 'free cancellation warning');
+  await browser.waitFor(browser.bodyHas('Your membership card and member access will end immediately.'), 'free cancellation warning');
   await browser.clickText('Confirm cancellation');
-  await browser.waitFor(`${browser.bodyHas('There is no active subscription to cancel.')} && !document.querySelector('[aria-label="Membership badge"]')`, 'free pass removed after cancellation');
+  await browser.waitFor(`${browser.bodyHas('There is no active subscription to cancel.')} && !document.querySelector('[aria-label="Membership card"]')`, 'free pass removed after cancellation');
   assert.equal(await browser.evaluate(`JSON.parse(localStorage.getItem('navigation-qa-user')).membershipStatus`), 'cancelled');
   assert.equal(await browser.evaluate(`JSON.parse(sessionStorage.getItem('membership-A')).cancelAtPeriodEnd`), false);
   assert.equal(await browser.evaluate(`window.__navigationQa.requests.some(request => request.path.startsWith('/payments/'))`), false);
   await browser.call('Page.reload');
-  await browser.waitFor(`${browser.bodyHas('Membership overview')} && !document.querySelector('[aria-label="Membership badge"]')`, 'cancelled membership remains manageable after reload');
+  await browser.waitFor(`${browser.bodyHas('Membership overview')} && !document.querySelector('[aria-label="Membership card"]')`, 'cancelled membership remains manageable after reload');
 });
 
 await scenario('membership upgrade previews unused credit and only changes the tier after an approved payment', { role: 'member', authenticated: true, organisation: 'A', membershipPortalFixture: true }, '/member/membership?organisation=A', async browser => {
-  await browser.waitFor(`document.querySelector('[aria-label="Upgrade to A Premium"]') && document.querySelector('[aria-label="Membership badge"]')`, 'upgrade choices and current pass');
+  await browser.waitFor(`document.querySelector('[aria-label="Upgrade to A Premium"]') && document.querySelector('[aria-label="Membership card"]')`, 'upgrade choices and current pass');
   await browser.clickSelector('[aria-label="Upgrade to A Premium"]');
   await browser.waitFor(`location.pathname === '/member/checkout' && new URLSearchParams(location.search).get('intent') === 'upgrade' && ${browser.bodyHas('MYR 20.00')}`, 'server upgrade quote');
   for (const amount of ['MYR 25.00', 'MYR 5.00']) assert.equal(await browser.evaluate(browser.bodyHas(amount)), true, `upgrade displays ${amount}`);
@@ -1005,12 +1029,12 @@ await scenario('membership upgrade previews unused credit and only changes the t
   assert.equal(await browser.evaluate(`JSON.parse(localStorage.getItem('navigation-qa-user')).tierId`), 'A-premium');
   assert.equal(await browser.evaluate(`JSON.parse(sessionStorage.getItem('membership-A')).firstSubscribedAt`), '2026-03-01T00:00:00.000Z');
   await browser.clickText('Back to membership');
-  await browser.waitFor(`location.pathname === '/member/membership' && document.querySelector('[aria-label="Membership badge"]')?.textContent.includes('A Premium')`, 'approved upgrade returns to membership overview');
+  await browser.waitFor(`location.pathname === '/member/membership' && document.querySelector('[aria-label="Membership card"]')?.textContent.includes('A Premium')`, 'approved upgrade returns to membership overview');
   assert.equal(await browser.evaluate(`!!document.querySelector('[aria-label="Upgrade to A Premium"]')`), false, 'the current tier cannot be purchased again as an upgrade');
 });
 
 await scenario('membership overview and upgrade quotes restore organisation context before fetching data', { role: 'member', authenticated: true, organisation: 'A', membershipPortalFixture: true }, '/member/membership?organisation=B', async browser => {
-  await browser.waitFor(`document.querySelector('[aria-label="Membership badge"]')?.textContent.includes('Beta Community') && document.querySelector('[aria-label="Upgrade to B Premium"]')`, 'Beta membership overview');
+  await browser.waitFor(`document.querySelector('[aria-label="Membership card"]')?.textContent.includes('Beta Community') && document.querySelector('[aria-label="Upgrade to B Premium"]')`, 'Beta membership overview');
   let reads = await browser.evaluate(`window.__navigationQa.requests.filter(request => request.path === '/members/membership')`);
   assert.ok(reads.length > 0);
   assert.equal(reads.every(request => request.organisation === 'B' && new URL(request.requestUrl, appOrigin).searchParams.get('organisationId') === 'B'), true);
@@ -1024,13 +1048,13 @@ await scenario('membership overview and upgrade quotes restore organisation cont
   await browser.evaluate('history.back()');
   await browser.waitFor(browser.bodyHas('Membership overview'), 'Beta overview after backing out of checkout');
   await browser.call('Page.reload');
-  await browser.waitFor(`document.querySelector('[aria-label="Membership badge"]')?.textContent.includes('Beta Community')`, 'Beta membership remains selected after reload');
+  await browser.waitFor(`document.querySelector('[aria-label="Membership card"]')?.textContent.includes('Beta Community')`, 'Beta membership remains selected after reload');
   reads = await browser.evaluate(`window.__navigationQa.requests.filter(request => request.path === '/members/membership')`);
   assert.equal(reads.every(request => request.organisation === 'B'), true);
 });
 
 await scenario('scheduled downgrade preserves the current pass, handles history and cancels without checkout', { role: 'member', authenticated: true, organisation: 'A', downgradeFixture: true }, '/member/membership?organisation=A', async browser => {
-  await browser.waitFor(`document.querySelector('[aria-label="Downgrade to A Community"]') && document.querySelector('[aria-label="Membership badge"]')?.textContent.includes('A Premium')`, 'cheaper membership choices');
+  await browser.waitFor(`document.querySelector('[aria-label="Downgrade to A Community"]') && document.querySelector('[aria-label="Membership card"]')?.textContent.includes('A Premium')`, 'cheaper membership choices');
   assert.equal(await browser.evaluate(`!!document.querySelector('[aria-label="Downgrade to A Annual Supporter"]')`), true, 'a cheaper equivalent monthly annual tier is offered');
   for (const tierName of ['A Equivalent Annual', 'A Higher Annual', 'A Inactive']) assert.equal(await browser.evaluate(`!!document.querySelector('[aria-label="Downgrade to ${tierName}"]')`), false, `${tierName} is not a cheaper active tier`);
   await browser.clickSelector('[aria-label="Downgrade to A Community"]');
@@ -1046,7 +1070,7 @@ await scenario('scheduled downgrade preserves the current pass, handles history 
   await browser.waitFor(`document.querySelector('[aria-label="Scheduled membership downgrade"]') && !document.querySelector('[role="dialog"]')`, 'downgrade saved');
   assert.equal(await browser.evaluate(`JSON.parse(sessionStorage.getItem('membership-A')).tierId`), 'A-premium');
   assert.equal(await browser.evaluate(`JSON.parse(sessionStorage.getItem('membership-A')).scheduledTierId`), 'A-tier');
-  assert.equal(await browser.evaluate(`document.querySelector('[aria-label="Membership badge"]').textContent.includes('A Premium')`), true, 'the expensive pass remains active');
+  assert.equal(await browser.evaluate(`document.querySelector('[aria-label="Membership card"]').textContent.includes('A Premium')`), true, 'the expensive pass remains active');
   assert.equal(await browser.evaluate(`window.__navigationQa.requests.some(request => request.path.startsWith('/payments/'))`), false, 'scheduling does not create a payment or quote');
   await browser.screenshot('membership-downgrade-desktop');
   await browser.call('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
@@ -1087,10 +1111,10 @@ await scenario('scheduled downgrade to a free tier takes effect at expiry withou
   await browser.clickSelector('[aria-label="Downgrade to A Free"]');
   await browser.clickText('Confirm downgrade');
   await browser.waitFor(browser.bodyHas('Your free membership will begin'), 'free downgrade scheduled');
-  await browser.waitFor(`document.querySelector('[aria-label="Membership badge"]')?.textContent.includes('A Premium')`, 'paid pass stays available after membership refresh and before expiry');
+  await browser.waitFor(`document.querySelector('[aria-label="Membership card"]')?.textContent.includes('A Premium')`, 'paid pass stays available after membership refresh and before expiry');
   await browser.evaluate(`(() => { const saved = JSON.parse(sessionStorage.getItem('membership-A')); saved.expirationDate = new Date(Date.now() - 60000).toISOString(); saved.scheduledTierEffectiveAt = saved.expirationDate; sessionStorage.setItem('membership-A', JSON.stringify(saved)); })()`);
   await browser.call('Page.reload');
-  await browser.waitFor(`document.querySelector('[aria-label="Membership badge"]')?.textContent.includes('A Free') && ${browser.bodyHas('No renewal required')}`, 'free tier applied after the paid period');
+  await browser.waitFor(`document.querySelector('[aria-label="Membership card"]')?.textContent.includes('A Free') && ${browser.bodyHas('No renewal required')}`, 'free tier applied after the paid period');
   assert.equal(await browser.evaluate(`window.__navigationQa.requests.some(request => request.path.startsWith('/payments/'))`), false, 'free downgrade never starts payment');
   assert.equal(await browser.evaluate(`JSON.parse(sessionStorage.getItem('membership-A')).scheduledTierId`), null);
 });
@@ -1216,6 +1240,84 @@ await scenario('password recovery changes forms and restores reset tokens throug
   await browser.evaluate('history.forward()');
   await browser.waitFor(`!!document.querySelector('#reset-email')`, 'Forward restores recovery form');
   assert.equal(await browser.evaluate(`document.querySelector('#reset-email').value`), '');
+});
+
+await scenario('notifications preview, full history, read state and mobile layout', { role: 'member', authenticated: true, organisation: 'A', notificationFixture: true }, '/account/memberships', async browser => {
+  await browser.waitFor(`!!document.querySelector('[aria-label="Notifications, 23 unread"]')`, 'unread notification badge');
+  await browser.clickSelector('[aria-label="Notifications, 23 unread"]');
+  await browser.waitFor(`document.querySelectorAll('#notification-dropdown .notification-item').length === 3`, 'exactly three recent notifications');
+  assert.deepEqual(await browser.evaluate(`[...document.querySelectorAll('#notification-dropdown .notification-organisation')].map(item => item.textContent)`), ['Beta Community', 'Alpha Community', 'Beta Community']);
+  await browser.call('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
+  await browser.waitFor(`!document.querySelector('#notification-dropdown')`, 'Escape closes notification preview');
+  assert.equal(await browser.evaluate(`document.activeElement.getAttribute('aria-label')`), 'Notifications, 23 unread');
+  await browser.clickSelector('[aria-label="Notifications, 23 unread"]');
+  await browser.clickText('View all notifications');
+  await browser.waitFor(`location.pathname === '/account/notifications' && document.querySelectorAll('.notifications-panel .notification-item').length === 20`, 'full history first page');
+  await browser.clickText('Next');
+  await browser.waitFor(`new URLSearchParams(location.search).get('page') === '2' && document.querySelectorAll('.notifications-panel .notification-item').length === 3`, 'history pagination');
+  await browser.clickSelector('[aria-label="Mark Community notice 21 as read"]');
+  await browser.waitFor(`!!document.querySelector('[aria-label="Notifications, 22 unread"]') && !document.querySelector('[aria-label="Mark Community notice 21 as read"]')`, 'single item marked read');
+  await browser.clickText('Mark all as read');
+  await browser.waitFor(`!!document.querySelector('[aria-label="Notifications"]') && !document.querySelector('.notification-item-unread')`, 'all notifications marked read');
+  await browser.call('Page.reload');
+  await browser.waitFor(`document.querySelectorAll('.notifications-panel .notification-item').length === 3 && !document.querySelector('.notification-item-unread')`, 'read state survives reload');
+  await browser.call('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
+  await browser.clickSelector('[aria-label="Notifications"]');
+  await browser.waitFor(`document.querySelectorAll('#notification-dropdown .notification-item').length === 3`, 'mobile dropdown');
+  assert.equal(await browser.evaluate(`(() => { const box = document.querySelector('#notification-dropdown').getBoundingClientRect(); return box.left >= 0 && box.right <= innerWidth && document.documentElement.scrollWidth <= innerWidth; })()`), true, 'mobile notifications fit the viewport');
+  assert.equal(await browser.evaluate(`document.querySelector('.navbar-brand').getBoundingClientRect().right <= document.querySelector('.navbar-tools').getBoundingClientRect().left`), true, 'mobile header has room for the notification button');
+  await browser.screenshot('notifications-mobile');
+});
+
+await scenario('notifications open the exact post and event across organisations', { role: 'member', authenticated: true, organisation: 'A', notificationFixture: true }, '/account/notifications', async browser => {
+  await browser.waitFor(`document.querySelectorAll('.notifications-panel .notification-item').length === 20`, 'notification history');
+  await browser.clickSelector('.notifications-panel .notification-item-link');
+  await browser.waitFor(`location.pathname === '/member/communication' && new URLSearchParams(location.search).get('organisation') === 'B' && ${browser.bodyHas('End of the complete notification post.')}`, 'specific Beta post fully displayed');
+  assert.equal(await browser.evaluate(`document.activeElement.getAttribute('aria-label')`), 'Selected post');
+  const requests = await browser.evaluate('window.__navigationQa.requests');
+  const selected = requests.findIndex(request => request.path === '/organisations/select');
+  assert.ok(requests.findIndex(request => request.path === '/posts/B-notification-post') > selected);
+  await browser.evaluate('history.back()');
+  await browser.waitFor(`location.pathname === '/account/notifications' && document.querySelectorAll('.notifications-panel .notification-item').length === 20`, 'Back restores notifications');
+  await browser.clickSelector('.notifications-panel .notification-item:nth-child(2) .notification-item-link');
+  await browser.waitFor(`location.pathname === '/member/events' && new URLSearchParams(location.search).get('organisation') === 'A' && !!document.querySelector('[aria-label="Selected event: A Open Workshop"]')`, 'specific Alpha event displayed');
+  assert.equal(await browser.evaluate(`document.querySelectorAll('[data-event-card]').length`), 1);
+  await browser.clickText('View all events');
+  await browser.waitFor(`!new URLSearchParams(location.search).has('event') && document.querySelectorAll('[data-event-card]').length > 1`, 'return to all events');
+});
+
+await scenario('notifications reminder settings save custom times and disabled reminders', { role: 'member', authenticated: true, organisation: 'A', notificationFixture: true }, '/account/profile', async browser => {
+  await browser.waitFor(`!!document.querySelector('#event-reminder-1')`, 'default reminder controls');
+  assert.deepEqual(await browser.evaluate(`[...document.querySelectorAll('input[id^="event-reminder-"]')].map(item => item.value)`), ['7', '1']);
+  await browser.fill('#event-reminder-0', '14');
+  await browser.fill('#event-reminder-1', '2');
+  await browser.clickText('Save Profile Changes');
+  await browser.waitFor(`window.__navigationQa.requests.some(item => item.path === '/members/profile')`, 'profile preferences saved');
+  assert.deepEqual(await browser.evaluate(`JSON.parse(localStorage.getItem('navigation-qa-user')).notifications.eventReminderDays`), [14, 2]);
+  await browser.call('Page.reload');
+  await browser.waitFor(`document.querySelector('#event-reminder-0')?.value === '14' && document.querySelector('#event-reminder-1')?.value === '2'`, 'custom reminders survive reload');
+  await browser.fill('#event-reminder-0', '');
+  await browser.evaluate(`(() => { const label = [...document.querySelectorAll('label')].find(item => item.textContent.includes('Receive event reminders')); label.querySelector('input').click(); })()`);
+  await browser.clickText('Save Profile Changes');
+  await browser.waitFor(`JSON.parse(localStorage.getItem('navigation-qa-user')).notifications.events === false`, 'disabled reminders save despite an unfinished timing edit');
+  assert.deepEqual(await browser.evaluate(`JSON.parse(localStorage.getItem('navigation-qa-user')).notifications.eventReminderDays`), [14, 2]);
+  await browser.waitFor(`document.querySelector('#event-reminder-0')?.value === '14' && document.querySelector('#event-reminder-0').matches(':disabled') && [...document.querySelectorAll('button')].some(item => item.textContent.trim() === 'Save Profile Changes' && !item.disabled)`, 'disabled reminder settings finish saving');
+  await browser.evaluate(`(() => { const label = [...document.querySelectorAll('label')].find(item => item.textContent.includes('Receive event reminders')); label.querySelector('input').click(); })()`);
+  await browser.waitFor(`!document.querySelector('#event-reminder-0').matches(':disabled')`, 'reminder controls enabled again');
+  await browser.clickSelector('[aria-label="Remove reminder 2"]');
+  await browser.waitFor(`document.querySelectorAll('input[id^="event-reminder-"]').length === 1`, 'second reminder removed');
+  await browser.clickSelector('[aria-label="Remove reminder 1"]');
+  await browser.waitFor(`document.querySelectorAll('input[id^="event-reminder-"]').length === 0`, 'last reminder removed');
+  await browser.clickText('Save Profile Changes');
+  await browser.waitFor(`JSON.parse(localStorage.getItem('navigation-qa-user')).notifications.eventReminderDays.length === 0`, 'all event reminders disabled');
+});
+
+await scenario('notifications use current membership status after an admin revokes access', { role: 'member', authenticated: true, organisation: 'A', notificationFixture: true }, '/account/notifications', async browser => {
+  await browser.waitFor(`document.querySelectorAll('.notifications-panel .notification-item').length === 20`, 'notification history before status change');
+  await browser.evaluate(`(() => { const user = JSON.parse(localStorage.getItem('navigation-qa-user')); user.memberships.find(item => item.organisationId === 'B').status = 'revoked'; localStorage.setItem('navigation-qa-user', JSON.stringify(user)); })()`);
+  await browser.clickSelector('.notifications-panel .notification-item:nth-child(3) .notification-item-link');
+  await browser.waitFor(`location.pathname === '/account/memberships'`, 'revoked membership opens the account list');
+  assert.equal(await browser.evaluate(`window.__navigationQa.requests.some(item => item.path === '/members/membership' || item.path === '/organisations/select')`), false, 'revoked notification never requests the restricted portal');
 });
 
 console.log(JSON.stringify({ passed: results.filter(result => result.status === 'passed').length, total: results.length, results }, null, 2));

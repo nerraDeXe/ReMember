@@ -1,4 +1,4 @@
-const accountPages = new Set(['account-organisations', 'account-memberships', 'member-organisations', 'member-profile', 'organisation-setup']);
+const accountPages = new Set(['account-organisations', 'account-memberships', 'member-organisations', 'member-profile', 'account-notifications', 'organisation-setup']);
 
 // These URLs are shared by links, browser history, and direct page visits.
 export const PAGE_PATHS = Object.freeze({
@@ -14,6 +14,7 @@ export const PAGE_PATHS = Object.freeze({
   'account-organisations': '/account/organisations',
   'account-memberships': '/account/memberships',
   'member-profile': '/account/profile',
+  'account-notifications': '/account/notifications',
   'member-dashboard': '/member/dashboard',
   'member-events': '/member/events',
   'member-invoices': '/member/invoices',

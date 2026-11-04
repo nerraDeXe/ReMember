@@ -1,0 +1,271 @@
+Command: node --test --test-reporter=tap --test-name-pattern="^Gateway routes derive identity and price on the server and discard card credentials$" backend/tests/payment-gateway.test.js
+Exit code: 0
+
+STDOUT
+TAP version 13
+# Subtest: Gateway sessions snapshot the server MYR price without activating paid membership
+ok 1 - Gateway sessions snapshot the server MYR price without activating paid membership # SKIP test name does not match pattern
+  ---
+  duration_ms: 1.2543
+  ...
+# Subtest: Free, unsupported, invalid and unjoined paid tiers cannot create a gateway session
+ok 2 - Free, unsupported, invalid and unjoined paid tiers cannot create a gateway session # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.3445
+  ...
+# Subtest: Viewing an open session leaves the member locked and does not create payment records
+ok 3 - Viewing an open session leaves the member locked and does not create payment records # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.1788
+  ...
+# Subtest: Tier capacity excludes the paying member and is checked again before confirmation
+ok 4 - Tier capacity excludes the paying member and is checked again before confirmation # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.1708
+  ...
+# Subtest: The explicit demo verification code is required before approval
+ok 5 - The explicit demo verification code is required before approval # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.1967
+  ...
+# Subtest: Invalid gateway methods and outcomes cannot authorize a payment
+ok 6 - Invalid gateway methods and outcomes cannot authorize a payment # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.1693
+  ...
+# Subtest: Verified demo card approval activates a membership and records one MYR invoice
+ok 7 - Verified demo card approval activates a membership and records one MYR invoice # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.1836
+  ...
+# Subtest: Verified demo online_banking approval activates a membership and records one MYR invoice
+ok 8 - Verified demo online_banking approval activates a membership and records one MYR invoice # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.2569
+  ...
+# Subtest: Verified demo ewallet approval activates a membership and records one MYR invoice
+ok 9 - Verified demo ewallet approval activates a membership and records one MYR invoice # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.282
+  ...
+# Subtest: Repeated approved confirmation reuses its invoice and never extends access twice
+ok 10 - Repeated approved confirmation reuses its invoice and never extends access twice # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.2662
+  ...
+# Subtest: A declined demo payment stays locked and records a failed invoice once
+ok 11 - A declined demo payment stays locked and records a failed invoice once # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.185
+  ...
+# Subtest: Cancellation leaves paid membership pending and prevents later confirmation
+ok 12 - Cancellation leaves paid membership pending and prevents later confirmation # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.2761
+  ...
+# Subtest: Expired checkout sessions cannot activate membership
+ok 13 - Expired checkout sessions cannot activate membership # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.2534
+  ...
+# Subtest: Checkout lookup, confirmation and cancellation are isolated by both member and organisation
+ok 14 - Checkout lookup, confirmation and cancellation are isolated by both member and organisation # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.2318
+  ...
+# Subtest: A session uses its original server price even if the tier is edited before confirmation
+ok 15 - A session uses its original server price even if the tier is edited before confirmation # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.474
+  ...
+# Subtest: A manual renewal extends existing paid access once and does not repeat the welcome email
+ok 16 - A manual renewal extends existing paid access once and does not repeat the welcome email # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.3137
+  ...
+# Subtest: Monthly renewal clamps the last day of shorter months
+ok 17 - Monthly renewal clamps the last day of shorter months # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.1782
+  ...
+# Subtest: Yearly membership clamps leap day and expired renewal begins at the current time
+ok 18 - Yearly membership clamps leap day and expired renewal begins at the current time # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.1616
+  ...
+# Subtest: Failed manual renewal never extends the previously paid membership period
+ok 19 - Failed manual renewal never extends the previously paid membership period # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.2212
+  ...
+# Subtest: Administrative suspension after session creation cannot be undone by approval
+ok 20 - Administrative suspension after session creation cannot be undone by approval # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.161
+  ...
+# Subtest: A failed transaction rolls back invoice and activation so confirmation can be retried
+ok 21 - A failed transaction rolls back invoice and activation so confirmation can be retried # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.1428
+  ...
+# Subtest: Notification failure does not undo an approved demo payment
+ok 22 - Notification failure does not undo an approved demo payment # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.1354
+  ...
+# Subtest: Invoices enforce one checkout reference and checkout schemas have no payment credential fields
+ok 23 - Invoices enforce one checkout reference and checkout schemas have no payment credential fields # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.1225
+  ...
+# Subtest: Payment routes reject missing authentication, owner checkout and stale organisation submissions
+ok 24 - Payment routes reject missing authentication, owner checkout and stale organisation submissions # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.1207
+  ...
+# Subtest: Gateway routes derive identity and price on the server and discard card credentials
+ok 25 - Gateway routes derive identity and price on the server and discard card credentials
+  ---
+  duration_ms: 160.4822
+  ...
+# Subtest: Upgrade quotes credit unused paid days and start a new full billing period without mutating membership
+ok 26 - Upgrade quotes credit unused paid days and start a new full billing period without mutating membership # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.3333
+  ...
+# Subtest: Upgrade confirmation persists the credit breakdown, service value and first known subscription date once
+ok 27 - Upgrade confirmation persists the credit breakdown, service value and first known subscription date once # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.1757
+  ...
+# Subtest: A second upgrade transfers the remaining service value rather than only the previous net cash payment
+ok 28 - A second upgrade transfers the remaining service value rather than only the previous net cash payment # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.1706
+  ...
+# Subtest: Legacy credit comes from the actual paid invoice even if an administrator changed the tier price
+ok 29 - Legacy credit comes from the actual paid invoice even if an administrator changed the tier price # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.3086
+  ...
+# Subtest: Foreign currency and failed invoices cannot create unused credit for legacy active memberships
+ok 30 - Foreign currency and failed invoices cannot create unused credit for legacy active memberships # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.174
+  ...
+# Subtest: Event ticket invoices cannot create upgrade credit or establish the first subscription date
+ok 31 - Event ticket invoices cannot create upgrade credit or establish the first subscription date # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.3415
+  ...
+# Subtest: Upgrade requires explicit intent and a strictly higher equivalent monthly price
+ok 32 - Upgrade requires explicit intent and a strictly higher equivalent monthly price # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.1972
+  ...
+# Subtest: Free active members can upgrade for the full new period without invented credit
+ok 33 - Free active members can upgrade for the full new period without invented credit # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.2757
+  ...
+# Subtest: Paused, expired, suspended and pending memberships cannot bypass the upgrade policy
+ok 34 - Paused, expired, suspended and pending memberships cannot bypass the upgrade policy # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.1121
+  ...
+# Subtest: Scheduled cancellation and later cancellation changes invalidate an existing upgrade quote
+ok 35 - Scheduled cancellation and later cancellation changes invalidate an existing upgrade quote # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.0992
+  ...
+# Subtest: A active membership whose cancellation has taken effect can renew its existing tier
+ok 36 - A active membership whose cancellation has taken effect can renew its existing tier # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.1063
+  ...
+# Subtest: A cancelled membership whose cancellation has taken effect can renew its existing tier
+ok 37 - A cancelled membership whose cancellation has taken effect can renew its existing tier # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.0912
+  ...
+# Subtest: Only one of two competing upgrade checkouts can consume the same credit
+ok 38 - Only one of two competing upgrade checkouts can consume the same credit # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.0889
+  ...
+# Subtest: Declined and cancelled upgrades preserve existing access, credit and the current tier
+ok 39 - Declined and cancelled upgrades preserve existing access, credit and the current tier # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.0949
+  ...
+# Subtest: Yearly to monthly upgrades preserve excess credit and zero-charge confirmations do not lose it
+ok 40 - Yearly to monthly upgrades preserve excess credit and zero-charge confirmations do not lose it # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.5686
+  ...
+# Subtest: Multiple prepaid renewal periods are transferred into an upgrade without losing future paid access value
+ok 41 - Multiple prepaid renewal periods are transferred into an upgrade without losing future paid access value # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.1278
+  ...
+# Subtest: A quote request is read-only, owner-scoped and disregards client-supplied prices and credits
+ok 42 - A quote request is read-only, owner-scoped and disregards client-supplied prices and credits # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.089
+  ...
+# Subtest: A scheduled downgrade cannot be paid early or bypassed by renewing the expensive tier
+ok 43 - A scheduled downgrade cannot be paid early or bypassed by renewing the expensive tier # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.0867
+  ...
+# Subtest: At the exact period boundary a paid downgrade renews only the scheduled tier without unused-period credit
+ok 44 - At the exact period boundary a paid downgrade renews only the scheduled tier without unused-period credit # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.0975
+  ...
+# Subtest: Late scheduled renewal begins when paid and uses the cheaper tier billing interval
+ok 45 - Late scheduled renewal begins when paid and uses the cheaper tier billing interval # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.0841
+  ...
+# Subtest: A failed or cancelled downgrade renewal preserves the pending choice and original paid-period end
+ok 46 - A failed or cancelled downgrade renewal preserves the pending choice and original paid-period end # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.1056
+  ...
+# Subtest: Cancelling or replacing a scheduled change invalidates its existing checkout, even without a revision update
+ok 47 - Cancelling or replacing a scheduled change invalidates its existing checkout, even without a revision update # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.0895
+  ...
+# Subtest: A scheduled renewal requires a currently available cheaper tier and capacity again at confirmation
+ok 48 - A scheduled renewal requires a currently available cheaper tier and capacity again at confirmation # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.188
+  ...
+# Subtest: An approved immediate upgrade clears a pending downgrade, while a decline leaves it scheduled
+ok 49 - An approved immediate upgrade clears a pending downgrade, while a decline leaves it scheduled # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.1009
+  ...
+# Subtest: A newly scheduled downgrade invalidates an existing expensive-tier renewal before it can extend access
+ok 50 - A newly scheduled downgrade invalidates an existing expensive-tier renewal before it can extend access # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.1186
+  ...
+# Subtest: Payment routes permit only the selected organisation scheduled target after its paid period ends
+ok 51 - Payment routes permit only the selected organisation scheduled target after its paid period ends # SKIP test name does not match pattern
+  ---
+  duration_ms: 0.0964
+  ...
+1..51
+# tests 51
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 50
+# todo 0
+# duration_ms 1773.9456
+
+STDERR

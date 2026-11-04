@@ -26,7 +26,7 @@ export default function TierModal({ isOpen, onClose, tierToEdit, onSaved }) {
       setPrice(49);
       setInterval('monthly');
       setDescription('');
-      setPerksText('Access to monthly community meetups\nDigital membership pass in Google Wallet');
+      setPerksText('Access to monthly community meetups\nDigital membership card');
       setMaxMembers('');
     }
   }, [tierToEdit, isOpen]);
@@ -64,12 +64,12 @@ export default function TierModal({ isOpen, onClose, tierToEdit, onSaved }) {
   };
 
   return (
-    <div className="tier-modal-overlay">
-      <div className="tier-modal-dialog">
+    <div className="dialog-overlay overflow-y-auto">
+      <div className="surface-card tier-dialog">
         {/* Header */}
-        <div className="tier-modal-header">
-          <div className="tier-modal-heading">
-            <div className="tier-modal-icon">
+        <div className="row-between tier-dialog-header">
+          <div className="row-inline-wide">
+            <div className="tier-dialog-icon">
               <Layers className="icon-medium" />
             </div>
             <div>
@@ -81,17 +81,17 @@ export default function TierModal({ isOpen, onClose, tierToEdit, onSaved }) {
           </div>
           <button
             onClick={onClose}
-            className="tier-modal-close"
+            className="dialog-close-button"
           >
             <X className="icon-medium" />
           </button>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="tier-modal-form">
-          <div className="tier-modal-pricing-fields">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div className="grid-pair gap-4">
             <div>
-              <label htmlFor="tier-name" className="tier-modal-field-label">Tier Name</label>
+              <label htmlFor="tier-name" className="label-compact">Tier Name</label>
               <input
                 id="tier-name"
                 type="text"
@@ -99,11 +99,11 @@ export default function TierModal({ isOpen, onClose, tierToEdit, onSaved }) {
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. Diamond Patron"
                 required
-                className="tier-modal-input"
+                className="control control-standard control-focus"
               />
             </div>
             <div>
-              <label htmlFor="tier-price" className="tier-modal-field-label">Price (MYR)</label>
+              <label htmlFor="tier-price" className="label-compact">Price (MYR)</label>
               <input
                 id="tier-price"
                 type="number"
@@ -112,19 +112,19 @@ export default function TierModal({ isOpen, onClose, tierToEdit, onSaved }) {
                 min="0"
                 step="0.01"
                 required
-                className="tier-modal-input"
+                className="control control-standard control-focus"
               />
             </div>
           </div>
 
           <div>
             <div>
-              <label htmlFor="tier-interval" className="tier-modal-field-label">Billing Interval</label>
+              <label htmlFor="tier-interval" className="label-compact">Billing Interval</label>
               <select
                 id="tier-interval"
                 value={interval}
                 onChange={(e) => setInterval(e.target.value)}
-                className="tier-modal-input"
+                className="control control-standard control-focus"
               >
                 <option value="monthly">Monthly</option>
                 <option value="yearly">Yearly</option>
@@ -133,19 +133,19 @@ export default function TierModal({ isOpen, onClose, tierToEdit, onSaved }) {
           </div>
 
           <div>
-            <label htmlFor="tier-description" className="tier-modal-field-label">Short Description</label>
+            <label htmlFor="tier-description" className="label-compact">Short Description</label>
             <input
               id="tier-description"
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Elevated perks for community patrons"
-              className="tier-modal-input"
+              className="control control-standard control-focus"
             />
           </div>
 
           <div>
-            <label htmlFor="tier-perks" className="tier-modal-field-label">
+            <label htmlFor="tier-perks" className="label-compact">
               Tier Perks (one benefit per line)
             </label>
             <textarea
@@ -154,29 +154,29 @@ export default function TierModal({ isOpen, onClose, tierToEdit, onSaved }) {
               value={perksText}
               onChange={(e) => setPerksText(e.target.value)}
               placeholder="Enter perk on each line..."
-              className="tier-modal-perks-input"
+              className="control control-compact control-focus text-sm font-mono"
             />
           </div>
 
           <div>
             <div>
-              <label htmlFor="tier-capacity" className="tier-modal-field-label">Max Member Capacity</label>
+              <label htmlFor="tier-capacity" className="label-compact">Max Member Capacity</label>
               <input
                 id="tier-capacity"
                 type="number"
                 value={maxMembers}
                 onChange={(e) => setMaxMembers(e.target.value)}
                 placeholder="Unlimited"
-                className="tier-modal-input"
+                className="control control-standard control-focus"
               />
             </div>
           </div>
 
-          <div className="tier-modal-footer">
+          <div className="pt-2">
             <button
               type="submit"
               disabled={saving}
-              className="tier-modal-save"
+              className="button-primary button-content tier-dialog-save"
             >
               {saving ? (
                 <>

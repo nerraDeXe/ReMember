@@ -8,8 +8,8 @@ export default function PhoneInput({ country, value, onChange, id, disabled = fa
   const limit = 15 - prefix.length;
   return (
     <div>
-      <div className="phone-field">
-        <span className="phone-calling-code" aria-label="Country calling code">+{prefix}</span>
+      <div className="phone-control">
+        <span className="control-editor phone-prefix" aria-label="Country calling code">+{prefix}</span>
         <input id={id} type="tel" inputMode="numeric" autoComplete="tel-national" value={national} maxLength={limit} disabled={disabled || !country} aria-describedby={`${id}-hint`} onChange={event => {
           let input = event.target.value;
           let next = input.replace(/\D/g, '');
@@ -19,9 +19,9 @@ export default function PhoneInput({ country, value, onChange, id, disabled = fa
           }
           next = next.slice(0, limit);
           onChange(next ? `+${prefix}${next}` : '');
-        }} className="phone-input" />
+        }} className="control-editor phone-number" />
       </div>
-      <p id={`${id}-hint`} className="phone-hint">{country ? 'Digits only. Maximum 15 digits including the country code.' : 'Choose your country first.'}</p>
+      <p id={`${id}-hint`} className="text-caption mt-1.5">{country ? 'Digits only. Maximum 15 digits including the country code.' : 'Choose your country first.'}</p>
     </div>
   );
 }

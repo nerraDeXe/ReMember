@@ -1,8 +1,9 @@
 import { config } from './config/config.js';
 import { dbManager } from './models/db.js';
-import { Invoice, PaymentCheckout, Organisation, Tier } from './models/index.js';
+import { Invoice, PaymentCheckout, Organisation, Tier, Notification } from './models/index.js';
 import { migrateMembershipBadges } from './services/membershipBadgeMigration.js';
 import { startRenewalScheduler } from './services/renewalScheduler.js';
+import { startNotificationScheduler } from './services/notifications.js';
 import { mailDelivery } from './services/mailDelivery.js';
 import { createApp } from './app.js';
 
@@ -15,7 +16,7 @@ async function startServer() {
     // Native collections also remove fields no longer present in the tier schema.
     await migrateMembershipBadges({ organisations: Organisation.collection, tiers: Tier.collection });
     // Payment idempotency relies on these unique indexes before serving traffic.
-    await Promise.all([Invoice.init(), PaymentCheckout.init()]);
+    await Promise.all([Invoice.init(), PaymentCheckout.init(), Notification.init()]);
 
     const server = app.listen(config.PORT, () => {
       console.log(`\n======================================================`);
@@ -23,12 +24,13 @@ async function startServer() {
       console.log(`📡 Base API URL: http://localhost:${config.PORT}/api`);
       console.log(`🛡️  RBAC & JWT Security: ENABLED`);
       console.log('💳 Payment gateway: DEMO MODE (no money is charged)');
-      console.log(`🎟️  Google Wallet Pass Engine: ENABLED`);
       console.log(`✉️  Automated Email Dispatcher: ${mailDelivery.isConfigured() ? `${mailDelivery.deliveryMethod()} configured` : 'NOT CONFIGURED'}`);
       console.log(`======================================================\n`);
     });
     const stopRenewalScheduler = startRenewalScheduler();
     server.on('close', stopRenewalScheduler);
+    const stopNotificationScheduler = startNotificationScheduler();
+    server.on('close', stopNotificationScheduler);
   } catch (error) {
     console.error('Fatal initialization error:', error);
     process.exit(1);

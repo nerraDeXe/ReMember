@@ -4,6 +4,7 @@ import { effectiveMembershipStatus } from './membershipState.js';
 import { updateOrgMemberCount } from './organisationAccess.js';
 import { equivalentMonthlyCents } from './membershipProration.js';
 import { billingRevisionFilter, scheduledDowngradeUnset } from './scheduledDowngrade.js';
+import { notifyMembershipChange } from './notifications.js';
 
 export class MembershipError extends Error {
   constructor(status, message) { super(message); this.status = status; }
@@ -68,6 +69,7 @@ export async function changeMembershipCancellation({ user, membership, organisat
     $inc: { billingRevision: 1 }
   }, { new: true, runValidators: true });
   if (!updated) throw new MembershipError(409, 'Your membership changed. Reload it before continuing.');
+  await notifyMembershipChange(membership, updated, { organisation, now }).catch(() => console.error('Could not record membership cancellation notification.'));
   await ActivityLog.create({ organisationId: String(organisation._id), action: resume ? 'MEMBERSHIP_CANCELLATION_UNDONE' : 'MEMBERSHIP_CANCELLED',
     userId: String(user._id), userName: user.name, userEmail: user.email, actorRole: 'member',
     details: { effectiveAt: paidAccessRemaining ? membership.expirationDate : timestamp, cancelAtPeriodEnd: !resume && paidAccessRemaining }, timestamp
@@ -117,6 +119,7 @@ export async function scheduleMembershipDowngrade({ user, membership, organisati
     userId: String(user._id), userName: user.name, userEmail: user.email, actorRole: 'member',
     details: { previousTierId: membership.tierId, tierId: String(target._id), effectiveAt: membership.expirationDate }, timestamp
   }).catch(() => console.error('Could not record membership downgrade audit.'));
+  await notifyMembershipChange(membership, updated, { organisation, now }).catch(() => console.error('Could not record membership downgrade notification.'));
   return updated;
 }
 
@@ -132,5 +135,6 @@ export async function cancelMembershipDowngrade({ user, membership, organisation
     userId: String(user._id), userName: user.name, userEmail: user.email, actorRole: 'member',
     details: { tierId: membership.scheduledTierId }, timestamp: now.toISOString()
   }).catch(() => console.error('Could not record membership downgrade audit.'));
+  await notifyMembershipChange(membership, updated, { organisation, now }).catch(() => console.error('Could not record membership downgrade notification.'));
   return updated;
 }

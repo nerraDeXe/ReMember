@@ -2,11 +2,11 @@
 
 These changes reduce duplication and unnecessary work while keeping the existing account, organisation and portal flows.
 
-## Styling follow-up — descriptive CSS classes
+## Styling follow-up — concise component design system
 
-The frontend now uses short semantic class names in JSX, with the former Tailwind configurations in `frontend/src/styles/*.css`. For example, an event day uses `className="event-schedule-day"`; its complete layout is defined with `@apply` in `styles/event-display.css`. Shared rules and page-specific rules are grouped by source file in `styles/interface.css`.
+The frontend uses shared component and pattern classes in `frontend/src/styles/*.css` for common elements (headings, stacks, tables, badges, cards, filters), with short utilities for local adjustments. A follow-up extracts the remaining long class lists across 41 JSX files into shared controls and focused component, public/account, admin and member stylesheets. Each affected stylesheet stays under 150 lines; common button, input, card and layout styles compose as short class names in JSX.
 
-See [the styling guide](docs/STYLING.md) for the stylesheet map, examples, state handling, cascade considerations and the generated-CSS size tradeoff. This follow-up prioritises readability and the location of styling; the source and bundle counts in the earlier review below describe that earlier pass.
+See [the styling guide](docs/STYLING.md) for the stylesheet map, examples, state handling, cascade considerations and bundle metrics.
 
 ## Frontend structure and loading review — 29 October 2026
 

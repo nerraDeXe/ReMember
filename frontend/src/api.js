@@ -42,6 +42,7 @@ const jsonMethod = (method) => (endpoint, data) => apiRequest(endpoint, {
 });
 const post = jsonMethod('POST');
 const put = jsonMethod('PUT');
+const patch = jsonMethod('PATCH');
 const remove = jsonMethod('DELETE');
 const get = (endpoint, params = {}, options) => {
   const query = new URLSearchParams(params).toString();
@@ -64,7 +65,6 @@ export const api = {
   // Members
   getMemberDashboard: () => apiRequest('/members/dashboard'),
   updateProfile: (profileData) => put('/members/profile', profileData),
-  getWalletPass: () => apiRequest('/members/wallet-pass'),
   getMemberInvoices: () => apiRequest('/members/invoices'),
   getMembership: (organisationId) => get('/members/membership', { organisationId }),
   cancelMembership: (organisationId) => post('/members/membership/cancel', { organisationId }),
@@ -72,6 +72,11 @@ export const api = {
   scheduleMembershipDowngrade: (organisationId, tierId) => post('/members/membership/downgrade', { organisationId, tierId }),
   cancelMembershipDowngrade: (organisationId) => post('/members/membership/downgrade/cancel', { organisationId }),
   downloadInvoice: (id) => apiRequest(`/members/invoices/${id}/download`),
+
+  // Account-wide notifications
+  getNotifications: (params) => get('/notifications', params),
+  markNotificationRead: (id) => patch(`/notifications/${encodeURIComponent(id)}/read`),
+  markAllNotificationsRead: () => patch('/notifications/read-all'),
 
   // Tiers
   getTiers: (organisationId) => get('/tiers', organisationId ? { organisationId } : {}),
@@ -94,9 +99,6 @@ export const api = {
   getPaymentCheckout: (sessionId, organisationId) => get(`/payments/checkout/${encodeURIComponent(sessionId)}`, { organisationId }),
   confirmPayment: (sessionId, organisationId, details) => post(`/payments/checkout/${encodeURIComponent(sessionId)}/confirm`, { ...details, organisationId }),
   cancelPayment: (sessionId, organisationId) => post(`/payments/checkout/${encodeURIComponent(sessionId)}/cancel`, { organisationId }),
-
-  // Wallet
-  syncWalletObject: (memberId) => put(`/wallet/update-object/${memberId}`),
 
   // Admin
   getAdminMembers: (params) => get('/admin/members', params),

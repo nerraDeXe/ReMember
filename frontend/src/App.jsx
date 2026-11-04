@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext.jsx';
 import { ToastProvider, useToast } from './context/ToastContext.jsx';
+import { NotificationsProvider } from './context/NotificationsContext.jsx';
 
 import Navbar from './components/Navbar.jsx';
 import Sidebar from './components/Sidebar.jsx';
@@ -18,6 +19,7 @@ const PasswordRecoveryPage = lazy(() => import('./pages/PasswordRecoveryPage.jsx
 // Member Pages
 const MemberDashboard = lazy(() => import('./pages/member/MemberDashboard.jsx'));
 const ProfilePage = lazy(() => import('./pages/member/ProfilePage.jsx'));
+const NotificationsPage = lazy(() => import('./pages/NotificationsPage.jsx'));
 const EventsCalendarPage = lazy(() => import('./pages/member/EventsCalendarPage.jsx'));
 const InvoicesPage = lazy(() => import('./pages/member/InvoicesPage.jsx'));
 const CheckoutPage = lazy(() => import('./pages/member/MembershipPage.jsx').then(module => ({ default: module.CheckoutPage })));
@@ -129,10 +131,10 @@ function MainApp() {
 
   if (loading || needsOrganisation || contextRequest || allowedPage !== currentPage) {
     return (
-      <div className="app-initializing">
-        <div className="app-loading-content">
+      <div className="icon-center page-background">
+        <div className="row-inline-wide flex-col">
           <div className="app-loading-spinner" />
-          <p className="app-loading-message">
+          <p className="text-caption font-mono tracking-wider">
             INITIALIZING REMEMBER SYSTEM...
           </p>
         </div>
@@ -140,7 +142,7 @@ function MainApp() {
     );
   }
 
-  if (currentPage === 'not-found') return <div className="app-not-found"><h1 className="app-not-found-title">Page not found</h1><p className="text-description">This address does not match a ReMember page.</p><a href={getPageUrl(user ? getAccountHomePage(user) : 'landing', { organisationId: user?.activeOrganisationId })} onClick={event => { event.preventDefault(); handleNavigate(user ? 'account-home' : 'landing'); }} className="app-home-link">Go to home</a></div>;
+  if (currentPage === 'not-found') return <div className="icon-center app-missing-page"><h1 className="text-2xl font-bold">Page not found</h1><p className="text-description">This address does not match a ReMember page.</p><a href={getPageUrl(user ? getAccountHomePage(user) : 'landing', { organisationId: user?.activeOrganisationId })} onClick={event => { event.preventDefault(); handleNavigate(user ? 'account-home' : 'landing'); }} className="link-underlined">Go to home</a></div>;
 
   // Public unauthenticated pages
   if (['forgot-password', 'reset-password'].includes(currentPage)) return <PasswordRecoveryPage key={currentPage} reset={currentPage === 'reset-password'} onNavigate={handleNavigate} />;
@@ -169,7 +171,7 @@ function MainApp() {
           isAdmin={isAdmin}
         />}
 
-        <main key={isAccountPage(currentPage) ? user._id : user.activeOrganisationId || 'account'} className="app-page">
+        <main key={isAccountPage(currentPage) ? user._id : user.activeOrganisationId || 'account'} className="app-content">
           <Suspense fallback={<p role="status" className="text-description">Loading page…</p>}>
             {['account-organisations', 'account-memberships', 'member-organisations'].includes(currentPage) && <AccountHomePage activeTab={currentPage === 'account-organisations' ? 'organisations' : 'memberships'} onNavigate={handleNavigate} onJoined={handleJoinedOrganisation} />}
             {/* Member Routes */}
@@ -177,6 +179,7 @@ function MainApp() {
             {currentPage === 'member-checkout' && <CheckoutPage onNavigate={handleNavigate} />}
             {currentPage === 'member-membership' && <MembershipPage onNavigate={handleNavigate} />}
             {currentPage === 'member-profile' && <ProfilePage />}
+            {currentPage === 'account-notifications' && <NotificationsPage onNavigate={handleNavigate} />}
             {currentPage === 'member-events' && <EventsCalendarPage />}
             {currentPage === 'member-invoices' && <InvoicesPage />}
             {currentPage === 'member-communication' && <CommunicationLayout onNavigate={handleNavigate}><PostsPage /></CommunicationLayout>}
@@ -205,7 +208,7 @@ export default function App() {
   return (
     <NavigationProvider><AuthProvider>
       <ToastProvider>
-        <Suspense fallback={<div className="app-loading-screen">Loading…</div>}><MainApp /></Suspense>
+        <NotificationsProvider><Suspense fallback={<div className="icon-center text-description min-h-screen bg-slate-50">Loading…</div>}><MainApp /></Suspense></NotificationsProvider>
       </ToastProvider>
     </AuthProvider></NavigationProvider>
   );

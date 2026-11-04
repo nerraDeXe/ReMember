@@ -10,7 +10,7 @@ import { postContentText } from '../../../shared/postContent.js';
 import { useUrlState, useNavigation } from '../routing.jsx';
 
 const blankPost = () => ({ title: '', subtitle: '', imageUrl: '', description: '', descriptionContent: null });
-const inputClass = "posts-input";
+const inputClass = "control control-ring-strong control-editor control-disabled placeholder:text-slate-400";
 const PAGE_SIZE = 6;
 const PostDescriptionEditor = lazy(() => import('../components/PostDescriptionEditor.jsx'));
 
@@ -25,6 +25,9 @@ export default function PostsPage({ canManage = false }) {
   const requestedPage = Number(pageRoute);
   const page = Number.isSafeInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
   const [postRoute, setPostRoute] = useUrlState('post');
+  const [selectedPostState, setSelectedPostState] = useState(null);
+  const selectedPostRef = useRef(null);
+  const selectedPost = selectedPostState?.id === postRoute && selectedPostState?.organisationId === organisationId ? selectedPostState : null;
   const { getSnapshot, updateQuery, closeQuery } = useNavigation();
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -54,6 +57,27 @@ export default function PostsPage({ canManage = false }) {
     mounted.current = true;
     return () => { mounted.current = false; };
   }, []);
+
+  useEffect(() => {
+    if (canManage || !postRoute) return;
+    let cancelled = false;
+    setSelectedPostState({ id: postRoute, organisationId, loading: true });
+    api.getPost(postRoute, organisationId).then(data => {
+      if (cancelled || getCurrentUser()?.activeOrganisationId !== organisationId) return;
+      if (!data.success || !data.post) throw new Error('This post is no longer available.');
+      setSelectedPostState({ id: postRoute, organisationId, post: data.post });
+    }).catch(error => {
+      if (!cancelled && getCurrentUser()?.activeOrganisationId === organisationId) setSelectedPostState({ id: postRoute, organisationId, error: error.message || 'This post could not be loaded.' });
+    });
+    return () => { cancelled = true; };
+  }, [canManage, postRoute, organisationId, getCurrentUser, reload]);
+
+  useEffect(() => {
+    if (!canManage && postRoute && selectedPost && !selectedPost.loading) {
+      selectedPostRef.current?.scrollIntoView({ block: 'start' });
+      selectedPostRef.current?.focus({ preventScroll: true });
+    }
+  }, [canManage, postRoute, selectedPost]);
 
   const stillCurrent = () => mounted.current && getCurrentUser()?.activeOrganisationId === organisationId;
 
@@ -224,120 +248,127 @@ export default function PostsPage({ canManage = false }) {
 
   return (
     <div className="section-stack">
-      <div className="posts-header">
+      <div className="row-wrap-wide justify-between">
         <div>
           <h2 className="section-title">{canManage ? 'Posts for your members' : 'Your organisation, in the loop'}</h2>
-          <p className="posts-intro">{canManage ? 'Share a quick update, an important notice, or something worth knowing.' : `News, notices, and updates from ${organisationName}.`}</p>
+          <p className="page-description leading-relaxed">{canManage ? 'Share a quick update, an important notice, or something worth knowing.' : `News, notices, and updates from ${organisationName}.`}</p>
         </div>
         {canManage ? (
-          <div className="posts-header-actions">
-            <span className="posts-audience-badge"><Users className="icon-small" aria-hidden="true" />Visible to this organisation's members</span>
-            {postRoute !== 'new' && <button type="button" onClick={focusComposer} disabled={busy} className="posts-create"><Plus className="icon-default" aria-hidden="true" />Create a post</button>}
+          <div className="row-wrap-wide">
+            <span className="text-hint button-inline posts-count"><Users className="icon-small" aria-hidden="true" />Visible to this organisation's members</span>
+            {postRoute !== 'new' && <button type="button" onClick={focusComposer} disabled={busy} className="button-primary button-inline posts-new-button"><Plus className="icon-default" aria-hidden="true" />Create a post</button>}
           </div>
         ) : (
-          !loading && !loadError && <span className="posts-total-badge">{total} {total === 1 ? 'post' : 'posts'}</span>
+          !loading && !loadError && <span className="posts-page-label">{total} {total === 1 ? 'post' : 'posts'}</span>
         )}
       </div>
 
+      {!canManage && postRoute && <section ref={selectedPostRef} tabIndex={-1} aria-label="Selected post" className="form-stack scroll-mt-24">
+        <button type="button" onClick={() => closeQuery(['post'])} className="button-muted button-inline button-small"><ArrowLeft className="icon-small" aria-hidden="true" />Return to all posts</button>
+        {!selectedPost || selectedPost.loading ? <p role="status" className="text-description">Loading post...</p>
+          : selectedPost.error ? <div role="alert" className="surface-large p-5"><p>{selectedPost.error}</p><button type="button" onClick={() => setReload(value => value + 1)} className="link-underlined mt-3">Try again</button></div>
+          : <PostCard key={postRoute} post={selectedPost.post} initiallyExpanded />}
+      </section>}
+
       <div className={canManage && postRoute ? "posts-editor-layout" : ''}>
         {canManage && postRoute && !editorReady && (
-          <section className="posts-missing-post">
+          <section className="surface-large text-description p-5">
             <p role={editorError ? 'alert' : 'status'}>{editorError || 'Loading post editor...'}</p>
-            <button type="button" onClick={() => closeQuery(['post'])} className="posts-return-to-feed">Return to posts</button>
+            <button type="button" onClick={() => closeQuery(['post'])} className="link-underlined mt-4 text-brand-ink">Return to posts</button>
           </section>
         )}
         {canManage && postRoute && editorReady && (
-          <section ref={composerRef} aria-labelledby="post-composer-heading" className="posts-composer">
-            <div className="posts-composer-header">
-              <span className="posts-composer-icon">{editingId ? <Pencil className="icon-medium" aria-hidden="true" /> : <Plus className="icon-medium" aria-hidden="true" />}</span>
+          <section ref={composerRef} aria-labelledby="post-composer-heading" className="surface-large scroll-mt-24 shadow-sm">
+            <div className="row-start posts-composer-header">
+              <span className="icon-center posts-icon">{editingId ? <Pencil className="icon-medium" aria-hidden="true" /> : <Plus className="icon-medium" aria-hidden="true" />}</span>
               <div>
                 <h3 id="post-composer-heading" className="card-title">{editingId ? 'Edit post' : 'Create a post'}</h3>
-                <p className="posts-intro">{editingId ? 'Save your changes to update the published notice.' : 'Keep it simple. Your notice appears in the member portal as soon as you publish.'}</p>
+                <p className="page-description leading-relaxed">{editingId ? 'Save your changes to update the published notice.' : 'Keep it simple. Your notice appears in the member portal as soon as you publish.'}</p>
               </div>
             </div>
-            <form onSubmit={savePost} noValidate className="posts-composer-form">
-              <fieldset disabled={busy} className="posts-composer-fields">
+            <form onSubmit={savePost} noValidate className="space-y-4 p-5">
+              <fieldset disabled={busy} className="min-w-0 space-y-4">
                 <div>
-                  <div className="posts-field-heading">
-                    <label htmlFor="post-title" className="posts-field-label">Title <span className="posts-required-mark">*</span></label>
-                    <span id="post-title-count" className="posts-field-count">{draft.title.length}/{POST_LIMITS.title}</span>
+                  <div className="row-inline mb-2 justify-between">
+                    <label htmlFor="post-title" className="text-label">Title <span className="text-slate-400">*</span></label>
+                    <span id="post-title-count" className="post-title-count">{draft.title.length}/{POST_LIMITS.title}</span>
                   </div>
                   <input ref={titleRef} id="post-title" name="title" value={draft.title} onChange={event => updateDraft('title', event.target.value)} maxLength={POST_LIMITS.title} required aria-invalid={Boolean(fieldErrors.title)} aria-describedby={fieldErrors.title ? 'post-title-error post-title-count' : 'post-title-count'} placeholder="Give your notice a clear headline" className={inputClass} />
-                  {fieldErrors.title && <p id="post-title-error" role="alert" className="posts-field-error">{fieldErrors.title}</p>}
+                  {fieldErrors.title && <p id="post-title-error" role="alert" className="post-field-error">{fieldErrors.title}</p>}
                 </div>
                 <div>
-                  <div className="posts-field-heading">
-                    <label htmlFor="post-subtitle" className="posts-field-label">Subtitle <span className="posts-required-mark">*</span></label>
-                    <span id="post-subtitle-count" className="posts-field-count">{draft.subtitle.length}/{POST_LIMITS.subtitle}</span>
+                  <div className="row-inline mb-2 justify-between">
+                    <label htmlFor="post-subtitle" className="text-label">Subtitle <span className="text-slate-400">*</span></label>
+                    <span id="post-subtitle-count" className="post-title-count">{draft.subtitle.length}/{POST_LIMITS.subtitle}</span>
                   </div>
                   <input id="post-subtitle" name="subtitle" value={draft.subtitle} onChange={event => updateDraft('subtitle', event.target.value)} maxLength={POST_LIMITS.subtitle} required aria-invalid={Boolean(fieldErrors.subtitle)} aria-describedby={fieldErrors.subtitle ? 'post-subtitle-error post-subtitle-count' : 'post-subtitle-count'} placeholder="A short summary for your members" className={inputClass} />
-                  {fieldErrors.subtitle && <p id="post-subtitle-error" role="alert" className="posts-field-error">{fieldErrors.subtitle}</p>}
+                  {fieldErrors.subtitle && <p id="post-subtitle-error" role="alert" className="post-field-error">{fieldErrors.subtitle}</p>}
                 </div>
                 <div>
-                  <p id="post-description-label" className="posts-description-label">Description <span className="posts-required-mark">*</span></p>
-                  <Suspense fallback={<div role="status" className="posts-editor-loading">Loading description editor…</div>}>
+                  <p id="post-description-label" className="field-heading mb-2">Description <span className="text-slate-400">*</span></p>
+                  <Suspense fallback={<div role="status" className="surface-muted text-caption p-5">Loading description editor…</div>}>
                     <PostDescriptionEditor key={editorRevision} initialContent={draft.descriptionContent} initialText={draft.description} onChange={({ text, content }) => { setDraft(previous => ({ ...previous, description: text, descriptionContent: content })); setFieldErrors(previous => ({ ...previous, description: '' })); setFormError(''); }} disabled={saving || Boolean(deletingId) || imageBusy} onBusyChange={setDescriptionImageBusy} invalid={Boolean(fieldErrors.description)} describedBy={fieldErrors.description ? 'post-description-error post-description-count' : 'post-description-count'} />
                   </Suspense>
-                  <div className="posts-description-feedback">
-                    {fieldErrors.description && <p id="post-description-error" role="alert" className="posts-description-error">{fieldErrors.description}</p>}
-                    <p id="post-description-count" role="status" className={`posts-description-count ${descriptionCount >= POST_LIMITS.description ? "posts-count-limit" : "posts-count-normal"}`}>{descriptionCount.toLocaleString()} / {POST_LIMITS.description.toLocaleString()} characters</p>
+                  <div className="post-field-heading">
+                    {fieldErrors.description && <p id="post-description-error" role="alert" className="text-xs text-red-700">{fieldErrors.description}</p>}
+                    <p id="post-description-count" role="status" className={`post-description-count ${descriptionCount >= POST_LIMITS.description ? "post-description-limit" : "post-description-available"}`}>{descriptionCount.toLocaleString()} / {POST_LIMITS.description.toLocaleString()} characters</p>
                   </div>
                 </div>
               </fieldset>
               <ImageUploadField label="Post image (optional)" kind="banner" value={draft.imageUrl} onChange={value => updateDraft('imageUrl', value)} onBusyChange={setImageBusy} disabled={saving || Boolean(deletingId) || descriptionImageBusy} />
-              {formError && <p role="alert" className="posts-form-error">{formError}</p>}
-              <div className="posts-composer-footer">
-                <button type="button" onClick={resetDraft} disabled={busy} className="posts-cancel"><X className="icon-small" aria-hidden="true" />{editingId ? 'Cancel editing' : 'Cancel'}</button>
-                <button type="submit" disabled={busy} className="posts-publish">{saving ? <RefreshCw className="icon-spinner" aria-hidden="true" /> : editingId ? <CheckCircle2 className="icon-default" aria-hidden="true" /> : <Send className="icon-default" aria-hidden="true" />}{saving ? 'Saving…' : imageBusy || descriptionImageBusy ? 'Reading image…' : editingId ? 'Save changes' : 'Publish post'}</button>
+              {formError && <p role="alert" className="post-form-error">{formError}</p>}
+              <div className="row-wrap-wide posts-composer-actions">
+                <button type="button" onClick={resetDraft} disabled={busy} className="row-icon-inline post-form-cancel"><X className="icon-small" aria-hidden="true" />{editingId ? 'Cancel editing' : 'Cancel'}</button>
+                <button type="submit" disabled={busy} className="button-primary button-inline button-standard post-form-submit">{saving ? <RefreshCw className="icon-spinner" aria-hidden="true" /> : editingId ? <CheckCircle2 className="icon-default" aria-hidden="true" /> : <Send className="icon-default" aria-hidden="true" />}{saving ? 'Saving…' : imageBusy || descriptionImageBusy ? 'Reading image…' : editingId ? 'Save changes' : 'Publish post'}</button>
               </div>
             </form>
           </section>
         )}
 
-        <section ref={feedRef} aria-labelledby="post-feed-heading" aria-busy={loading} className="posts-feed">
+        <section ref={feedRef} aria-labelledby="post-feed-heading" aria-busy={loading} className="form-stack posts-feed">
           {canManage && (
-            <div className="posts-feed-header">
-              <h3 id="post-feed-heading" className="posts-feed-heading"><FileText className="icon-default" aria-hidden="true" />Published posts <span className="posts-count-badge">{loading ? '…' : total}</span></h3>
-              <span className="posts-feed-caption">Newest first</span>
+            <div className="row-inline-wide justify-between px-1">
+              <h3 id="post-feed-heading" className="row-inline posts-feed-title"><FileText className="icon-default" aria-hidden="true" />Published posts <span className="badge-small posts-feed-count">{loading ? '…' : total}</span></h3>
+              <span className="text-note">Newest first</span>
             </div>
           )}
           {!canManage && <h3 id="post-feed-heading" className="sr-only">Organisation posts, newest first</h3>}
 
           {loading ? (
-            <div role="status" className="posts-feed-status">
-              <div className="posts-loading-label"><RefreshCw className="icon-spinner" aria-hidden="true" />Loading posts…</div>
-              <div aria-hidden="true" className="posts-loading-skeleton"><div className="posts-skeleton-title" /><div className="posts-skeleton-summary" /><div className="posts-skeleton-line" /><div className="posts-skeleton-ending" /></div>
+            <div role="status" className="surface-large p-5 sm:p-6">
+              <div className="row-inline text-caption mb-6"><RefreshCw className="icon-spinner" aria-hidden="true" />Loading posts…</div>
+              <div aria-hidden="true" className="animate-pulse space-y-3"><div className="posts-skeleton-title" /><div className="posts-skeleton-summary" /><div className="posts-skeleton-line" /><div className="posts-skeleton-end" /></div>
             </div>
           ) : loadError ? (
-            <div role="alert" className="posts-feed-status">
-              <AlertCircle className="posts-error-icon" aria-hidden="true" />
-              <h4 className="posts-error-title">We couldn't load the posts</h4>
+            <div role="alert" className="surface-large p-5 sm:p-6">
+              <AlertCircle className="icon-large mb-3 text-slate-500" aria-hidden="true" />
+              <h4 className="posts-feed-title">We couldn't load the posts</h4>
               <p className="posts-error-description">{loadError}</p>
-              <button type="button" onClick={() => setReload(value => value + 1)} className="posts-retry"><RefreshCw className="icon-small" aria-hidden="true" />Try again</button>
+              <button type="button" onClick={() => setReload(value => value + 1)} className="button-muted button-inline posts-retry-button"><RefreshCw className="icon-small" aria-hidden="true" />Try again</button>
             </div>
           ) : posts.length === 0 ? (
-            <div className="posts-empty">
-              <span className="posts-empty-icon"><Megaphone className="posts-announcement-icon" aria-hidden="true" /></span>
+            <div className="surface-large p-6 sm:p-8">
+              <span className="posts-empty-icon"><Megaphone className="icon-brand-large" aria-hidden="true" /></span>
               <h4 className="section-title">{canManage ? 'Start the conversation' : 'Your updates will appear here'}</h4>
               <p className="posts-empty-description">{canManage ? 'Welcome your members, share an announcement, or post a helpful reminder. Your first notice will appear here and in their member portal.' : `${organisationName} hasn't shared any posts yet. Check back here for announcements and notices for your community.`}</p>
-              {canManage ? <button type="button" onClick={focusComposer} className="posts-create-first"><Plus className="icon-default" aria-hidden="true" />Write your first post</button> : <p className="posts-audience-note"><Users className="posts-audience-icon" aria-hidden="true" />This feed is just for your organisation.</p>}
+              {canManage ? <button type="button" onClick={focusComposer} className="button-primary button-inline posts-empty-button"><Plus className="icon-default" aria-hidden="true" />Write your first post</button> : <p className="row-inline text-caption posts-pagination"><Users className="icon-default shrink-0" aria-hidden="true" />This feed is just for your organisation.</p>}
             </div>
           ) : (
             <>
-              <div className={canManage ? "form-stack" : "posts-member-feed"}>
+              <div className={canManage ? "form-stack" : "posts-member-grid"}>
                 {posts.map((post, index) => (
-                  <div key={post._id} className={`posts-feed-item ${isFeatured(index) ? "posts-featured" : ''}`}>
+                  <div key={post._id} className={`min-w-0 ${isFeatured(index) ? "posts-featured-slot" : ''}`}>
                     <PostCard post={post} featured={isFeatured(index)} canManage={canManage} onEdit={() => editPost(post)} onRequestDelete={() => { setConfirmDeleteId(post._id); setDeleteError(''); }} onCancelDelete={() => { setConfirmDeleteId(null); setDeleteError(''); }} onDelete={() => deletePost(post)} confirmingDelete={confirmDeleteId === post._id} deleting={deletingId === post._id} actionsDisabled={busy} deleteError={confirmDeleteId === post._id ? deleteError : ''} />
                   </div>
                 ))}
               </div>
-              <div className="posts-pagination">
-                <p className="posts-feed-caption">Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)} of {total} {total === 1 ? 'post' : 'posts'}</p>
+              <div className="row-wrap-wide surface-card posts-feed-pagination">
+                <p className="text-note">Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)} of {total} {total === 1 ? 'post' : 'posts'}</p>
                 {totalPages > 1 && (
-                  <nav aria-label="Post pages" className="posts-page-controls">
-                    <button type="button" disabled={page <= 1 || busy} onClick={() => changePage(page - 1)} aria-label="Previous page of posts" className="posts-page-button"><ArrowLeft className="icon-small" aria-hidden="true" /></button>
+                  <nav aria-label="Post pages" className="row-inline">
+                    <button type="button" disabled={page <= 1 || busy} onClick={() => changePage(page - 1)} aria-label="Previous page of posts" className="surface-rounded posts-pagination-button"><ArrowLeft className="icon-small" aria-hidden="true" /></button>
                     <span className="posts-page-number">{page} / {totalPages}</span>
-                    <button type="button" disabled={page >= totalPages || busy} onClick={() => changePage(page + 1)} aria-label="Next page of posts" className="posts-page-button"><ArrowRight className="icon-small" aria-hidden="true" /></button>
+                    <button type="button" disabled={page >= totalPages || busy} onClick={() => changePage(page + 1)} aria-label="Next page of posts" className="surface-rounded posts-pagination-button"><ArrowRight className="icon-small" aria-hidden="true" /></button>
                   </nav>
                 )}
               </div>

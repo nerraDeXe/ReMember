@@ -8,17 +8,17 @@ import {
   ArrowRight,
   CheckCircle2,
   RefreshCw,
-  Wallet
+  IdCard
 } from 'lucide-react';
 import { api } from '../../api.js';
 import StatusBadge from '../../components/StatusBadge.jsx';
-import GoogleWalletPass from '../../components/GoogleWalletPass.jsx';
+import MembershipCard from '../../components/MembershipCard.jsx';
 import EventSchedule, { EventLocation } from '../../components/EventSchedule.jsx';
 import { getEventTiming } from '../../../../shared/eventTiming.js';
 import { useEventNow } from '../../useEventNow.js';
 
 export default function MemberDashboard({ onNavigate }) {
-  const { user, refreshUser } = useAuth();
+  const { user } = useAuth();
   const { showToast } = useToast();
   const now = useEventNow();
   const [dashboardData, setDashboardData] = useState(null);
@@ -43,25 +43,19 @@ export default function MemberDashboard({ onNavigate }) {
     loadData();
   }, []);
 
-  const handleWalletSync = async () => {
-    if (!user?._id) return;
-    await api.syncWalletObject(user._id);
-    await loadData();
-    await refreshUser();
-  };
-
   if (loading) {
     return (
-      <div className="member-dashboard-loading">
-        <div className="member-dashboard-loading-content">
+      <div className="icon-center min-h-[60vh]">
+        <div className="row-inline-wide flex-col">
           <RefreshCw className="loading-spinner" />
-          <p className="member-dashboard-loading-message">Loading member credentials & digital pass...</p>
+          <p className="text-xs text-slate-400">Loading membership details...</p>
         </div>
       </div>
     );
   }
 
   const membership = dashboardData?.membership || user;
+  const cardAvailable = membership?.status === 'active' && (!membership.expirationDate || new Date(membership.expirationDate).getTime() > now);
   const upcomingRsvps = (dashboardData?.upcomingRsvps || []).filter(event => getEventTiming(event, now).status !== 'ended');
   const formattedExpiry = membership?.expirationDate
     ? new Date(membership.expirationDate).toLocaleDateString('en-US', {
@@ -74,48 +68,48 @@ export default function MemberDashboard({ onNavigate }) {
   return (
     <div className="page-stack">
       {/* Welcome & Status Ribbon */}
-      <div className="member-dashboard-welcome">
-        <div className="member-dashboard-welcome-content">
+      <div className="panel-card sm:p-8">
+        <div className="member-dashboard-header">
           <div className="detail-stack">
-            <div className="member-dashboard-greeting">
-              <span className="member-dashboard-greeting-label">
+            <div className="row-inline">
+              <span className="text-eyebrow">
                 Welcome back
               </span>
               <StatusBadge status={membership?.status} />
             </div>
-            <h1 className="member-dashboard-member-name">
+            <h1 className="member-welcome-title">
               {membership?.name}
             </h1>
-            <div className="member-dashboard-membership-details">
+            <div className="member-dashboard-details">
               <span>
                 <strong>Member ID:</strong>{' '}
-                <span className="member-dashboard-member-number">{membership?.membershipNumber}</span>
+                <span className="member-reference">{membership?.membershipNumber}</span>
               </span>
               <span>•</span>
               <span>
                 <strong>Current Tier:</strong>{' '}
-                <span className="member-dashboard-current-tier">{membership?.tierName}</span>
+                <span className="text-strong">{membership?.tierName}</span>
               </span>
               <span>•</span>
-              <span className="member-dashboard-expiry">
-                <Clock className="member-dashboard-clock-icon" />
+              <span className="row-icon">
+                <Clock className="icon-small text-slate-400" />
                 <strong>Valid Through:</strong> {formattedExpiry}
               </span>
             </div>
           </div>
 
           {/* Quick Action Renewal Button */}
-          <div className="member-dashboard-quick-actions">
+          <div className="row-inline-wide">
             <button
               onClick={() => onNavigate('member-membership')}
-              className="member-dashboard-manage-button"
+              className="button-primary row-inline member-manage-button"
             >
               <CreditCard className="icon-default" />
               <span>Manage Membership</span>
             </button>
             <button
               onClick={() => onNavigate('member-events')}
-              className="member-dashboard-events-button"
+              className="button-muted-bordered row-inline-tight member-dashboard-action"
             >
               <Calendar className="icon-default" />
               <span>Events</span>
@@ -124,32 +118,27 @@ export default function MemberDashboard({ onNavigate }) {
         </div>
       </div>
 
-      {/* Main Grid: Google Wallet Pass & Member Quick Stats */}
-      <div className="member-dashboard-columns">
-        {/* Left Column: Digital Pass Showcase (5 cols) */}
-        <div className="member-dashboard-pass-column">
-          <div className="member-dashboard-pass-heading">
-            <h2 className="member-dashboard-pass-title">
-              <Wallet className="member-dashboard-wallet-icon" />
-              Digital Membership Pass
+      {/* Membership Card & Member Quick Stats */}
+      <div className="member-dashboard-grid">
+        {/* Membership Card (5 cols) */}
+        <div className="form-stack lg:col-span-5">
+          <div className="row-between">
+            <h2 className="row-inline card-title">
+              <IdCard className="icon-brand" />
+              Membership Card
             </h2>
-            <span className="text-caption">Google Wallet Compatible</span>
           </div>
 
           <div className="panel-card">
-            {membership?.googleWallet ? <GoogleWalletPass
-              user={membership}
-              walletData={membership?.googleWallet}
-              onSync={handleWalletSync}
-            /> : <div className="member-dashboard-pass-unavailable"><p>Your membership pass will be available when your membership is active.</p><button onClick={() => onNavigate('member-membership')} className="member-dashboard-pass-manage-button">Manage Membership</button></div>}
+            {cardAvailable ? <MembershipCard user={membership} /> : <div className="text-description content-stack"><p>Your membership card will be available when your membership is active.</p><button onClick={() => onNavigate('member-membership')} className="member-credit-button">Manage Membership</button></div>}
           </div>
         </div>
 
         {/* Right Column: Perks, Upcoming RSVPs & Quick Links (7 cols) */}
-        <div className="member-dashboard-activity-column">
+        <div className="page-stack lg:col-span-7">
           {/* Tier Privileges Card */}
           <div className="panel-card">
-            <div className="member-dashboard-card-heading">
+            <div className="analytics-header">
               <div>
                 <h3 className="panel-title">Your Tier Privileges</h3>
                 <p className="text-caption">
@@ -158,19 +147,19 @@ export default function MemberDashboard({ onNavigate }) {
               </div>
               <button
                 onClick={() => onNavigate('member-membership')}
-                className="member-dashboard-card-link"
+                className="link-brand text-xs"
               >
                 Manage Membership &rarr;
               </button>
             </div>
 
-            <div className="member-dashboard-perks">
+            <div className="member-perks-grid">
               {(membership?.tier?.perks || []).map((perk, idx) => (
                 <div
                   key={idx}
-                  className="member-dashboard-perk"
+                  className="surface-muted member-upgrade-notice"
                 >
-                  <CheckCircle2 className="member-dashboard-perk-icon" />
+                  <CheckCircle2 className="icon-default member-perk-icon" />
                   <span>{perk}</span>
                 </div>
               ))}
@@ -179,7 +168,7 @@ export default function MemberDashboard({ onNavigate }) {
 
           {/* Upcoming Event RSVPs */}
           <div className="panel-card">
-            <div className="member-dashboard-card-heading">
+            <div className="analytics-header">
               <div>
                 <h3 className="panel-title">Confirmed Event RSVPs</h3>
                 <p className="text-caption">
@@ -188,19 +177,19 @@ export default function MemberDashboard({ onNavigate }) {
               </div>
               <button
                 onClick={() => onNavigate('member-events')}
-                className="member-dashboard-card-link"
+                className="link-brand text-xs"
               >
                 Browse All Events &rarr;
               </button>
             </div>
 
             {upcomingRsvps.length === 0 ? (
-              <div className="member-dashboard-rsvps-empty">
-                <Calendar className="member-dashboard-rsvps-empty-icon" />
+              <div className="detail-card text-caption member-rsvp-empty">
+                <Calendar className="icon-large member-rsvp-empty-icon" />
                 You haven't RSVP'd to any upcoming events yet.
                 <button
                   onClick={() => onNavigate('member-events')}
-                  className="member-dashboard-browse-events-link"
+                  className="link-brand member-rsvp-browse"
                 >
                   View Event Calendar
                 </button>
@@ -210,14 +199,14 @@ export default function MemberDashboard({ onNavigate }) {
                 {upcomingRsvps.map((evt) => (
                   <div
                     key={evt._id}
-                    className="member-dashboard-upcoming-card"
+                    className="row-header surface-muted p-3.5"
                   >
-                    <div className="member-dashboard-upcoming-details">
-                      <div className="member-dashboard-item-title">{evt.title}</div>
+                    <div className="content-stack member-rsvp-details">
+                      <div className="heading-small">{evt.title}</div>
                       <EventSchedule event={evt} compact />
                       <EventLocation event={evt} />
                     </div>
-                    <span className="member-dashboard-rsvp-confirmed">
+                    <span className="choice-selected member-rsvp-badge">
                       RSVP Confirmed
                     </span>
                   </div>
@@ -227,31 +216,31 @@ export default function MemberDashboard({ onNavigate }) {
           </div>
 
           {/* Quick Hub Navigation Cards */}
-          <div className="member-dashboard-shortcuts">
+          <div className="form-grid">
             <div
               onClick={() => onNavigate('member-invoices')}
-              className="group member-dashboard-shortcut-card"
+              className="detail-card row-between member-hub-card group"
             >
               <div>
-                <h4 className="member-dashboard-item-title">Payment Invoices</h4>
-                <p className="member-dashboard-shortcut-description">
+                <h4 className="heading-small">Payment Invoices</h4>
+                <p className="text-note mt-0.5">
                   View and download historical receipts
                 </p>
               </div>
-              <ArrowRight className="member-dashboard-shortcut-arrow" />
+              <ArrowRight className="icon-default member-hub-arrow" />
             </div>
 
             <div
               onClick={() => onNavigate('member-profile')}
-              className="group member-dashboard-shortcut-card"
+              className="detail-card row-between member-hub-card group"
             >
               <div>
-                <h4 className="member-dashboard-item-title">Profile Information</h4>
-                <p className="member-dashboard-shortcut-description">
+                <h4 className="heading-small">Profile Information</h4>
+                <p className="text-note mt-0.5">
                   Update personal data stored in MongoDB
                 </p>
               </div>
-              <ArrowRight className="member-dashboard-shortcut-arrow" />
+              <ArrowRight className="icon-default member-hub-arrow" />
             </div>
           </div>
         </div>

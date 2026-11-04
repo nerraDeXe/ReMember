@@ -4,8 +4,8 @@ import { PaymentCheckout, Invoice, Organisation, OrganisationMembership, Tier, U
 import { membershipView } from './membershipContext.js';
 import { updateOrgMemberCount } from './organisationAccess.js';
 import { emailService } from './emailService.js';
-import { walletService } from './walletService.js';
 import { sendWelcomeForMembership } from './organisationEmailSettings.js';
+import { notifyMembershipChange } from './notifications.js';
 import { dateMilliseconds, equivalentMonthlyCents, membershipBillingRevision, membershipCreditBalance,
   membershipPeriodEnd, paidMembershipPeriods, unusedMembershipCredit } from './membershipProration.js';
 
@@ -163,7 +163,7 @@ export function createPaymentGateway({ now = () => new Date() } = {}) {
     if (!Object.hasOwn(methods, paymentMethod) || !['approved', 'declined'].includes(scenario)) throw new PaymentError(400, 'Choose a demo payment method and payment result.');
     if (verificationCode !== '123456') throw new PaymentError(400, 'Enter the demo verification code 123456.');
     const session = await mongoose.startSession();
-    let checkout, invoice, membership, user, organisation, newlyPaid = false;
+    let checkout, invoice, membership, previousMembership, user, organisation, newlyPaid = false;
     try {
       await session.withTransaction(async () => {
         newlyPaid = false;
@@ -220,6 +220,7 @@ export function createPaymentGateway({ now = () => new Date() } = {}) {
           ...(paid ? { periodStart: checkout.periodStart, periodEnd: checkout.periodEnd, paidAt: timestamp, coverageValueCents: checkout.subtotalCents } : {}),
         } }, { upsert: true, new: true, runValidators: true, session });
         if (paid) {
+          previousMembership = membership.toObject ? membership.toObject() : { ...membership };
           membership.status = 'active';
           membership.tierId = checkout.tierId;
           membership.tierName = checkout.tierName;
@@ -252,9 +253,9 @@ export function createPaymentGateway({ now = () => new Date() } = {}) {
       });
     } finally { await session.endSession(); }
     if (newlyPaid) {
+      await notifyMembershipChange(previousMembership, membership, { organisation, now: currentTime() }).catch(() => console.error('[Payment gateway] Could not record membership notification.'));
       await updateOrgMemberCount(organisationId).catch(() => console.error('[Payment gateway] Member count update failed.'));
       const member = membershipView(user, membership, organisation);
-      await walletService.updateWalletObject(member, 'Payment gateway demo').catch(() => console.error('[Payment gateway] Wallet update failed.'));
       await emailService.sendPaymentConfirmation(member, invoice).catch(() => console.error('[Payment gateway] Could not deliver the demo receipt.'));
       await sendWelcomeForMembership(user, membership, organisation).catch(() => console.error('[Payment gateway] Could not deliver the welcome message.'));
     }

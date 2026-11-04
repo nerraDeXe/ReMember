@@ -1,0 +1,24 @@
+{
+  "id": "IT-01",
+  "title": "Email Verification",
+  "file": "backend/tests/auth.test.js",
+  "name": "a delivered code confirms email, removes its hash, and permits verified actions",
+  "expected": "A valid email code verifies the account and permits protected actions.",
+  "scope": "Real HTTP, authentication router, JWT middleware, validation and verification logic; database and email delivery mocked.",
+  "sourceStart": 360,
+  "sourceEnd": 375,
+  "source": "test('a delivered code confirms email, removes its hash, and permits verified actions', async () => {\n  const registration = await request('/api/auth/register', { body: validAccount });\n  const token = registration.body.token;\n  assert.equal((await request('/verified-action', { token })).status, 403);\n  const verification = await request('/api/auth/verify-email', { token, body: { code: deliveredCode() } });\n  assert.equal(verification.status, 200);\n  assert.equal(verification.body.user.emailVerified, true);\n  assert.equal(verification.body.user.onboardingCompleted, false);\n  assert.equal(users[0].emailVerificationHash, undefined);\n  assert.equal(users[0].emailVerificationExpiresAt, undefined);\n  assertNoSecrets(verification.body.user);\n  assert.equal((await request('/verified-action', { token: verification.body.token })).status, 200);\n  const me = await request('/api/auth/me', { token });\n  assert.equal(me.body.user.emailVerified, true);\n  assertNoSecrets(me.body.user);\n});",
+  "command": "node --test --test-reporter=tap --test-name-pattern=\"^a delivered code confirms email, removes its hash, and permits verified actions$\" backend/tests/auth.test.js",
+  "status": "PASS",
+  "execution": {
+    "executedAt": "2026-11-04T05:12:35.369Z",
+    "nodeVersion": "v20.18.0",
+    "exitCode": 0,
+    "signal": null,
+    "pass": 1,
+    "fail": 0,
+    "skipped": 17,
+    "selectedTestMatched": true,
+    "error": null
+  }
+}

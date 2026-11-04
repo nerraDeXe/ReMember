@@ -31,7 +31,6 @@ SMTP remains available on hosts that allow it, including paid Render web service
    MONGODB_URI=your-existing-mongodb-connection-string
    JWT_SECRET=your-long-random-secret
    APP_WEB_URL=https://YOUR-ACTUAL-SERVICE.onrender.com
-   APP_ORIGIN=https://YOUR-ACTUAL-SERVICE.onrender.com
    VITE_API_BASE_URL=/api
    MAIL_TRANSPORT=gmail-api
    GMAIL_CLIENT_ID=your-mail-oauth-client-id.apps.googleusercontent.com
@@ -45,7 +44,7 @@ SMTP remains available on hosts that allow it, including paid Render web service
 
 7. Choose Save, rebuild, and deploy. Open your Render website URL and confirm `/api/health` returns healthy. Test account sign-in, verification emails, both account tabs and an image upload.
 
-Render Free sleeps after 15 idle minutes. Gmail API email works when the app is running, but the renewal reminder scheduler cannot run while the service sleeps. Use an always-on service for reliable unattended reminders. Keep one backend instance when using public Nominatim because its throttling is maintained in process memory. The [in-app payment gateway demo](PAYMENT_GATEWAY.md) needs no provider keys, external webhook, or separate terminal process. It simulates MYR payments without moving money; renewals require a member to complete another checkout. Google Wallet still requires its own credentials.
+Render Free sleeps after 15 idle minutes. Gmail API email works when the app is running, but the renewal reminder scheduler cannot run while the service sleeps. Use an always-on service for reliable unattended reminders. Keep one backend instance when using public Nominatim because its throttling is maintained in process memory. The [in-app payment gateway demo](PAYMENT_GATEWAY.md) needs no provider keys, external webhook, or separate terminal process. It simulates MYR payments without moving money; renewals require a member to complete another checkout. Membership cards appear in the app without external credentials.
 
 No frontend `.env` file or Vercel service is needed for this setup. `/api` is already the frontend default. Local development can continue with `npm run dev` in `frontend` and `npm start` in `backend`; Vite proxies API requests as before.
 

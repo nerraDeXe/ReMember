@@ -1,0 +1,24 @@
+{
+  "id": "IT-03",
+  "title": "Organisation Permissions",
+  "file": "backend/tests/auth.test.js",
+  "name": "admin permissions require verified ownership in the selected organisation",
+  "expected": "Only a verified owner of the selected organisation can access owner actions.",
+  "scope": "Real HTTP, authentication router, JWT middleware, organisation context and ownership checks; database and email delivery mocked.",
+  "sourceStart": 473,
+  "sourceEnd": 490,
+  "source": "test('admin permissions require verified ownership in the selected organisation', async () => {\n  const registration = await request('/api/auth/register', { body: validAccount });\n  const token = registration.body.token;\n  users[0].emailVerified = true;\n  users[0].role = 'admin';\n  assert.equal((await request('/owner-action', { token })).status, 403);\n  organisations = [\n    { _id: 'owned-org', name: 'Owned Organisation', adminId: users[0]._id, visibility: 'public', isPublic: true },\n    { _id: 'joined-org', name: 'Joined Organisation', adminId: 'another-owner', visibility: 'public', isPublic: true }\n  ];\n  memberships = [{ _id: 'joined-membership', userId: users[0]._id, organisationId: 'joined-org', role: 'member', status: 'active' }];\n  users[0].activeOrganisationId = 'joined-org';\n  assert.equal((await request('/owner-action', { token })).status, 403);\n  users[0].activeOrganisationId = 'owned-org';\n  assert.equal((await request('/owner-action', { token })).status, 200);\n  users[0].emailVerified = false;\n  assert.equal((await request('/owner-action', { token })).status, 403);\n});",
+  "command": "node --test --test-reporter=tap --test-name-pattern=\"^admin permissions require verified ownership in the selected organisation$\" backend/tests/auth.test.js",
+  "status": "PASS",
+  "execution": {
+    "executedAt": "2026-11-04T05:12:39.708Z",
+    "nodeVersion": "v20.18.0",
+    "exitCode": 0,
+    "signal": null,
+    "pass": 1,
+    "fail": 0,
+    "skipped": 17,
+    "selectedTestMatched": true,
+    "error": null
+  }
+}

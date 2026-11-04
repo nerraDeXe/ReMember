@@ -26,6 +26,7 @@ export default function ProfilePage() {
   const [country, setCountry] = useState('');
   const [notifyEmail, setNotifyEmail] = useState(true);
   const [notifyEvents, setNotifyEvents] = useState(true);
+  const [eventReminderDays, setEventReminderDays] = useState(['7', '1']);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -41,6 +42,7 @@ export default function ProfilePage() {
       setCountry(user.country || user.address?.country || '');
       setNotifyEmail(user.notifications?.email ?? true);
       setNotifyEvents(user.notifications?.events ?? true);
+      setEventReminderDays((user.notifications?.eventReminderDays ?? [7, 1]).map(String));
     }
   }, [user]);
 
@@ -75,6 +77,12 @@ export default function ProfilePage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const reminderDays = eventReminderDays.map(Number);
+    const invalidReminderDays = reminderDays.some(days => !Number.isInteger(days) || days < 1 || days > 365) || new Set(reminderDays).size !== reminderDays.length;
+    if (notifyEvents && invalidReminderDays) {
+      showToast('Choose different reminder times between 1 and 365 days before an event.', 'error');
+      return;
+    }
     setSaving(true);
 
     try {
@@ -92,7 +100,8 @@ export default function ProfilePage() {
         },
         notifications: {
           email: notifyEmail,
-          events: notifyEvents
+          events: notifyEvents,
+          eventReminderDays: invalidReminderDays ? (user.notifications?.eventReminderDays ?? [7, 1]) : reminderDays
         }
       };
 
@@ -109,10 +118,10 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="profile-page">
+    <div className="page-stack profile-page">
       <div>
         <h1 className="page-title">
-          <User className="profile-user-icon" />
+          <User className="icon-brand-large" />
           Personal Member Profile
         </h1>
         <p className="page-description">
@@ -122,16 +131,16 @@ export default function ProfilePage() {
 
       <form onSubmit={handleSubmit} className="page-stack">
         {/* Profile Details Card */}
-        <div className="profile-personal-details">
-          <div className="profile-avatar-section">
-            <div role="img" className="profile-avatar" aria-label={avatarUrl ? `${name} profile photo` : 'Default profile icon'}>
-              {avatarUrl ? <img src={avatarUrl} alt={`${name} profile`} className="profile-avatar-image" /> : <User className="profile-avatar-placeholder" aria-hidden="true" />}
+        <div className="panel-card page-stack">
+          <div className="profile-photo-section">
+            <div role="img" className="icon-center profile-avatar" aria-label={avatarUrl ? `${name} profile photo` : 'Default profile icon'}>
+              {avatarUrl ? <img src={avatarUrl} alt={`${name} profile`} className="avatar-photo" /> : <User className="profile-default-avatar" aria-hidden="true" />}
             </div>
-            <div className="profile-avatar-controls">
-              <p className="profile-avatar-label">Profile Photo</p>
-              <p className="profile-avatar-requirements">JPEG, PNG, or WebP. Maximum file size: 2 MB.</p>
-              <div className="profile-avatar-actions">
-                <label className="profile-avatar-upload-button">
+            <div className="flex-1">
+              <p className="profile-photo-label">Profile Photo</p>
+              <p className="text-note mb-3">JPEG, PNG, or WebP. Maximum file size: 2 MB.</p>
+              <div className="row-wrap">
+                <label className="button-primary button-inline button-small cursor-pointer transition-colors">
                   <Upload className="icon-default" />
                   <span>{avatarUrl ? 'Change Photo' : 'Upload Photo'}</span>
                   <input
@@ -145,18 +154,18 @@ export default function ProfilePage() {
                   <button
                     type="button"
                     onClick={handleAvatarRemove}
-                    className="profile-avatar-remove-button"
+                    className="button-muted button-inline button-small transition-colors"
                   >
                     <Trash2 className="icon-default" />
                     <span>Remove Photo</span>
                   </button>
                 )}
               </div>
-              {avatarFileName && <p className="profile-avatar-selected-file">Selected: {avatarFileName}</p>}
+              {avatarFileName && <p className="text-note mt-2 truncate">Selected: {avatarFileName}</p>}
             </div>
           </div>
 
-          <div className="profile-personal-fields">
+          <div className="form-grid">
             <div>
               <label className="field-label">Full Name</label>
               <input
@@ -164,24 +173,24 @@ export default function ProfilePage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                className="profile-name-input"
+                className="control-input px-3.5"
               />
             </div>
 
             <div>
               <label className="field-label">
-                Email Address <span className="profile-email-hint">(Account Identifier)</span>
+                Email Address <span className="text-[10px] text-slate-500">(Account Identifier)</span>
               </label>
               <input
                 type="email"
                 value={user?.email || ''}
                 disabled
-                className="profile-email-input"
+                className="surface-muted control-standard profile-email"
               />
             </div>
           </div>
 
-          <div className="profile-personal-fields">
+          <div className="form-grid">
             <div>
               <label htmlFor="profile-phone" className="field-label">Phone Number (optional)</label>
               <PhoneInput id="profile-phone" country={country} value={phone} onChange={setPhone} disabled={saving} />
@@ -195,7 +204,7 @@ export default function ProfilePage() {
                 type="text"
                 value={user?.membershipNumber || ''}
                 disabled
-                className="profile-member-number-input"
+                className="surface-muted control-standard profile-membership-id"
               />
             </div>
           </div>
@@ -207,76 +216,98 @@ export default function ProfilePage() {
               maxLength={500}
               value={bio}
               onChange={(e) => setBio(e.target.value)}
-              className="profile-detail-input"
+              className="control control-ring control-compact"
             />
-            <p className="profile-bio-character-count">{bio.length}/500 characters</p>
+            <p className="text-note profile-bio-count">{bio.length}/500 characters</p>
           </div>
         </div>
 
         {/* Address Card */}
-        <div className="profile-address-panel">
-          <h3 className="profile-panel-title">
-            <MapPin className="profile-panel-icon" />
+        <div className="panel-card form-stack">
+          <h3 className="row-inline panel-title">
+            <MapPin className="icon-brand" />
             Mailing & Residence Address
           </h3>
 
           <div>
-            <label className="profile-address-label">Street Address</label>
+            <label className="label-compact">Street Address</label>
             <input
               type="text"
               value={street}
               onChange={(e) => setStreet(e.target.value)}
               placeholder="123 Community Blvd"
-              className="profile-detail-input"
+              className="control control-ring control-compact"
             />
           </div>
 
-          <div className="profile-address-fields">
+          <div className="profile-address-grid">
             {[
               { id: 'profile-city', label: 'City', value: city, update: setCity },
               { id: 'profile-state', label: 'State / Province', value: state, update: setState },
               { id: 'profile-postal-code', label: 'Postal Code', value: postalCode, update: setPostalCode },
             ].map(({ id, label, value, update }) => (
               <div key={id}>
-                <label htmlFor={id} className="profile-address-label">{label}</label>
+                <label htmlFor={id} className="label-compact">{label}</label>
                 <input id={id} type="text" value={value} onChange={event => update(event.target.value)}
-                  className="profile-detail-input" />
+                  className="control control-ring control-compact" />
               </div>
             ))}
             <div>
-              <label htmlFor="profile-country" className="profile-address-label">Country</label>
+              <label htmlFor="profile-country" className="label-compact">Country</label>
               <CountrySelect id="profile-country" value={country} onChange={value => { setPhone(previous => rebasePhone(previous, country, value)); setCountry(value); }} required disabled={saving} />
             </div>
           </div>
         </div>
 
         {/* Notifications Preferences */}
-        <div className="profile-notifications-panel">
-          <h3 className="profile-panel-title">
-            <Bell className="profile-panel-icon" />
+        <div className="panel-card content-stack">
+          <h3 className="row-inline panel-title">
+            <Bell className="icon-brand" />
             Automated Notification Preferences
           </h3>
 
-          <div className="profile-notification-options">
+          <div className="content-stack pt-2">
             {[
               { label: 'Receive welcome emails, renewal reminders and payment receipts', checked: notifyEmail, update: setNotifyEmail },
-              { label: 'Receive instant RSVP confirmation emails with calendar invitations', checked: notifyEvents, update: setNotifyEvents },
+              { label: 'Receive event reminders and RSVP confirmation emails with calendar invitations', checked: notifyEvents, update: setNotifyEvents },
             ].map(({ label, checked, update }) => (
-              <label key={label} className="profile-notification-option">
+              <label key={label} className="row-inline-wide cursor-pointer">
                 <input type="checkbox" checked={checked} onChange={event => update(event.target.checked)}
-                  className="profile-notification-checkbox" />
-                <span className="profile-notification-label">{label}</span>
+                  className="icon-brand profile-checkbox" />
+                <span className="text-xs text-slate-700">{label}</span>
               </label>
             ))}
           </div>
+          <fieldset disabled={!notifyEvents || saving} className="form-stack mt-5">
+            <legend className="field-label">Upcoming event reminders</legend>
+            <p className="text-note">Get a notification before an upcoming event. The defaults are one week and one day before it starts.</p>
+            {eventReminderDays.map((days, index) => (
+              <div key={index} className="row-wrap">
+                <label htmlFor={`event-reminder-${index}`} className="text-xs text-slate-700">Reminder {index + 1}</label>
+                <input id={`event-reminder-${index}`} type="number" min="1" max="365" step="1" required
+                  value={days} onChange={event => setEventReminderDays(previous => previous.map((value, position) => position === index ? event.target.value : value))}
+                  className="control-input w-24 px-3" />
+                <span className="text-xs text-slate-700">days before</span>
+                <button type="button" aria-label={`Remove reminder ${index + 1}`}
+                  onClick={() => setEventReminderDays(previous => previous.filter((_, position) => position !== index))}
+                  className="button-muted button-inline button-small"><Trash2 className="icon-small" aria-hidden="true" />Remove</button>
+              </div>
+            ))}
+            {eventReminderDays.length === 0 && <p className="text-note">No upcoming event reminders are scheduled.</p>}
+            {eventReminderDays.length < 5 && <button type="button" className="button-muted button-inline button-small"
+              onClick={() => setEventReminderDays(previous => [...previous, String([7, 1, 3, 14, 30].find(days => !previous.map(Number).includes(days)))])}>
+              <Bell className="icon-small" aria-hidden="true" />Add reminder
+            </button>}
+            <p className="text-note">Choose up to five different times, from 1 to 365 days before an event. Remove all reminders to turn them off.</p>
+          </fieldset>
         </div>
 
         {/* Save Button */}
-        <div className="profile-form-actions">
+        <div className="form-actions">
           <button
             type="submit"
             disabled={saving}
-            className="profile-save-button"
+            className="button-primary row-inline profile-save"
           >
             {saving ? (
               <>

@@ -1,5 +1,6 @@
 import { OrganisationMembership, Tier, Organisation, ActivityLog } from '../models/index.js';
 import { equivalentMonthlyCents } from './membershipProration.js';
+import { notifyMembershipChange } from './notifications.js';
 
 export const scheduledDowngradeUnset = {
   scheduledTierId: '', scheduledTierEffectiveAt: '', scheduledTierRequestedAt: ''
@@ -57,6 +58,7 @@ export async function resolveDueFreeDowngrade(membership, organisation, now = ne
     details: { previousTierId: membership.tierId, tierId: String(target._id), effectiveAt: membership.scheduledTierEffectiveAt, paymentRequired: false },
     timestamp: now.toISOString()
   }).catch(() => console.error('Could not record membership downgrade audit.'));
+  await notifyMembershipChange(membership, updated, { organisation, now }).catch(() => console.error('Could not record membership downgrade notification.'));
   if (membership.status !== 'active') {
     try {
       const [activeCount, ownerMember] = await Promise.all([

@@ -78,15 +78,15 @@ async function runTests() {
     const welcomeEmail = emailsRes.emails?.find(e => e.type === 'REGISTRATION_WELCOME');
     assert(welcomeEmail !== undefined, 'Automated welcome email confirmation recorded in notification system');
 
-    // 5. Member Dashboard & Google Wallet Pass (Requirements 3 & 6)
-    console.log('\n--- Test Group 4: Member Dashboard & Google Wallet Pass ---');
+    // 5. Member Dashboard & Membership Card (Requirements 3 & 6)
+    console.log('\n--- Test Group 4: Member Dashboard & Membership Card ---');
     const dashRes = await (await fetch(`${BASE_URL}/members/dashboard`, {
       headers: { 'Authorization': `Bearer ${memberLogin.token}` }
     })).json();
     assert(dashRes.success && dashRes.membership.status === 'active', 'Member dashboard displays active status');
     assert(dashRes.membership.tierName === 'Gold VIP', 'Member dashboard displays correct tier');
     assert(dashRes.membership.expirationDate !== undefined, 'Member dashboard displays expiration date');
-    assert(dashRes.membership.googleWallet?.saveUrl.includes('pay.google.com/gp/v/save'), 'Digital pass provides Google Wallet save link');
+    assert(Boolean(dashRes.membership.membershipNumber), 'Membership card provides the member ID');
 
     // 6. Profile Update in MongoDB (Requirement 4)
     console.log('\n--- Test Group 5: MongoDB Profile Updates ---');
@@ -127,8 +127,8 @@ async function runTests() {
     })).json();
     assert(rsvpRes.success, 'Member RSVP completed directly from portal with email dispatch');
 
-    // 9. Admin Member Management & Google Wallet Tier Sync (Requirements 10, 11, 12 & 16)
-    console.log('\n--- Test Group 8: Admin Management & Google Wallet Sync ---');
+    // 9. Admin Member Management (Requirements 10, 11, 12 & 16)
+    console.log('\n--- Test Group 8: Admin Member Management ---');
     const adminMembers = await (await fetch(`${BASE_URL}/admin/members?page=1&limit=5`, {
       headers: { 'Authorization': `Bearer ${adminLogin.token}` }
     })).json();
@@ -146,7 +146,7 @@ async function runTests() {
     })).json();
     assert(statusUpdate.success && statusUpdate.member.status === 'active', 'Admin manually approves member status');
 
-    // Tier change -> Automatic Google Wallet API Update Trigger
+    // Tier changes are reflected in membership card details.
     const tierUpdateRes = await (await fetch(`${BASE_URL}/admin/members/${marcusUser._id}/tier`, {
       method: 'PUT',
       headers: {
@@ -155,7 +155,7 @@ async function runTests() {
       },
       body: JSON.stringify({ tierId: 'tier-platinum' })
     })).json();
-    assert(tierUpdateRes.success && tierUpdateRes.walletSync?.success === true, 'Admin tier change automatically triggers Google Wallet Object update API call');
+    assert(tierUpdateRes.success && tierUpdateRes.member?.tierId === 'tier-platinum', 'Admin tier change updates the membership card tier');
 
     // 10. Admin Tiers & Pricing CRUD (Requirement 13)
     console.log('\n--- Test Group 9: Custom Tiers & Pricing CRUD ---');
@@ -219,7 +219,7 @@ async function runTests() {
       headers: { 'Authorization': `Bearer ${adminLogin.token}` }
     })).json();
     assert(regLogsRes.success && regLogsRes.logs.length > 0, 'Activity log records user registration events');
-    assert(logsRes.logs.some(l => l.action === 'GOOGLE_WALLET_SYNCED'), 'Activity log records automatic Google Wallet sync events');
+    assert(logsRes.logs.some(l => l.action === 'TIER_CHANGED'), 'Activity log records membership tier changes');
 
     // 15. Organisation Search & Admin Public/Private Visibility Controls (Plan: 1, 2, 3)
     console.log('\n--- Test Group 14: Organisation Search & Admin Visibility Controls ---');

@@ -55,7 +55,7 @@ function renderNode(node, key) {
   }
   const children = (node.content || []).map((child, index) => renderNode(child, `${key}-${index}`));
   if (node.type === 'paragraph') return <p key={key} className="post-content-paragraph">{children}</p>;
-  if (node.type === 'listItem') return <li key={key} className="post-content-list-item">{children}</li>;
+  if (node.type === 'listItem') return <li key={key} className="pl-1">{children}</li>;
   if (node.type === 'orderedList') {
     const start = Number.isSafeInteger(node.attrs?.start) && node.attrs.start > 0 && node.attrs.start <= 1000000 ? node.attrs.start : 1;
     return <ol key={key} start={start} className="post-content-ordered-list">{children}</ol>;
@@ -64,6 +64,6 @@ function renderNode(node, key) {
 }
 
 export default function PostDescription({ content, description = '' }) {
-  if (!isRenderablePostContent(content)) return <p className="post-content-plain-text">{description}</p>;
-  return <div className="post-content-rich-text">{renderNode(content, 'description')}</div>;
+  if (!isRenderablePostContent(content)) return <p className="post-content-plain">{description}</p>;
+  return <div className="content-stack post-content-rich">{renderNode(content, 'description')}</div>;
 }

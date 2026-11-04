@@ -11,18 +11,18 @@ export default function CommunicationLayout({ activeTab = 'posts', onNavigate, c
   ];
   return (
     <section className="section-stack">
-      <header className="communication-header">
-        <div className="communication-heading">
-          <div className="communication-identity">
+      <header className="surface-large shadow-sm overflow-hidden">
+        <div className="page-header communication-header">
+          <div className="communication-heading">
             <div className="communication-icon"><Megaphone className="icon-medium" aria-hidden="true" /></div>
-            <div><h1 className="communication-title">Communication</h1><p className="communication-intro">{isAdmin ? 'Share notices with your members and personalise your organisation’s emails.' : 'Stay up to date with the latest notices and news from your organisation.'}</p></div>
+            <div><h1 className="heading-large">Communication</h1><p className="communication-description">{isAdmin ? 'Share notices with your members and personalise your organisation’s emails.' : 'Stay up to date with the latest notices and news from your organisation.'}</p></div>
           </div>
-          <p className="communication-organisation"><Building2 className="communication-organisation-icon" aria-hidden="true" /><span className="communication-organisation-name">{user?.activeOrganisation?.name}</span></p>
+          <p className="surface-muted button-inline communication-context"><Building2 className="icon-small shrink-0" aria-hidden="true" /><span className="truncate">{user?.activeOrganisation?.name}</span></p>
         </div>
         <nav aria-label="Communication sections" className="communication-tabs">
           {tabs.map(tab => {
             const Icon = tab.icon;
-            return <PageLink key={tab.id} page={tab.page} onNavigate={onNavigate} aria-current={activeTab === tab.id ? 'page' : undefined} className={`communication-tab ${activeTab === tab.id ? "communication-tab-active" : "communication-tab-idle"}`}><Icon className="icon-default" aria-hidden="true" />{tab.label}</PageLink>;
+            return <PageLink key={tab.id} page={tab.page} onNavigate={onNavigate} aria-current={activeTab === tab.id ? 'page' : undefined} className={`button-inline communication-tab ${activeTab === tab.id ? "communication-tab-active" : "communication-tab-idle"}`}><Icon className="icon-default" aria-hidden="true" />{tab.label}</PageLink>;
           })}
         </nav>
       </header>

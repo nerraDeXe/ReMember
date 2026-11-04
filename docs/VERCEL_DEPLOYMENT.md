@@ -82,7 +82,7 @@ Update backend `APP_WEB_URL` and the OpenStreetMap User-Agent with the final fro
 
 Open the Vercel URL and verify registration/email confirmation, sign-in, both account tabs, joining an organisation, posting images, and event location search. Confirm browser API requests go to the configured backend, not the Vercel domain. The current backend already permits cross-origin requests with the Authorization header.
 
-Use separate backend/database environments if preview deployments should not change production data. Payments and Google Wallet currently contain simulated integrations; hosting the application does not convert them into live payment or Wallet integrations.
+Use separate backend/database environments if preview deployments should not change production data. Payments use a simulated gateway; hosting the application does not enable real payments. Membership cards appear in the app without an external integration.
 
 ## Why the backend is separate
 

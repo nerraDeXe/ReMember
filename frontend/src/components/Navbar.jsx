@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { isAccountPage } from '../navigation.js';
 import { PageLink } from '../routing.jsx';
+import NotificationBell from './NotificationBell.jsx';
 import {
   User,
   LogOut,
@@ -51,6 +52,8 @@ export default function Navbar({ onNavigate, currentPage }) {
             <PageLink page="account-organisations" onNavigate={onNavigate} aria-label="My Organisations" className={`navbar-organisations ${currentPage === 'account-organisations' ? 'navbar-organisations-active' : 'navbar-organisations-idle'}`}>
               <Building2 className="navbar-tool-icon" /><span className="navbar-organisations-label">My Organisations</span>
             </PageLink>
+
+            <NotificationBell onNavigate={onNavigate} currentPage={currentPage} onOpen={() => setUserMenuOpen(false)} />
 
             {/* User Profile Pill */}
             <div className="navbar-account">
