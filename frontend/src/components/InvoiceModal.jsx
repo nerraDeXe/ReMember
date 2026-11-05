@@ -1,7 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { X, Printer, Download, CheckCircle2, AlertCircle } from 'lucide-react';
+import { useToast } from '../context/ToastContext.jsx';
+import { downloadInvoicePdf } from '../invoicePdf.js';
 
 export default function InvoiceModal({ invoice, isOpen, onClose }) {
+  const { showToast } = useToast();
+  const [downloading, setDownloading] = useState(false);
+
   if (!isOpen || !invoice) return null;
 
   const isPaid = invoice.paymentStatus === 'paid';
@@ -13,14 +18,18 @@ export default function InvoiceModal({ invoice, isOpen, onClose }) {
     window.print();
   };
 
-  const handleDownload = () => {
-    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(invoice, null, 2));
-    const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute('href', dataStr);
-    downloadAnchor.setAttribute('download', `${invoice.invoiceNumber}.json`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
+  const handleDownload = async () => {
+    if (downloading) return;
+    setDownloading(true);
+    try {
+      await downloadInvoicePdf(invoice);
+      showToast(`Invoice ${invoice.invoiceNumber} downloaded as PDF.`, 'success');
+    } catch (err) {
+      console.error('Failed to download invoice PDF:', err);
+      showToast('Could not download the invoice PDF. Please try again.', 'error');
+    } finally {
+      setDownloading(false);
+    }
   };
 
   return (
@@ -48,10 +57,13 @@ export default function InvoiceModal({ invoice, isOpen, onClose }) {
             <button
               onClick={handleDownload}
               className="row-icon invoice-tool-button"
-              title="Download JSON record"
+              title="Download Invoice PDF"
+              aria-label="Download invoice as PDF"
+              disabled={downloading}
+              aria-busy={downloading}
             >
               <Download className="icon-default" />
-              <span>Export</span>
+              <span>{downloading ? 'Exporting...' : 'Export PDF'}</span>
             </button>
             <button
               onClick={onClose}

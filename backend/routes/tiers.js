@@ -3,6 +3,8 @@ import { Tier, Organisation, OrganisationMembership, ActivityLog } from '../mode
 import { authenticateToken } from '../middleware/auth.js';
 import { optionalAuth, requireOrganisationOwner } from '../middleware/organisationAccess.js';
 import { canReadOrganisation, isOrganisationOwner, normaliseTierInput, resolveSelectedOrganisation } from '../services/organisationAccess.js';
+import { DUPLICATE_TIER_PRICING_MESSAGE, findTierPricingConflict } from '../../shared/tierPricing.js';
+import { isDuplicateTierPricingError } from '../services/tierPricing.js';
 
 const router = express.Router();
 
@@ -28,10 +30,13 @@ router.post('/', authenticateToken, requireOrganisationOwner, async (req, res) =
     try { input = normaliseTierInput(req.body); }
     catch (error) { return res.status(400).json({ success: false, message: error.message }); }
     if (await Tier.findOne({ organisationId: req.organisationId, name: input.name })) return res.status(409).json({ success: false, message: 'A tier with this name already exists in your organisation.' });
+    const tiers = await Tier.find({ organisationId: req.organisationId }).lean();
+    if (findTierPricingConflict(tiers, input)) return res.status(409).json({ success: false, message: DUPLICATE_TIER_PRICING_MESSAGE });
     const tier = await Tier.create({ ...input, organisationId: req.organisationId });
     await logTierActivity(req, 'TIER_CREATED', tier);
     res.status(201).json({ success: true, message: `Tier '${tier.name}' created successfully.`, tier });
-  } catch {
+  } catch (error) {
+    if (isDuplicateTierPricingError(error)) return res.status(409).json({ success: false, message: DUPLICATE_TIER_PRICING_MESSAGE });
     res.status(500).json({ success: false, message: 'Failed to create tier.' });
   }
 });
@@ -45,11 +50,14 @@ router.put('/:id', authenticateToken, requireOrganisationOwner, async (req, res)
     catch (error) { return res.status(400).json({ success: false, message: error.message }); }
     const duplicate = await Tier.findOne({ organisationId: req.organisationId, name: input.name, _id: { $ne: existing._id } });
     if (duplicate) return res.status(409).json({ success: false, message: 'A tier with this name already exists in your organisation.' });
+    const tiers = await Tier.find({ organisationId: req.organisationId }).lean();
+    if (findTierPricingConflict(tiers, input, existing._id)) return res.status(409).json({ success: false, message: DUPLICATE_TIER_PRICING_MESSAGE });
     if (existing.isActive && !input.isActive && !await Tier.exists({ organisationId: req.organisationId, isActive: true, _id: { $ne: existing._id } })) return res.status(400).json({ success: false, message: 'Keep at least one active membership tier.' });
     const tier = await Tier.findOneAndUpdate({ _id: existing._id, organisationId: req.organisationId }, { $set: input }, { new: true, runValidators: true });
     await logTierActivity(req, 'TIER_MODIFIED', tier, Object.keys(req.body));
     res.json({ success: true, message: `Tier '${tier.name}' updated successfully.`, tier });
-  } catch {
+  } catch (error) {
+    if (isDuplicateTierPricingError(error)) return res.status(409).json({ success: false, message: DUPLICATE_TIER_PRICING_MESSAGE });
     res.status(500).json({ success: false, message: 'Failed to update tier.' });
   }
 });

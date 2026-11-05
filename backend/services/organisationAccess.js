@@ -1,5 +1,6 @@
 import { Organisation, OrganisationMembership, User } from '../models/index.js';
 import { getOrganisationBadgeColor } from '../../shared/membershipBadges.js';
+import { tierPricingKey } from '../../shared/tierPricing.js';
 import { effectiveMembershipStatus } from './membershipState.js';
 import { resolveDueFreeDowngrade } from './scheduledDowngrade.js';
 
@@ -125,6 +126,7 @@ export function normaliseTierInput(input = {}) {
     slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'membership',
     price: Math.round(price * 100) / 100,
     interval,
+    pricingKey: tierPricingKey({ price, interval }),
     description: input.description || '',
     perks: perks.map(perk => perk.trim()).filter(Boolean),
     isActive: input.isActive === undefined ? true : input.isActive,

@@ -305,6 +305,122 @@ test('Creating and editing tiers ignores retired fields without changing the org
   assert.equal(records.Organisation[0].badgeColor, '#654321');
 });
 
+test('Tier pricing uniqueness protects new writes while leaving legacy rows outside the unique index', () => {
+  const index = Tier.schema.indexes().find(([, options]) => options.name === 'unique_organisation_tier_pricing');
+  assert.ok(index, 'Tier pricing has a database uniqueness constraint');
+  assert.deepEqual(index[0], { organisationId: 1, pricingKey: 1 });
+  assert.equal(index[1].unique, true);
+  assert.deepEqual(index[1].partialFilterExpression, { organisationId: { $type: 'string' }, pricingKey: { $type: 'string' } });
+  assert.equal(new Tier({ name: 'Legacy tier', price: 12.5, interval: 'monthly' }).pricingKey, undefined);
+  assert.equal(normaliseTierInput({ name: 'Canonical price', price: '12.50', interval: 'monthly', pricingKey: 'untrusted' }).pricingKey, 'monthly:1250');
+});
+
+test('Creating a tier rejects duplicate numeric, free and inactive prices without writes', async () => {
+  seedOrganisation('owned', 'alice');
+  records.User[0].activeOrganisationId = 'owned';
+  records.Tier.push({ _id: 'inactive', organisationId: 'owned', name: 'Inactive tier', price: 25, interval: 'yearly', isActive: false });
+  const before = clone(records);
+  for (const input of [
+    { price: '12.50', interval: 'monthly' },
+    { price: 12.5, interval: 'monthly' },
+    { price: '0.00', interval: 'monthly' },
+    { price: 25, interval: 'yearly' },
+  ]) {
+    const result = await request(tierRouter, 'POST', '/', { userId: 'alice', body: { name: 'Different tier name', ...input } });
+    assert.equal(result.status, 409, JSON.stringify(input));
+    assert.match(result.body.message, /price and billing interval already exists/i);
+    assert.deepEqual(records, before, 'Rejected pricing does not create tiers or audit entries');
+  }
+});
+
+test('Matching amounts with another interval or in another organisation can be created', async () => {
+  seedOrganisation('owned', 'alice');
+  seedOrganisation('other');
+  records.User[0].activeOrganisationId = 'owned';
+  records.Tier.push({ _id: 'other-exclusive-price', organisationId: 'other', name: 'Other price', price: 30, interval: 'monthly', isActive: true });
+  for (const input of [
+    { name: 'Annual supporter', price: 12.5, interval: 'yearly' },
+    { name: 'Own pricing', price: 30, interval: 'monthly' },
+  ]) {
+    const result = await request(tierRouter, 'POST', '/', { userId: 'alice', body: input });
+    assert.equal(result.status, 201);
+    assert.equal(result.body.tier.organisationId, 'owned');
+    assert.equal(result.body.tier.price, input.price);
+    assert.equal(result.body.tier.interval, input.interval);
+  }
+  assert.equal(records.Tier.filter(tier => tier.organisationId === 'other').length, 3);
+});
+
+test('Editing a tier excludes itself and preserves its existing pricing when only metadata changes', async () => {
+  seedOrganisation('owned', 'alice');
+  records.User[0].activeOrganisationId = 'owned';
+  for (const body of [{ description: 'New description' }, { name: 'Renamed supporter', price: '12.50', interval: 'monthly' }]) {
+    const result = await request(tierRouter, 'PUT', '/:id', { userId: 'alice', params: { id: 'owned-paid' }, body });
+    assert.equal(result.status, 200);
+    assert.equal(result.body.tier.price, 12.5);
+    assert.equal(result.body.tier.interval, 'monthly');
+    assert.equal(result.body.tier.pricingKey, 'monthly:1250');
+  }
+  assert.equal(records.Tier.find(tier => tier._id === 'owned-paid').description, 'New description');
+});
+
+test('Editing a tier cannot adopt another tier price or interval and rejected edits leave no changes', async () => {
+  seedOrganisation('owned', 'alice');
+  records.User[0].activeOrganisationId = 'owned';
+  records.Tier.push({ _id: 'annual', organisationId: 'owned', name: 'Annual', price: 12.5, interval: 'yearly', isActive: true });
+  const before = clone(records);
+  for (const body of [{ name: 'Rejected free tier', price: '0.00' }, { interval: 'yearly' }]) {
+    const result = await request(tierRouter, 'PUT', '/:id', { userId: 'alice', params: { id: 'owned-paid' }, body });
+    assert.equal(result.status, 409);
+    assert.match(result.body.message, /price and billing interval already exists/i);
+    assert.deepEqual(records, before, 'Rejected pricing leaves tier data and audit history unchanged');
+  }
+});
+
+test('Organisation setup rejects normalized duplicate pricing before creating data or promoting the account', async () => {
+  const before = clone(records);
+  for (const prices of [[12.5, '12.50'], [0, '0.00']]) {
+    const result = await request(organisationRouter, 'POST', '/', { userId: 'alice', body: {
+      name: 'Duplicate price club', description: 'Duplicate pricing is invalid.',
+      tiers: [{ name: 'First', price: prices[0], interval: 'monthly' }, { name: 'Second', price: prices[1], interval: 'monthly' }]
+    } });
+    assert.equal(result.status, 400);
+    assert.match(result.body.message, /different price and billing interval combination/i);
+    assert.deepEqual(records, before);
+  }
+});
+
+test('Organisation setup accepts the same amount with distinct billing intervals', async () => {
+  const result = await request(organisationRouter, 'POST', '/', { userId: 'alice', body: {
+    name: 'Billing periods club', description: 'Distinct periods have distinct pricing.',
+    tiers: [{ name: 'Monthly', price: '10.00', interval: 'monthly' }, { name: 'Annual', price: 10, interval: 'yearly' }]
+  } });
+  assert.equal(result.status, 201);
+  assert.deepEqual(result.body.tiers.map(tier => tier.pricingKey), ['monthly:1000', 'yearly:1000']);
+});
+
+test('A concurrent tier creation pricing conflict returns a useful conflict response', async t => {
+  seedOrganisation('owned', 'alice');
+  records.User[0].activeOrganisationId = 'owned';
+  const before = clone(records);
+  t.mock.method(Tier, 'create', async () => { throw Object.assign(new Error('Duplicate pricing key'), { code: 11000, keyPattern: { organisationId: 1, pricingKey: 1 } }); });
+  const result = await request(tierRouter, 'POST', '/', { userId: 'alice', body: { name: 'Concurrent creation', price: 22, interval: 'monthly' } });
+  assert.equal(result.status, 409);
+  assert.match(result.body.message, /price and billing interval already exists/i);
+  assert.deepEqual(records, before);
+});
+
+test('A concurrent tier update pricing conflict returns a useful conflict response', async t => {
+  seedOrganisation('owned', 'alice');
+  records.User[0].activeOrganisationId = 'owned';
+  const before = clone(records);
+  t.mock.method(Tier, 'findOneAndUpdate', async () => { throw Object.assign(new Error('Duplicate pricing key'), { code: 11000, keyPattern: { organisationId: 1, pricingKey: 1 } }); });
+  const result = await request(tierRouter, 'PUT', '/:id', { userId: 'alice', params: { id: 'owned-paid' }, body: { price: 22 } });
+  assert.equal(result.status, 409);
+  assert.match(result.body.message, /price and billing interval already exists/i);
+  assert.deepEqual(records, before);
+});
+
 test('Tier write failure rolls back organisation creation and account promotion', async () => {
   failTierCreation = true;
   const result = await request(organisationRouter, 'POST', '/', { userId: 'alice', body: { name: 'Club', description: 'Club description', tiers: [{ name: 'Members', price: 0 }] } });

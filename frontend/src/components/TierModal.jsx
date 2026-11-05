@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { X, Layers, Save, RefreshCw } from 'lucide-react';
 import { api } from '../api.js';
 import { useToast } from '../context/ToastContext.jsx';
+import { DUPLICATE_TIER_PRICING_MESSAGE, findTierPricingConflict } from '../../../shared/tierPricing.js';
 
-export default function TierModal({ isOpen, onClose, tierToEdit, onSaved }) {
+export default function TierModal({ isOpen, onClose, tierToEdit, onSaved, existingTiers = [] }) {
   const { showToast } = useToast();
   const [name, setName] = useState('');
   const [price, setPrice] = useState(49);
@@ -12,8 +13,10 @@ export default function TierModal({ isOpen, onClose, tierToEdit, onSaved }) {
   const [perksText, setPerksText] = useState('');
   const [maxMembers, setMaxMembers] = useState('');
   const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState('');
 
   useEffect(() => {
+    setFormError('');
     if (tierToEdit) {
       setName(tierToEdit.name || '');
       setPrice(tierToEdit.price || 0);
@@ -33,8 +36,13 @@ export default function TierModal({ isOpen, onClose, tierToEdit, onSaved }) {
 
   if (!isOpen) return null;
 
+  const pricingConflict = findTierPricingConflict(existingTiers, { price, interval }, tierToEdit?._id);
+  const priceError = (pricingConflict || formError === DUPLICATE_TIER_PRICING_MESSAGE) ? DUPLICATE_TIER_PRICING_MESSAGE : '';
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (saving || priceError) return;
+    setFormError('');
     setSaving(true);
 
     const payload = {
@@ -57,7 +65,9 @@ export default function TierModal({ isOpen, onClose, tierToEdit, onSaved }) {
       if (onSaved) onSaved();
       onClose();
     } catch (err) {
-      showToast(err.message || 'Failed to save tier.', 'error');
+      const message = err.message || 'Failed to save tier.';
+      setFormError(message);
+      showToast(message, 'error');
     } finally {
       setSaving(false);
     }
@@ -108,12 +118,15 @@ export default function TierModal({ isOpen, onClose, tierToEdit, onSaved }) {
                 id="tier-price"
                 type="number"
                 value={price}
-                onChange={(e) => setPrice(e.target.value)}
+                onChange={(e) => { setPrice(e.target.value); setFormError(''); }}
                 min="0"
                 step="0.01"
                 required
+                aria-invalid={Boolean(priceError)}
+                aria-describedby={priceError ? 'tier-price-error' : undefined}
                 className="control control-standard control-focus"
               />
+              {priceError && <p id="tier-price-error" role="alert" className="text-sm text-red-600 mt-1">{priceError}</p>}
             </div>
           </div>
 
@@ -123,7 +136,9 @@ export default function TierModal({ isOpen, onClose, tierToEdit, onSaved }) {
               <select
                 id="tier-interval"
                 value={interval}
-                onChange={(e) => setInterval(e.target.value)}
+                onChange={(e) => { setInterval(e.target.value); setFormError(''); }}
+                aria-invalid={Boolean(priceError)}
+                aria-describedby={priceError ? 'tier-price-error' : undefined}
                 className="control control-standard control-focus"
               >
                 <option value="monthly">Monthly</option>
@@ -172,10 +187,11 @@ export default function TierModal({ isOpen, onClose, tierToEdit, onSaved }) {
             </div>
           </div>
 
+          {formError && !priceError && <p role="alert" className="text-sm text-red-600">{formError}</p>}
           <div className="pt-2">
             <button
               type="submit"
-              disabled={saving}
+              disabled={saving || Boolean(priceError)}
               className="button-primary button-content tier-dialog-save"
             >
               {saving ? (

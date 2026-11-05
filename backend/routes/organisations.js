@@ -7,6 +7,8 @@ import { optionalAuth } from '../middleware/organisationAccess.js';
 import { normaliseOrganisationImage } from '../services/organisationImages.js';
 import { getOrganisationEmailSettings, normaliseOrganisationEmailSettings } from '../../shared/organisationEmails.js';
 import { DEFAULT_MEMBERSHIP_BADGE_COLOR, isBadgeColor } from '../../shared/membershipBadges.js';
+import { DUPLICATE_TIER_PRICING_MESSAGE, hasDuplicateTierPricing } from '../../shared/tierPricing.js';
+import { isDuplicateTierPricingError } from '../services/tierPricing.js';
 import { effectiveMembershipStatus } from '../services/membershipState.js';
 import { membershipDetails } from '../services/membershipManagement.js';
 import { sendWelcomeForMembership } from '../services/organisationEmailSettings.js';
@@ -152,6 +154,7 @@ router.post('/', authenticateToken, requireVerifiedEmail, async (req, res) => {
     if (!Array.isArray(req.body.tiers) || !req.body.tiers.length || req.body.tiers.length > 20) throw new Error('Create at least one membership tier, up to a maximum of 20.');
     tierInputs = req.body.tiers.map(normaliseTierInput);
     if (new Set(tierInputs.map(tier => tier.name.toLowerCase())).size !== tierInputs.length) throw new Error('Each membership tier needs a different name.');
+    if (hasDuplicateTierPricing(tierInputs)) throw new Error('Each membership tier needs a different price and billing interval combination.');
     if (!tierInputs.some(tier => tier.isActive)) throw new Error('Create at least one active membership tier.');
   } catch (error) {
     return res.status(400).json({ success: false, message: error.message });
@@ -182,6 +185,7 @@ router.post('/', authenticateToken, requireVerifiedEmail, async (req, res) => {
     await logActivity(req, organisation._id, 'ORGANISATION_CREATED', { organisationId: organisation._id, name: organisation.name, visibility: organisation.visibility });
     res.status(201).json({ success: true, message: `Organisation "${organisation.name}" created successfully.`, organisation, tiers, user: await getAccountContext(updatedUser) });
   } catch (error) {
+    if (isDuplicateTierPricingError(error)) return res.status(409).json({ success: false, message: DUPLICATE_TIER_PRICING_MESSAGE });
     console.error('Create organisation error:', error.message);
     res.status(500).json({ success: false, message: 'Failed to create organisation. Please try again.' });
   } finally {

@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { filterOrganisations } from '../src/organisationDirectory.js';
+import { findTierPricingConflict, hasDuplicateTierPricing, tierPricingKey } from '../../shared/tierPricing.js';
 
 const organisations = [
   { name: 'ReMember Club', description: 'Meet local makers', category: 'Technology', location: 'Kuala Lumpur', tags: ['Robotics', 'AI'], isPublic: true },
@@ -35,4 +36,28 @@ test('Each page keeps its existing searchable fields and handles empty lists or 
   assert.deepEqual(filterOrganisations([], { search: 'ReMember' }), []);
   assert.deepEqual(filterOrganisations([{}], { search: 'anything' }), []);
   assert.deepEqual(filterOrganisations([{}], { search: '   ' }), [{}]);
+});
+
+test('Tier pricing matches amounts in cents with the same billing interval', () => {
+  const tiers = [
+    { _id: 'monthly', price: 10, interval: 'monthly' },
+    { _id: 'free', price: 0, interval: 'yearly', isActive: false },
+  ];
+  assert.equal(findTierPricingConflict(tiers, { price: '10.00', interval: 'monthly' }), tiers[0]);
+  assert.equal(findTierPricingConflict(tiers, { price: '0.00', interval: 'yearly' }), tiers[1]);
+  assert.equal(findTierPricingConflict(tiers, { price: 10, interval: 'yearly' }), null);
+  assert.equal(findTierPricingConflict(tiers, { price: 120, interval: 'yearly' }), null);
+  assert.equal(findTierPricingConflict(tiers, { price: 10, interval: 'monthly' }, 'monthly'), null);
+  assert.equal(tierPricingKey({ price: 12.5 }), tierPricingKey({ price: '12.50', interval: 'monthly' }));
+});
+
+test('Tier setup detects duplicate pricing including free tiers and ignores incomplete amounts', () => {
+  assert.equal(hasDuplicateTierPricing([{ price: '0', interval: 'monthly' }, { price: 0, interval: 'monthly' }]), true);
+  assert.equal(hasDuplicateTierPricing([{ price: '12.50', interval: 'yearly' }, { price: 12.5, interval: 'yearly' }]), true);
+  assert.equal(hasDuplicateTierPricing([{ price: 10, interval: 'monthly' }, { price: 10, interval: 'yearly' }]), false);
+  assert.equal(hasDuplicateTierPricing([{ price: '' }, { price: '' }]), false);
+  for (const price of ['', ' ', null, undefined, false, NaN, Infinity, -1, 0.001, '12.500', 'invalid', 1000001]) {
+    assert.equal(tierPricingKey({ price, interval: 'monthly' }), null, `Invalid price ${price} does not become a pricing key`);
+  }
+  assert.equal(tierPricingKey({ price: 10, interval: 'weekly' }), null);
 });

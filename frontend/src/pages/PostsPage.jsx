@@ -210,7 +210,7 @@ export default function PostsPage({ canManage = false }) {
 
   const deletePost = async post => {
     if (mutationPending.current || imageBusy || descriptionImageBusy) return;
-    const deletingRoute = getSnapshot();
+    const deletingRoute = getSnapshot();D
     mutationPending.current = true;
     setDeletingId(post._id);
     setDeleteError('');

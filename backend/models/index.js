@@ -65,11 +65,18 @@ const tierSchema = new mongoose.Schema({
   slug: { type: String, required: true },
   price: { type: Number, required: true, min: 0 },
   interval: { type: String, default: 'yearly' }, // monthly or yearly
+  pricingKey: { type: String },
   description: { type: String },
   perks: [{ type: String }],
   isActive: { type: Boolean, default: true },
   maxMembers: { type: Number, default: null }
 }, { timestamps: true });
+
+tierSchema.index({ organisationId: 1, pricingKey: 1 }, {
+  unique: true,
+  partialFilterExpression: { organisationId: { $type: 'string' }, pricingKey: { $type: 'string' } },
+  name: 'unique_organisation_tier_pricing'
+});
 
 const eventSchema = new mongoose.Schema({
   _id: { type: String, default: () => new mongoose.Types.ObjectId().toString() },

@@ -4,11 +4,13 @@ import { api } from '../../api.js';
 import { useToast } from '../../context/ToastContext.jsx';
 import InvoiceModal from '../../components/InvoiceModal.jsx';
 import { useUrlQuery, useUrlState } from '../../routing.jsx';
+import { downloadInvoicePdf } from '../../invoicePdf.js';
 
 export default function InvoicesPage() {
   const { showToast } = useToast();
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [downloadingInvoiceId, setDownloadingInvoiceId] = useState(null);
   const [invoiceId, setInvoiceId] = useUrlState('invoice');
   const { closeQuery } = useUrlQuery();
   const [loadError, setLoadError] = useState('');
@@ -35,15 +37,18 @@ export default function InvoicesPage() {
     loadInvoices();
   }, []);
 
-  const handleDownload = (invoice) => {
-    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(invoice, null, 2));
-    const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute('href', dataStr);
-    downloadAnchor.setAttribute('download', `${invoice.invoiceNumber}.json`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
-    showToast(`Invoice ${invoice.invoiceNumber} downloaded.`, 'success');
+  const handleDownload = async (invoice) => {
+    if (downloadingInvoiceId !== null) return;
+    setDownloadingInvoiceId(String(invoice._id));
+    try {
+      await downloadInvoicePdf(invoice);
+      showToast(`Invoice ${invoice.invoiceNumber} downloaded as PDF.`, 'success');
+    } catch (err) {
+      console.error('Failed to download invoice PDF:', err);
+      showToast('Could not download the invoice PDF. Please try again.', 'error');
+    } finally {
+      setDownloadingInvoiceId(null);
+    }
   };
 
   return (
@@ -127,9 +132,14 @@ export default function InvoicesPage() {
                         <button
                           onClick={() => handleDownload(inv)}
                           className="button-icon"
-                          title="Download Invoice JSON"
+                          title="Download Invoice PDF"
+                          aria-label={`Download invoice ${inv.invoiceNumber} as PDF`}
+                          disabled={downloadingInvoiceId !== null}
+                          aria-busy={downloadingInvoiceId === String(inv._id)}
                         >
-                          <Download className="icon-default" />
+                          {downloadingInvoiceId === String(inv._id)
+                            ? <RefreshCw className="icon-default animate-spin" />
+                            : <Download className="icon-default" />}
                         </button>
                       </td>
                     </tr>

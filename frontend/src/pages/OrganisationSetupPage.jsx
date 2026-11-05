@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import AccountShell from '../components/AccountShell.jsx';
 import { useNavigation, useUrlQuery, useUrlState } from '../routing.jsx';
+import { hasDuplicateTierPricing } from '../../../shared/tierPricing.js';
 
 const inputClass = "control control-standard focus:border-brand-primary";
 const labelClass = "field-label";
@@ -38,6 +39,10 @@ export default function OrganisationSetupPage({ onNavigate }) {
     const names = tiers.map((tier) => tier.name.trim().toLowerCase());
     if (new Set(names).size !== names.length) {
       setError('Give each membership tier a different name.');
+      return false;
+    }
+    if (hasDuplicateTierPricing(tiers)) {
+      setError('Each membership tier needs a different price and billing interval combination.');
       return false;
     }
     return true;

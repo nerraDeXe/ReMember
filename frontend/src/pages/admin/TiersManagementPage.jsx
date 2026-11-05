@@ -238,6 +238,7 @@ export default function TiersManagementPage() {
         isOpen={!loading && !loadError && Boolean(tierRoute) && (tierRoute === 'new' || Boolean(editingTier))}
         onClose={closeEditor}
         tierToEdit={editingTier}
+        existingTiers={tiers}
         onSaved={() => { if (mounted.current && getSnapshot() === route) loadTiers(); }}
       />
     </div>
